@@ -1,0 +1,367 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================
+// NGƯỜI DÙNG & XÁC THỰC
+// ============================
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password      String
+  hoTen         String
+  soDienThoai   String?
+  vaiTro        VaiTro   @default(CUSTOMER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  donDatVe           DonDatVe[]
+  thanhToan          ThanhToan[]
+  giaoDichThanhToan  GiaoDichThanhToan[]
+
+  @@map("users")
+}
+
+enum VaiTro {
+  CUSTOMER
+  ADMIN
+  OPERATOR
+}
+
+// ============================
+// DANH MỤC CƠ BẢN
+// ============================
+
+model QuocGia {
+  id        Int      @id @default(autoincrement())
+  maQuocGia String   @unique @db.VarChar(3) // VNM, USA, THA
+  tenQuocGia String
+  createdAt DateTime @default(now())
+  
+  sanBay    SanBay[]
+
+  @@map("quoc_gia")
+}
+
+model TienTe {
+  id        Int      @id @default(autoincrement())
+  maTienTe  String   @unique @db.VarChar(3) // VND, USD, THB
+  tenTienTe String
+  tyGia     Decimal  @db.Decimal(15, 4) @default(1.0)
+  createdAt DateTime @default(now())
+
+  @@map("tien_te")
+}
+
+model SanBay {
+  id          Int      @id @default(autoincrement())
+  maIata      String   @unique @db.VarChar(3) // SGN, HAN, BKK
+  tenSanBay   String
+  thanhPho    String
+  quocGiaId   Int
+  quocGia     QuocGia  @relation(fields: [quocGiaId], references: [id])
+  kinhDo      Decimal? @db.Decimal(10, 6)
+  viDo        Decimal? @db.Decimal(10, 6)
+  createdAt   DateTime @default(now())
+
+  changBayDi  ChangBay[] @relation("ChangBayDi")
+  changBayDen ChangBay[] @relation("ChangBayDen")
+
+  @@map("san_bay")
+}
+
+model HangHangKhong {
+  id            Int      @id @default(autoincrement())
+  maIata        String   @unique @db.VarChar(2) // VN, VJ, QH
+  tenHang       String
+  logo          String?
+  createdAt     DateTime @default(now())
+
+  chuyenBay     ChuyenBay[]
+
+  @@map("hang_hang_khong")
+}
+
+// ============================
+// CHUYẾN BAY & CHẶNG BAY
+// ============================
+
+model ChuyenBay {
+  id                  Int      @id @default(autoincrement())
+  hangId              Int
+  hang                HangHangKhong @relation(fields: [hangId], references: [id])
+  soHieuChuyenBay     String   // VN123
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  changBay            ChangBay[]
+
+  @@map("chuyen_bay")
+}
+
+model ChangBay {
+  id                Int      @id @default(autoincrement())
+  chuyenBayId       Int
+  chuyenBay         ChuyenBay @relation(fields: [chuyenBayId], references: [id])
+  thuTuChang        Int      // 1, 2 (cho multi-city)
+  sanBayDiId        Int
+  sanBayDi          SanBay   @relation("ChangBayDi", fields: [sanBayDiId], references: [id])
+  sanBayDenId       Int
+  sanBayDen         SanBay   @relation("ChangBayDen", fields: [sanBayDenId], references: [id])
+  gioDi             DateTime
+  gioDen            DateTime
+  thoiGianBayPhut   Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tonCho            TonCho[]
+  donDatVe          DonDatVe[]
+
+  @@map("chang_bay")
+}
+
+// ============================
+// GIÁ VÉ & TỒN CHỖ
+// ============================
+
+model KhoangVe {
+  id        Int      @id @default(autoincrement())
+  maKhoang  String   @unique // ECONOMY, BUSINESS, FIRST
+  tenKhoang String
+  createdAt DateTime @default(now())
+
+  hangVe    HangVe[]
+
+  @@map("khoang_ve")
+}
+
+model HangVe {
+  id          Int      @id @default(autoincrement())
+  khoangVeId  Int
+  khoangVe    KhoangVe @relation(fields: [khoangVeId], references: [id])
+  maHang      String   @unique // Y, M, J, C, F
+  tenHang     String
+  moTa        String?
+  createdAt   DateTime @default(now())
+
+  tonCho      TonCho[]
+  donDatVe    DonDatVe[]
+
+  @@map("hang_ve")
+}
+
+model NhomGiaVe {
+  id            Int      @id @default(autoincrement())
+  tenNhom       String   // Eco Saver, Eco Flex, Business
+  hangVeId      Int?
+  hanhLyKy      Int      @default(0) // kg
+  hanhLyXach    Int      @default(7) // kg
+  choPhepDoi    Boolean  @default(false)
+  choPhepHoan   Boolean  @default(false)
+  phiDoi        Decimal  @db.Decimal(15, 2) @default(0)
+  phiHoan       Decimal  @db.Decimal(15, 2) @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tonCho        TonCho[]
+
+  @@map("nhom_gia_ve")
+}
+
+model TonCho {
+  id          Int      @id @default(autoincrement())
+  changBayId  Int
+  changBay    ChangBay @relation(fields: [changBayId], references: [id])
+  hangVeId    Int
+  hangVe      HangVe   @relation(fields: [hangVeId], references: [id])
+  nhomGiaId   Int?
+  nhomGia     NhomGiaVe? @relation(fields: [nhomGiaId], references: [id])
+  tongSoCho   Int
+  soChoCon    Int
+  giaCoSo     Decimal  @db.Decimal(15, 2)
+  thue        Decimal  @db.Decimal(15, 2) @default(0)
+  phi         Decimal  @db.Decimal(15, 2) @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([changBayId, hangVeId, nhomGiaId])
+  @@map("ton_cho")
+}
+
+// ============================
+// ĐƠN ĐẶT VÉ
+// ============================
+
+model DonDatVe {
+  id              Int               @id @default(autoincrement())
+  maDatVe         String            @unique // PNR123
+  nguoiDungId     Int?
+  nguoiDung       User?             @relation(fields: [nguoiDungId], references: [id])
+  changBayId      Int
+  changBay        ChangBay          @relation(fields: [changBayId], references: [id])
+  hangVeId        Int
+  hangVe          HangVe            @relation(fields: [hangVeId], references: [id])
+  nhomGiaId       Int?
+  trangThai       TrangThaiDonDatVe @default(TAO_MOI)
+  tongTien        Decimal           @db.Decimal(15, 2)
+  tienTe          String            @default("VND") @db.VarChar(3)
+  hetHanGiuCho    DateTime?
+  searchSessionId String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  hanhKhach           HanhKhach[]
+  thanhToan           ThanhToan[]
+  ve                  Ve[]
+  thongTinLienHe      ThongTinLienHe?
+  giaoDichThanhToan   GiaoDichThanhToan[]
+
+  @@map("don_dat_ve")
+}
+
+enum TrangThaiDonDatVe {
+  TAO_MOI
+  GIU_CHO
+  HET_HAN
+  CHO_THANH_TOAN
+  DA_THANH_TOAN
+  DANG_XUAT_VE
+  DA_XUAT_VE
+  HUY
+  CHO_HOAN_TIEN
+  DA_HOAN_TIEN
+  THAT_BAI
+}
+
+model HanhKhach {
+  id          Int      @id @default(autoincrement())
+  donDatVeId  Int
+  donDatVe    DonDatVe @relation(fields: [donDatVeId], references: [id])
+  loai        LoaiHanhKhach // NGUOI_LON, TRE_EM, SO_SINH
+  ho          String
+  ten         String
+  gioiTinh    String   // NAM, NU
+  ngaySinh    DateTime
+  soCccd      String?
+  soHoChieu   String?
+  ngayHetHan  DateTime?
+  quocTich    String?
+  createdAt   DateTime @default(now())
+
+  ve          Ve[]
+
+  @@map("hanh_khach")
+}
+
+enum LoaiHanhKhach {
+  NGUOI_LON
+  TRE_EM
+  SO_SINH
+}
+
+model ThongTinLienHe {
+  id          Int      @id @default(autoincrement())
+  donDatVeId  Int      @unique
+  donDatVe    DonDatVe @relation(fields: [donDatVeId], references: [id])
+  hoTen       String
+  email       String
+  soDienThoai String
+  createdAt   DateTime @default(now())
+
+  @@map("thong_tin_lien_he")
+}
+
+// ============================
+// THANH TOÁN
+// ============================
+
+model ThanhToan {
+  id                Int             @id @default(autoincrement())
+  donDatVeId        Int
+  donDatVe          DonDatVe        @relation(fields: [donDatVeId], references: [id])
+  nguoiDungId       Int?
+  nguoiDung         User?           @relation(fields: [nguoiDungId], references: [id])
+  maGiaoDich        String          @unique
+  soTien            Decimal         @db.Decimal(15, 2)
+  tienTe            String          @default("VND") @db.VarChar(3)
+  phuongThuc        String          // THE, ATM, VI, QR
+  trangThai         TrangThaiThanhToan @default(KHOI_TAO)
+  thongTinCong      Json?           // callback data
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @default(now()) @updatedAt
+
+  @@map("thanh_toan")
+}
+
+enum TrangThaiThanhToan {
+  KHOI_TAO
+  CHO_XU_LY
+  THANH_CONG
+  THAT_BAI
+  DA_HOAN
+}
+
+model GiaoDichThanhToan {
+  id           Int                      @id @default(autoincrement())
+  donDatVeId   Int
+  donDatVe     DonDatVe                 @relation(fields: [donDatVeId], references: [id], map: "fk_gdtt_don_dat_ve")
+  nguoiDungId  Int
+  nguoiDung    User                     @relation(fields: [nguoiDungId], references: [id], map: "fk_gdtt_users")
+  maGiaoDich   String                   @db.VarChar(100)
+  soTien       Decimal                  @db.Decimal(15, 2)
+  phuongThuc   PhuongThucThanhToan
+  trangThai    TrangThaiGiaoDich
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @default(now()) @updatedAt
+
+  @@index([donDatVeId], map: "idx_gdtt_donDatVeId")
+  @@index([nguoiDungId], map: "idx_gdtt_nguoiDungId")
+  @@map("giao_dich_thanh_toan")
+}
+
+enum PhuongThucThanhToan {
+  VNPAY
+  MOMO
+  ZALOPAY
+  ATM
+  QR
+}
+
+enum TrangThaiGiaoDich {
+  KHOI_TAO
+  DANG_XU_LY
+  THANH_CONG
+  THAT_BAI
+}
+
+// ============================
+// VÉ ĐIỆN TỬ
+// ============================
+
+model Ve {
+  id          Int      @id @default(autoincrement())
+  donDatVeId  Int
+  donDatVe    DonDatVe @relation(fields: [donDatVeId], references: [id])
+  hanhKhachId Int
+  hanhKhach   HanhKhach @relation(fields: [hanhKhachId], references: [id])
+  soVe        String   @unique // 7381234567890
+  trangThai   TrangThaiVe @default(HIEU_LUC)
+  ngayXuat    DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@map("ve")
+}
+
+enum TrangThaiVe {
+  HIEU_LUC
+  DA_SU_DUNG
+  DA_HUY
+  DA_HOAN
+}
+
