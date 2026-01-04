@@ -25,7 +25,7 @@ export default function CreateJobPage() {
         setLoading(true);
         try {
             // TODO: Get recruiterId from auth context
-            await axios.post('http://localhost:3000/jobs', {
+            await axios.post('http://localhost:5000/jobs', {
                 ...formData,
                 recruiterId: 1, // Mock ID
             });

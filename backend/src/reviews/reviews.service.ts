@@ -55,10 +55,9 @@ export class ReviewsService {
     const review = await this.prisma.danhGia.create({
       data: {
         nguoiDungId: userId,
-        hangId: hangId,
+        hangHangKhongId: hangId,
         soSao: soSao,
-        binhLuan: binhLuan,
-        hinhAnh: hinhAnh || [],
+        nhanXet: binhLuan,
       },
     });
 
@@ -74,7 +73,7 @@ export class ReviewsService {
 
     const [reviews, total] = await Promise.all([
       this.prisma.danhGia.findMany({
-        where: { hangId: hangId },
+        where: { hangHangKhongId: hangId },
         include: {
           nguoiDung: {
             select: {
@@ -91,7 +90,7 @@ export class ReviewsService {
         take: limit,
       }),
       this.prisma.danhGia.count({
-        where: { hangId: hangId },
+        where: { hangHangKhongId: hangId },
       }),
     ]);
 
@@ -105,8 +104,8 @@ export class ReviewsService {
         id: r.id,
         nguoiDung: r.nguoiDung.hoTen,
         soSao: r.soSao,
-        binhLuan: r.binhLuan,
-        hinhAnh: r.hinhAnh,
+        binhLuan: r.nhanXet,
+        hinhAnh: [],
         ngayTao: r.createdAt,
       })),
     };
@@ -115,7 +114,7 @@ export class ReviewsService {
   // Lấy rating trung bình
   async getAirlineRating(hangId: number) {
     const reviews = await this.prisma.danhGia.findMany({
-      where: { hangId: hangId },
+      where: { hangHangKhongId: hangId },
       select: { soSao: true },
     });
 
@@ -150,7 +149,7 @@ export class ReviewsService {
     const reviews = await this.prisma.danhGia.findMany({
       where: { nguoiDungId: userId },
       include: {
-        hang: {
+        hangHangKhong: {
           select: {
             tenHang: true,
             maIata: true,
@@ -164,11 +163,11 @@ export class ReviewsService {
 
     return reviews.map((r) => ({
       id: r.id,
-      hangHangKhong: r.hang?.tenHang,
-      maHang: r.hang?.maIata,
+      hangHangKhong: r.hangHangKhong?.tenHang,
+      maHang: r.hangHangKhong?.maIata,
       soSao: r.soSao,
-      binhLuan: r.binhLuan,
-      hinhAnh: r.hinhAnh,
+      binhLuan: r.nhanXet,
+      hinhAnh: [],
       ngayTao: r.createdAt,
     }));
   }

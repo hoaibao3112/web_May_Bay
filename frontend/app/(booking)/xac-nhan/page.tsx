@@ -59,7 +59,7 @@ function XacNhanContent() {
 
   const fetchBooking = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/bookings/pnr/${maDatCho}`);
+      const res = await fetch(`http://localhost:5000/bookings/pnr/${maDatCho}`);
       const data = await res.json();
       setBooking(data);
     } catch (error) {

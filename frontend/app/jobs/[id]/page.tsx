@@ -28,7 +28,7 @@ export default function JobDetailPage() {
         const fetchJob = async () => {
             if (!params.id) return;
             try {
-                const res = await axios.get(`http://localhost:3000/jobs/${params.id}`);
+                const res = await axios.get(`http://localhost:5000/jobs/${params.id}`);
                 setJob(res.data);
             } catch (error) {
                 console.error('Failed to fetch job', error);

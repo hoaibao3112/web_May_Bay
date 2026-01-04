@@ -142,7 +142,7 @@ export class SeatsService {
 
     return {
       tongSoGhe: totalSeats,
-      ghe DaDat: bookedSeats,
+      gheDaDat: bookedSeats,
       gheConTrong: availableSeats,
     };
   }

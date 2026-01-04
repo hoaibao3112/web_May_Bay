@@ -19,7 +19,7 @@ export default function MyJobsPage() {
         const fetchJobs = async () => {
             try {
                 // TODO: Filter by recruiterId
-                const res = await axios.get('http://localhost:3000/jobs');
+                const res = await axios.get('http://localhost:5000/jobs');
                 setJobs(res.data);
             } catch (error) {
                 console.error('Failed to fetch jobs', error);

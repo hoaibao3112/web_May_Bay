@@ -25,7 +25,7 @@ export default function QuanLyDatChoPage() {
     setBooking(null);
 
     try {
-      const res = await fetch(`http://localhost:3000/bookings/pnr/${searchForm.maDatCho}`);
+      const res = await fetch(`http://localhost:5000/bookings/pnr/${searchForm.maDatCho}`);
       
       if (!res.ok) {
         throw new Error('Không tìm thấy đặt chỗ');

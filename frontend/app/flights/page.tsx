@@ -20,7 +20,7 @@ export default function FlightSearchPage() {
   // Lấy danh sách sân bay
   const fetchAirports = async () => {
     try {
-      const res = await fetch('http://localhost:3000/catalog/san-bay');
+      const res = await fetch('http://localhost:5000/catalog/san-bay');
       const data = await res.json();
       setAirports(data);
     } catch (error) {
@@ -34,7 +34,7 @@ export default function FlightSearchPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:3000/search', {
+      const res = await fetch('http://localhost:5000/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -58,7 +58,7 @@ export default function FlightSearchPage() {
   const handleBook = async (changBayId: number, hangVeId: number, giaVe: any) => {
     try {
       // 1. Tạo booking
-      const bookingRes = await fetch('http://localhost:3000/bookings', {
+      const bookingRes = await fetch('http://localhost:5000/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

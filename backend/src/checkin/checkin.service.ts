@@ -122,11 +122,11 @@ export class CheckinService {
         hangHangKhong: changBay.chuyenBay.hang.tenHang,
       },
       sanBayDi: {
-        ma: changBay.sanBayDi.maSanBay,
+        ma: changBay.sanBayDi.maIata,
         ten: changBay.sanBayDi.tenSanBay,
       },
       sanBayDen: {
-        ma: changBay.sanBayDen.maSanBay,
+        ma: changBay.sanBayDen.maIata,
         ten: changBay.sanBayDen.tenSanBay,
       },
       gioDi: changBay.gioDi,

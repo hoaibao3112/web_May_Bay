@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TrangThaiDonDatVe } from '@prisma/client';
 
 @Injectable()
 export class StatisticsService {
@@ -28,7 +29,7 @@ export class StatisticsService {
         where: { donDatVe: whereCondition },
       }),
       this.prisma.donDatVe.count({
-        where: { trangThai: 'DA_HUY' },
+        where: { trangThai: TrangThaiDonDatVe.HUY },
       }),
     ]);
 
@@ -148,7 +149,7 @@ export class StatisticsService {
           changBayId: stat.changBayId,
           soHieuChuyenBay: changBay?.chuyenBay.soHieuChuyenBay,
           hangHangKhong: changBay?.chuyenBay.hang.tenHang,
-          tuyen: `${changBay?.sanBayDi.maSanBay} → ${changBay?.sanBayDen.maSanBay}`,
+          tuyen: `${changBay?.sanBayDi.maIata} → ${changBay?.sanBayDen.maIata}`,
           diemDi: changBay?.sanBayDi.tenSanBay,
           diemDen: changBay?.sanBayDen.tenSanBay,
           soLuongDat: stat._count,

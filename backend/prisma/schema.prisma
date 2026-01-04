@@ -25,6 +25,8 @@ model User {
   donDatVe           DonDatVe[]
   thanhToan          ThanhToan[]
   giaoDichThanhToan  GiaoDichThanhToan[]
+  danhGia            DanhGia[]
+  thongBao           ThongBao[]
 
   @@map("users")
 }
@@ -63,6 +65,7 @@ model TienTe {
 model SanBay {
   id          Int      @id @default(autoincrement())
   maIata      String   @unique @db.VarChar(3) // SGN, HAN, BKK
+  maSanBay    String   @unique @db.VarChar(3) // Alias cho maIata
   tenSanBay   String
   thanhPho    String
   quocGiaId   Int
@@ -83,6 +86,7 @@ model HangHangKhong {
   tenHang       String
   logo          String?
   createdAt     DateTime @default(now())
+  danhGia       DanhGia[]
 
   chuyenBay     ChuyenBay[]
 
@@ -214,6 +218,8 @@ model DonDatVe {
   tienTe          String            @default("VND") @db.VarChar(3)
   hetHanGiuCho    DateTime?
   searchSessionId String?
+  maKhuyenMai     String?           // Mã khuyến mãi đã áp dụng
+  giamGia         Decimal?          @db.Decimal(15, 2) @default(0)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -253,9 +259,14 @@ model HanhKhach {
   soHoChieu   String?
   ngayHetHan  DateTime?
   quocTich    String?
+  soGhe       String?  // Số ghế đã chọn
+  daCheckin   Boolean  @default(false)
+  thoiGianCheckin DateTime?
+  maBoardingPass String?
   createdAt   DateTime @default(now())
 
   ve          Ve[]
+  hanhLy      HanhLy[]
 
   @@map("hanh_khach")
 }
@@ -365,4 +376,81 @@ enum TrangThaiVe {
   DA_HUY
   DA_HOAN
 }
+
+// ============================
+// KHUYẾN MÃI
+// ============================
+
+model KhuyenMai {
+  id                Int      @id @default(autoincrement())
+  maKhuyenMai       String   @unique // SUMMER2024
+  tenKhuyenMai      String
+  moTa              String?  @db.Text
+  loaiGiam          String   // PERCENT, FIXED
+  giaTriGiam        Decimal  @db.Decimal(15, 2)
+  giamToiDa         Decimal? @db.Decimal(15, 2)
+  giaTriDonToiThieu Decimal  @db.Decimal(15, 2)
+  soLuotSuDung      Int
+  soLuotDaSuDung    Int      @default(0)
+  ngayBatDau        DateTime
+  ngayKetThuc       DateTime
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("khuyen_mai")
+}
+
+// ============================
+// THÔNG BÁO
+// ============================
+
+model ThongBao {
+  id           Int      @id @default(autoincrement())
+  nguoiDungId  Int
+  nguoiDung    User     @relation(fields: [nguoiDungId], references: [id])
+  loai         String   // DELAY, CANCELLED, GATE_CHANGE, ON_TIME
+  tieuDe       String
+  noiDung      String   @db.Text
+  lienKet      String?
+  daDo         Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@map("thong_bao")
+}
+
+// ============================
+// HÀNH LÝ
+// ============================
+
+model HanhLy {
+  id            Int       @id @default(autoincrement())
+  hanhKhachId   Int
+  hanhKhach     HanhKhach @relation(fields: [hanhKhachId], references: [id])
+  loai          String    // KY_GUI, XACH_TAY
+  soKien        Int
+  khoiLuong     Decimal   @db.Decimal(10, 2)
+  phiPhatSinh   Decimal   @db.Decimal(15, 2) @default(0)
+  createdAt     DateTime  @default(now())
+
+  @@map("hanh_ly")
+}
+
+// ============================
+// ĐÁNH GIÁ HÃNG HÀNG KHÔNG
+// ============================
+
+model DanhGia {
+  id               Int            @id @default(autoincrement())
+  nguoiDungId      Int
+  nguoiDung        User           @relation(fields: [nguoiDungId], references: [id])
+  hangHangKhongId  Int
+  hangHangKhong    HangHangKhong  @relation(fields: [hangHangKhongId], references: [id])
+  soSao            Int            // 1-5
+  nhanXet          String?        @db.Text
+  createdAt        DateTime       @default(now())
+
+  @@map("danh_gia")
+}
+
 

@@ -63,6 +63,7 @@ async function main() {
     update: {},
     create: {
       maIata: 'SGN',
+      maSanBay: 'SGN',
       tenSanBay: 'Sân bay Tân Sơn Nhất',
       thanhPho: 'Hồ Chí Minh',
       quocGiaId: vietnam.id,
@@ -76,6 +77,7 @@ async function main() {
     update: {},
     create: {
       maIata: 'HAN',
+      maSanBay: 'HAN',
       tenSanBay: 'Sân bay Nội Bài',
       thanhPho: 'Hà Nội',
       quocGiaId: vietnam.id,
@@ -89,6 +91,7 @@ async function main() {
     update: {},
     create: {
       maIata: 'DAD',
+      maSanBay: 'DAD',
       tenSanBay: 'Sân bay Đà Nẵng',
       thanhPho: 'Đà Nẵng',
       quocGiaId: vietnam.id,
@@ -102,6 +105,7 @@ async function main() {
     update: {},
     create: {
       maIata: 'BKK',
+      maSanBay: 'BKK',
       tenSanBay: 'Sân bay Suvarnabhumi',
       thanhPho: 'Bangkok',
       quocGiaId: thailand.id,
@@ -115,6 +119,7 @@ async function main() {
     update: {},
     create: {
       maIata: 'SIN',
+      maSanBay: 'SIN',
       tenSanBay: 'Sân bay Changi',
       thanhPho: 'Singapore',
       quocGiaId: singapore.id,

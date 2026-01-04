@@ -22,20 +22,11 @@ export class BaggageService {
       throw new NotFoundException('Không tìm thấy hành khách');
     }
 
-    // Lấy chính sách hành lý
-    const policy = await this.prisma.chinhSachVe.findFirst({
-      where: {
-        maHangVe: hanhKhach.donDatVe.hangVe.maHang,
-      },
-    });
-
-    if (!policy) {
-      throw new NotFoundException('Không tìm thấy chính sách hành lý');
-    }
-
+    // Định mức hành lý cơ bản: 20kg/hành khách
+    const DEFINED_WEIGHT = 20;
+    
     // Tính phí vượt định mức
-    const definedWeight = policy.hanhLyKyGuiKg || 0;
-    const extraWeight = Math.max(0, khoiLuong - definedWeight);
+    const extraWeight = Math.max(0, khoiLuong - DEFINED_WEIGHT);
     const extraFee = extraWeight * 50000; // 50k/kg vượt định mức
 
     // Tạo bản ghi hành lý
@@ -53,7 +44,7 @@ export class BaggageService {
       id: baggage.id,
       soKien,
       khoiLuong,
-      dinhMuc: definedWeight,
+      dinhMuc: DEFINED_WEIGHT,
       vuotDinhMuc: extraWeight,
       phiPhatSinh: extraFee,
       tongPhi: extraFee,
@@ -100,19 +91,13 @@ export class BaggageService {
       throw new NotFoundException('Không tìm thấy hạng vé');
     }
 
-    const policy = await this.prisma.chinhSachVe.findFirst({
-      where: {
-        maHangVe: hangVe.maHang,
-      },
-    });
-
-    const definedWeight = policy?.hanhLyKyGuiKg || 0;
-    const extraWeight = Math.max(0, khoiLuong - definedWeight);
+    const DEFINED_WEIGHT = 20; // Định mức cố định 20kg
+    const extraWeight = Math.max(0, khoiLuong - DEFINED_WEIGHT);
     const fee = extraWeight * 50000;
 
     return {
       hangVe: hangVe.tenHang,
-      dinhMucKg: definedWeight,
+      dinhMucKg: DEFINED_WEIGHT,
       khoiLuongYeuCau: khoiLuong,
       vuotDinhMuc: extraWeight,
       donGia: 50000,
@@ -145,20 +130,15 @@ export class BaggageService {
       throw new NotFoundException('Không tìm thấy hạng vé');
     }
 
-    const policy = await this.prisma.chinhSachVe.findFirst({
-      where: {
-        maHangVe: hangVe.maHang,
-      },
-    });
-
+    // Chính sách hành lý cố định
     return {
       hangVe: hangVe.tenHang,
       khoangVe: hangVe.khoangVe.tenKhoang,
-      hanhLyKyGui: policy?.hanhLyKyGuiKg || 0,
-      hanhLyXachTay: policy?.hanhLyXachTayKg || 7,
+      hanhLyKyGui: 20, // 20kg hành lý ký gửi
+      hanhLyXachTay: 7, // 7kg hành lý xách tay
       donGiaVuotDinhMuc: 50000,
       donVi: 'VND/kg',
-      ghiChu: policy?.ghiChu,
+      ghiChu: 'Áp dụng cho tất cả hạng vé',
     };
   }
 }

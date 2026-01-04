@@ -33,7 +33,7 @@ export default function TimChuyenBayPage() {
 
   const fetchAirports = async () => {
     try {
-      const res = await fetch('http://localhost:3000/catalog/san-bay');
+      const res = await fetch('http://localhost:5000/catalog/san-bay');
       const data = await res.json();
       setAirports(data);
     } catch (error) {

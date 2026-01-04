@@ -80,7 +80,7 @@ function ThongTinHanhKhachContent() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const res = await fetch('http://localhost:3000/bookings', {
+      const res = await fetch('http://localhost:5000/bookings', {
         method: 'POST',
         headers,
         body: JSON.stringify(bookingData),

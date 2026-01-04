@@ -66,7 +66,7 @@ function ThanhToanContent() {
 
   const fetchBooking = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/bookings/${bookingId}`);
+      const res = await fetch(`http://localhost:5000/bookings/${bookingId}`);
       const data = await res.json();
       setBooking(data);
     } catch (error) {
@@ -81,7 +81,7 @@ function ThanhToanContent() {
 
     try {
       // Create payment
-      const paymentRes = await fetch('http://localhost:3000/payments', {
+      const paymentRes = await fetch('http://localhost:5000/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -97,7 +97,7 @@ function ThanhToanContent() {
       const payment = await paymentRes.json();
 
       // Mock payment callback (success)
-      const callbackRes = await fetch('http://localhost:3000/payments/callback', {
+      const callbackRes = await fetch('http://localhost:5000/payments/callback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -111,7 +111,7 @@ function ThanhToanContent() {
       }
 
       // Issue ticket
-      const ticketRes = await fetch('http://localhost:3000/tickets/issue', {
+      const ticketRes = await fetch('http://localhost:5000/tickets/issue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
