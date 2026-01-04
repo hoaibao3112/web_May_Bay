@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:3000/auth/login', {
+      const res = await fetch('http://localhost:5000/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -27,7 +28,7 @@ export default function LoginPage() {
       }
 
       const data = await res.json();
-      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('token', data.accessToken);
       localStorage.setItem('user', JSON.stringify(data.user));
 
       alert('Đăng nhập thành công!');
@@ -38,6 +39,37 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    try {
+      setLoading(true);
+      const res = await fetch('http://localhost:5000/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: credentialResponse.credential }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Đăng nhập Google thất bại');
+      }
+
+      const data = await res.json();
+      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      alert('Đăng nhập Google thành công!');
+      router.push('/');
+    } catch (error) {
+      console.error('Lỗi:', error);
+      alert('Đăng nhập Google thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    alert('Đăng nhập Google thất bại');
   };
 
   return (
@@ -103,19 +135,47 @@ export default function LoginPage() {
                 <div className="w-full border-t border-gray-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Hoặc tiếp tục với</span>
+                <span className="px-2 bg-white text-gray-500">Các lựa chọn khác</span>
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button className="border-2 border-gray-300 rounded-lg py-3 hover:bg-gray-50 transition flex items-center justify-center gap-2">
-                <span>🔵</span>
-                <span className="font-medium">Google</span>
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme="outline"
+                  size="large"
+                  text="signin_with"
+                  shape="rectangular"
+                />
+              </div>
+              <button 
+                type="button"
+                onClick={() => alert('Chức năng đăng nhập Facebook đang được phát triển')}
+                className="border-2 border-gray-200 rounded-xl py-3.5 hover:bg-gray-50 hover:border-gray-300 transition flex items-center justify-center gap-3 shadow-sm"
+              >
+                <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                <span className="font-medium text-gray-700">Facebook</span>
               </button>
-              <button className="border-2 border-gray-300 rounded-lg py-3 hover:bg-gray-50 transition flex items-center justify-center gap-2">
-                <span>📘</span>
-                <span className="font-medium">Facebook</span>
-              </button>
+            </div>
+
+            <div className="mt-6 text-center text-sm text-gray-500">
+              <p>Giá thấp hơn và nhiều phần thưởng đang chờ bạn. Mở khóa ưu đãi bằng cách đăng nhập!</p>
+            </div>
+
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-600">
+                Bằng cách tiếp tục, bạn đồng ý với{' '}
+                <a href="#" className="text-blue-600 hover:underline">Điều khoản</a>
+                {' '}và{' '}
+                <a href="#" className="text-blue-600 hover:underline">Điều kiện</a>
+                {' '}này và bạn đã được thông báo về{' '}
+                <a href="#" className="text-blue-600 hover:underline">Chính sách bảo vệ dữ liệu</a>
+                {' '}của chúng tôi.
+              </p>
             </div>
           </div>
 

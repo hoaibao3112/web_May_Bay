@@ -18,6 +18,7 @@ model User {
   hoTen         String
   soDienThoai   String?
   vaiTro        VaiTro   @default(CUSTOMER)
+  googleId      String?  @unique
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   

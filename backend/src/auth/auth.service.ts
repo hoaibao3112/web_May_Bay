@@ -4,12 +4,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { GoogleStrategy } from './google.strategy';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private googleStrategy: GoogleStrategy,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -77,6 +79,52 @@ export class AuthService {
 
     const { password, ...result } = user;
     return result;
+  }
+
+  async googleLogin(idToken: string) {
+    try {
+      const googleUser = await this.googleStrategy.verifyToken(idToken);
+
+      if (!googleUser || !googleUser.email) {
+        throw new UnauthorizedException('Invalid Google token');
+      }
+
+      // Tìm hoặc tạo user
+      let user = await this.prisma.user.findUnique({
+        where: { email: googleUser.email },
+      });
+
+      if (!user) {
+        // Tạo user mới từ Google
+        user = await this.prisma.user.create({
+          data: {
+            email: googleUser.email,
+            hoTen: googleUser.name || googleUser.email,
+            password: '', // Không cần password cho Google OAuth
+            vaiTro: 'CUSTOMER',
+            googleId: googleUser.sub,
+          },
+        });
+      } else if (!user.googleId) {
+        // Cập nhật googleId nếu user đã tồn tại nhưng chưa có
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { googleId: googleUser.sub },
+        });
+      }
+
+      const payload = { sub: user.id, email: user.email, vaiTro: user.vaiTro };
+      const accessToken = this.jwtService.sign(payload);
+
+      const { password, ...userWithoutPassword } = user;
+
+      return {
+        accessToken,
+        user: userWithoutPassword,
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Google authentication failed');
+    }
   }
 }
 

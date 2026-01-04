@@ -18,6 +18,11 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Post('google')
+  async googleLogin(@Body('idToken') idToken: string) {
+    return this.authService.googleLogin(idToken);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getProfile(@Request() req) {

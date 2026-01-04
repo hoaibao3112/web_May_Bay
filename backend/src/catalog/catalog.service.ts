@@ -14,6 +14,9 @@ export class CatalogService {
     return this.prisma.quocGia.create({ data });
   }
 
+
+
+
   async updateCountry(id: number, data: { tenQuocGia?: string }) {
     return this.prisma.quocGia.update({ where: { id }, data });
   }
