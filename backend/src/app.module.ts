@@ -8,6 +8,13 @@ import { SearchModule } from './search/search.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { PaymentsModule } from './payments/payments.module';
 import { TicketsModule } from './tickets/tickets.module';
+import { StatisticsModule } from './statistics/statistics.module';
+import { SeatsModule } from './seats/seats.module';
+import { CheckinModule } from './checkin/checkin.module';
+import { BaggageModule } from './baggage/baggage.module';
+import { PromotionsModule } from './promotions/promotions.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { TestDbController } from './test-db.controller';
 
 @Module({
@@ -21,6 +28,13 @@ import { TestDbController } from './test-db.controller';
     BookingsModule,
     PaymentsModule,
     TicketsModule,
+    StatisticsModule,
+    SeatsModule,
+    CheckinModule,
+    BaggageModule,
+    PromotionsModule,
+    ReviewsModule,
+    NotificationsModule,
   ],
   controllers: [TestDbController],
 })
