@@ -51,25 +51,42 @@ function KetQuaContent() {
   const searchFlights = async () => {
     setLoading(true);
     try {
-      const params = {
-        sanBayDiId: searchParams.get('sanBayDiId') || '',
-        sanBayDenId: searchParams.get('sanBayDenId') || '',
-        ngayDi: searchParams.get('ngayDi') || '',
-        nguoiLon: parseInt(searchParams.get('nguoiLon') || '1'),
-        treEm: parseInt(searchParams.get('treEm') || '0'),
-        soSinh: parseInt(searchParams.get('soSinh') || '0'),
-      };
+      const sanBayDiId = searchParams.get('sanBayDiId');
+      const sanBayDenId = searchParams.get('sanBayDenId');
+      const ngayDi = searchParams.get('ngayDi');
+      const nguoiLon = parseInt(searchParams.get('nguoiLon') || '1');
+      const treEm = parseInt(searchParams.get('treEm') || '0');
+
+      if (!sanBayDiId || !sanBayDenId || !ngayDi) {
+        console.error('Missing required search parameters');
+        setLoading(false);
+        return;
+      }
 
       const res = await fetch('http://localhost:5000/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params),
+        body: JSON.stringify({
+          sanBayDiId: parseInt(sanBayDiId),
+          sanBayDenId: parseInt(sanBayDenId),
+          ngayDi,
+          loaiChuyen: 'ONE_WAY',
+          nguoiLon,
+          treEm,
+          soSinh: 0,
+        }),
       });
 
+      if (!res.ok) {
+        throw new Error('Search failed');
+      }
+
       const data = await res.json();
-      setFlights(data.chuyenBay || []);
+      console.log('Search results:', data);
+      setFlights(data.chuyenBay || data || []);
     } catch (error) {
       console.error('Lỗi tìm kiếm:', error);
+      setFlights([]);
     } finally {
       setLoading(false);
     }
@@ -109,11 +126,13 @@ function KetQuaContent() {
   const airlines = Array.from(new Set(flights.map(f => f.hangHangKhong.maHang)));
 
   const handleSelectFlight = (changBayId: number, hangVeId: number, giaBan: number) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams();
     params.set('changBayId', changBayId.toString());
     params.set('hangVeId', hangVeId.toString());
     params.set('giaBan', giaBan.toString());
-    router.push(`/chon-ghe?${params.toString()}`);
+    params.set('nguoiLon', searchParams.get('nguoiLon') || '1');
+    params.set('treEm', searchParams.get('treEm') || '0');
+    router.push(`/thong-tin-hanh-khach?${params.toString()}`);
   };
 
   return (

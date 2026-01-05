@@ -14,6 +14,7 @@ export default function TimChuyenBayPage() {
   const router = useRouter();
   const [airports, setAirports] = useState<Airport[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingAirports, setLoadingAirports] = useState(true);
 
   const [searchForm, setSearchForm] = useState({
     loaiChuyen: 'MOT_CHIEU',
@@ -32,12 +33,44 @@ export default function TimChuyenBayPage() {
   }, []);
 
   const fetchAirports = async () => {
+    setLoadingAirports(true);
     try {
-      const res = await fetch('http://localhost:5000/catalog/san-bay');
+      const apiUrl = 'http://localhost:5000/catalog/san-bay';
+      console.log('Fetching airports from:', apiUrl);
+      
+      const res = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('Response status:', res.status);
+      console.log('Response headers:', res.headers);
+      console.log('Response URL:', res.url);
+      
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Response text:', text.substring(0, 200));
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
-      setAirports(data);
-    } catch (error) {
+      console.log('Airports loaded:', data);
+      console.log('Number of airports:', data.length);
+      
+      if (Array.isArray(data) && data.length > 0) {
+        setAirports(data);
+      } else {
+        console.error('Invalid airports data:', data);
+        alert('Dữ liệu sân bay không hợp lệ');
+      }
+    } catch (error: any) {
       console.error('Lỗi tải sân bay:', error);
+      console.error('Error details:', error.message);
+      alert(`Không thể tải danh sách sân bay.\nLỗi: ${error.message}\n\nVui lòng kiểm tra:\n1. Backend đang chạy ở localhost:5000\n2. Mở Console (F12) để xem chi tiết`);
+    } finally {
+      setLoadingAirports(false);
     }
   };
 
@@ -144,14 +177,22 @@ export default function TimChuyenBayPage() {
                   onChange={(e) => setSearchForm({ ...searchForm, sanBayDiId: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
+                  disabled={loadingAirports}
                 >
-                  <option value="">Chọn điểm đi</option>
+                  <option value="">
+                    {loadingAirports ? 'Đang tải...' : airports.length === 0 ? 'Không có dữ liệu sân bay' : 'Chọn điểm đi'}
+                  </option>
                   {airports.map((airport) => (
                     <option key={airport.id} value={airport.id}>
                       {airport.maIata} - {airport.tenSanBay} ({airport.thanhPho})
                     </option>
                   ))}
                 </select>
+                {!loadingAirports && airports.length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Không thể tải danh sách sân bay. Vui lòng refresh trang.
+                  </p>
+                )}
               </div>
 
               {/* Đến */}
@@ -164,14 +205,22 @@ export default function TimChuyenBayPage() {
                   onChange={(e) => setSearchForm({ ...searchForm, sanBayDenId: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
+                  disabled={loadingAirports}
                 >
-                  <option value="">Chọn điểm đến</option>
+                  <option value="">
+                    {loadingAirports ? 'Đang tải...' : airports.length === 0 ? 'Không có dữ liệu sân bay' : 'Chọn điểm đến'}
+                  </option>
                   {airports.map((airport) => (
                     <option key={airport.id} value={airport.id}>
                       {airport.maIata} - {airport.tenSanBay} ({airport.thanhPho})
                     </option>
                   ))}
                 </select>
+                {!loadingAirports && airports.length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Không thể tải danh sách sân bay. Vui lòng refresh trang.
+                  </p>
+                )}
               </div>
 
               {/* Ngày đi */}

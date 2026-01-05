@@ -6,6 +6,8 @@ import Image from 'next/image';
 
 export default function HomePage() {
   const [airports, setAirports] = useState<any[]>([]);
+  const [airlines, setAirlines] = useState<any[]>([]);
+  const [popularRoutes, setPopularRoutes] = useState<any[]>([]);
   const [fromAirport, setFromAirport] = useState('');
   const [toAirport, setToAirport] = useState('');
   const [departDate, setDepartDate] = useState('');
@@ -15,71 +17,106 @@ export default function HomePage() {
   const [children, setChildren] = useState(0);
   const [activeTab, setActiveTab] = useState('flights');
 
+  // Hotel search state
+  const [hotelCity, setHotelCity] = useState('');
+  const [hotelCheckin, setHotelCheckin] = useState('');
+  const [hotelCheckout, setHotelCheckout] = useState('');
+  const [hotelGuests, setHotelGuests] = useState(2);
+  const [hotelRooms, setHotelRooms] = useState(1);
+
+  // Bus search state
+  const [busFrom, setBusFrom] = useState('');
+  const [busTo, setBusTo] = useState('');
+  const [busDate, setBusDate] = useState('');
+  const [busPassengers, setBusPassengers] = useState(1);
+
   useEffect(() => {
+    // Load airports
     fetch('http://localhost:5000/catalog/san-bay')
       .then(res => res.json())
       .then(data => setAirports(data))
       .catch(err => console.error('Error loading airports:', err));
 
+    // Load airlines
+    fetch('http://localhost:5000/catalog/hang-hang-khong')
+      .then(res => res.json())
+      .then(data => setAirlines(data))
+      .catch(err => console.error('Error loading airlines:', err));
+
+    // Load popular routes
+    fetch('http://localhost:5000/statistics/popular-routes?limit=4')
+      .then(res => res.json())
+      .then(data => setPopularRoutes(data))
+      .catch(err => console.error('Error loading popular routes:', err));
+
     // Set default date to tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    setDepartDate(tomorrow.toISOString().split('T')[0]);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    setDepartDate(tomorrowStr);
+    setHotelCheckin(tomorrowStr);
+    setBusDate(tomorrowStr);
 
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 8);
-    setReturnDate(nextWeek.toISOString().split('T')[0]);
+    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+    setReturnDate(nextWeekStr);
+    setHotelCheckout(nextWeekStr);
   }, []);
 
   const handleSearch = () => {
+    if (!fromAirport || !toAirport || !departDate) {
+      alert('Vui lòng điền đầy đủ thông tin tìm kiếm');
+      return;
+    }
+    
     const params = new URLSearchParams({
-      from: fromAirport,
-      to: toAirport,
-      departDate,
-      ...(tripType === 'roundtrip' && { returnDate }),
-      adults: adults.toString(),
-      children: children.toString(),
-      tripType
+      sanBayDiId: fromAirport,
+      sanBayDenId: toAirport,
+      ngayDi: departDate,
+      nguoiLon: adults.toString(),
+      treEm: children.toString(),
+      loaiVe: tripType,
+      ...(tripType === 'roundtrip' && returnDate && { ngayVe: returnDate }),
     });
     window.location.href = `/ket-qua?${params.toString()}`;
+  };
+
+  const handleHotelSearch = () => {
+    if (!hotelCity || !hotelCheckin || !hotelCheckout) {
+      alert('Vui lòng điền đầy đủ thông tin tìm kiếm khách sạn');
+      return;
+    }
+    alert('Chức năng tìm kiếm khách sạn đang được phát triển');
+  };
+
+  const handleBusSearch = () => {
+    if (!busFrom || !busTo || !busDate) {
+      alert('Vui lòng điền đầy đủ thông tin tìm kiếm xe khách');
+      return;
+    }
+    alert('Chức năng tìm kiếm xe khách đang được phát triển');
   };
 
   // Service tabs data
   const serviceTabs = [
     { id: 'flights', name: 'Vé máy bay', icon: '✈️' },
     { id: 'hotels', name: 'Khách sạn', icon: '🏨' },
-    { id: 'trains', name: 'Xe khách', icon: '🚌' },
-    { id: 'cars', name: 'Thuê xe', icon: '🚗' },
-    { id: 'activities', name: 'Hoạt động', icon: '🎯' },
+    { id: 'buses', name: 'Vé xe khách', icon: '🚌' },
+    { id: 'airport-transfer', name: 'Đưa đón sân bay', icon: '🚗' },
+    { id: 'car-rental', name: 'Cho thuê xe', icon: '🚙' },
+    { id: 'activities', name: 'Hoạt động & Vui chơi', icon: '🎯' },
   ];
 
-  // Destinations data
-  const destinations = [
-    { 
-      name: 'Phú Quốc', 
-      image: '🏝️',
-      description: 'Đảo ngọc thiên đường',
-      price: 'Từ 2.100.000đ'
-    },
-    { 
-      name: 'Đà Nẵng', 
-      image: '🌉',
-      description: 'Thành phố đáng sống',
-      price: 'Từ 1.500.000đ'
-    },
-    { 
-      name: 'Nha Trang', 
-      image: '🏖️',
-      description: 'Bãi biển tuyệt đẹp',
-      price: 'Từ 1.800.000đ'
-    },
-    { 
-      name: 'Đà Lạt', 
-      image: '🌲',
-      description: 'Thành phố ngàn hoa',
-      price: 'Từ 1.400.000đ'
-    },
-  ];
+  // Destinations data from API
+  const destinations = popularRoutes.map((route: any) => ({
+    name: route.thanhPhoDen || route.sanBayDen,
+    image: '🏝️',
+    description: `${route.soLuongDat || 0} chuyến bay`,
+    price: route.giaTrungBinh ? `Từ ${new Intl.NumberFormat('vi-VN').format(route.giaTrungBinh)}đ` : 'Liên hệ',
+    from: route.sanBayDi,
+    to: route.sanBayDen,
+  }));
 
   // Travel inspirations
   const travelCards = [
@@ -138,7 +175,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section with Background Image */}
-      <section className="relative h-[500px] overflow-hidden">
+      <section className="relative h-[600px] overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
           <Image
@@ -148,171 +185,338 @@ export default function HomePage() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-black/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40"></div>
         </div>
 
         {/* Content */}
         <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="pt-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-              Bay đến mọi nơi
+          <div className="pt-16">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+              App du lịch hàng đầu, một chạm đi bất cứ đâu
             </h1>
-            <p className="text-xl text-white/90 mb-8">
-              Tìm kiếm và đặt vé máy bay giá tốt nhất
-            </p>
 
             {/* Service Tabs */}
-            <div className="flex flex-wrap gap-3 mb-6">
+            <div className="flex flex-wrap gap-2 mb-8">
               {serviceTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-5 py-2.5 rounded-lg font-medium transition-all ${
+                  className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 ${
                     activeTab === tab.id
-                      ? 'bg-white text-blue-600 shadow-lg'
-                      : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm'
+                      ? 'bg-white text-gray-900 shadow-lg'
+                      : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30'
                   }`}
                 >
-                  <span className="mr-2">{tab.icon}</span>
-                  {tab.name}
+                  <span className="text-xl">{tab.icon}</span>
+                  <span>{tab.name}</span>
                 </button>
               ))}
             </div>
 
             {/* Search Card */}
             <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-5xl">
-              {/* Trip Type Buttons */}
-              <div className="flex gap-3 mb-5">
-                <button
-                  onClick={() => setTripType('roundtrip')}
-                  className={`px-5 py-2 rounded-lg font-medium transition-all ${
-                    tripType === 'roundtrip'
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  ↔️ Khứ hồi
-                </button>
-                <button
-                  onClick={() => setTripType('oneway')}
-                  className={`px-5 py-2 rounded-lg font-medium transition-all ${
-                    tripType === 'oneway'
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  → Một chiều
-                </button>
-              </div>
-
-              {/* Search Form Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* From Airport */}
+              {/* Flight Search */}
+              {activeTab === 'flights' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Từ
-                  </label>
-                  <select
-                    value={fromAirport}
-                    onChange={(e) => setFromAirport(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  >
-                    <option value="">Chọn điểm đi</option>
-                    {airports.map((airport) => (
-                      <option key={airport.id} value={airport.maSanBay}>
-                        {airport.tenSanBay} ({airport.maSanBay})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  {/* Trip Type Buttons */}
+                  <div className="flex gap-3 mb-5">
+                    <button
+                      onClick={() => setTripType('roundtrip')}
+                      className={`px-5 py-2 rounded-lg font-medium transition-all ${
+                        tripType === 'roundtrip'
+                          ? 'bg-blue-100 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      ↔️ Khứ hồi
+                    </button>
+                    <button
+                      onClick={() => setTripType('oneway')}
+                      className={`px-5 py-2 rounded-lg font-medium transition-all ${
+                        tripType === 'oneway'
+                          ? 'bg-blue-100 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      → Một chiều
+                    </button>
+                  </div>
 
-                {/* To Airport */}
+                  {/* Search Form Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* From Airport */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Từ
+                      </label>
+                      <select
+                        value={fromAirport}
+                        onChange={(e) => setFromAirport(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      >
+                        <option value="">Chọn điểm đi</option>
+                        {airports.map((airport) => (
+                          <option key={airport.id} value={airport.maSanBay}>
+                            {airport.tenSanBay} ({airport.maSanBay})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* To Airport */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Đến
+                      </label>
+                      <select
+                        value={toAirport}
+                        onChange={(e) => setToAirport(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      >
+                        <option value="">Chọn điểm đến</option>
+                        {airports.map((airport) => (
+                          <option key={airport.id} value={airport.maSanBay}>
+                            {airport.tenSanBay} ({airport.maSanBay})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Depart Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày đi
+                      </label>
+                      <input
+                        type="date"
+                        value={departDate}
+                        onChange={(e) => setDepartDate(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+
+                    {/* Return Date */}
+                    {tripType === 'roundtrip' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Ngày về
+                        </label>
+                        <input
+                          type="date"
+                          value={returnDate}
+                          onChange={(e) => setReturnDate(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Passengers and Search Button */}
+                  <div className="flex flex-wrap gap-4 mt-4">
+                    <div className="flex gap-4 flex-1">
+                      <div className="flex-1 min-w-[120px]">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Người lớn
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="9"
+                          value={adults}
+                          onChange={(e) => setAdults(parseInt(e.target.value))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-[120px]">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Trẻ em
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="9"
+                          value={children}
+                          onChange={(e) => setChildren(parseInt(e.target.value))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={handleSearch}
+                      disabled={!fromAirport || !toAirport || !departDate}
+                      className="px-10 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 self-end transition-all"
+                    >
+                      🔍 Tìm chuyến bay
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Hotel Search */}
+              {activeTab === 'hotels' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Đến
-                  </label>
-                  <select
-                    value={toAirport}
-                    onChange={(e) => setToAirport(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  >
-                    <option value="">Chọn điểm đến</option>
-                    {airports.map((airport) => (
-                      <option key={airport.id} value={airport.maSanBay}>
-                        {airport.tenSanBay} ({airport.maSanBay})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="lg:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Thành phố, địa điểm hoặc tên khách sạn
+                      </label>
+                      <input
+                        type="text"
+                        value={hotelCity}
+                        onChange={(e) => setHotelCity(e.target.value)}
+                        placeholder="Nhập thành phố, địa điểm hoặc tên khách sạn"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày nhận phòng
+                      </label>
+                      <input
+                        type="date"
+                        value={hotelCheckin}
+                        onChange={(e) => setHotelCheckin(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
 
-                {/* Depart Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày trả phòng
+                      </label>
+                      <input
+                        type="date"
+                        value={hotelCheckout}
+                        onChange={(e) => setHotelCheckout(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-4 mt-4">
+                    <div className="flex gap-4 flex-1">
+                      <div className="flex-1 min-w-[120px]">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Số khách
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="20"
+                          value={hotelGuests}
+                          onChange={(e) => setHotelGuests(parseInt(e.target.value))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-[120px]">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Số phòng
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={hotelRooms}
+                          onChange={(e) => setHotelRooms(parseInt(e.target.value))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleHotelSearch}
+                      disabled={!hotelCity || !hotelCheckin || !hotelCheckout}
+                      className="px-10 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 self-end transition-all"
+                    >
+                      🔍 Tìm khách sạn
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Bus Search */}
+              {activeTab === 'buses' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ngày đi
-                  </label>
-                  <input
-                    type="date"
-                    value={departDate}
-                    onChange={(e) => setDepartDate(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  />
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Từ
+                      </label>
+                      <input
+                        type="text"
+                        value={busFrom}
+                        onChange={(e) => setBusFrom(e.target.value)}
+                        placeholder="Nhập thành phố, nhà ga hoặc địa điểm"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Đến
+                      </label>
+                      <input
+                        type="text"
+                        value={busTo}
+                        onChange={(e) => setBusTo(e.target.value)}
+                        placeholder="Nhập thành phố, nhà ga hoặc địa điểm"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
 
-                {/* Return Date */}
-                {tripType === 'roundtrip' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ngày về
-                    </label>
-                    <input
-                      type="date"
-                      value={returnDate}
-                      onChange={(e) => setReturnDate(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày khởi hành
+                      </label>
+                      <input
+                        type="date"
+                        value={busDate}
+                        onChange={(e) => setBusDate(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Passengers and Search Button */}
-              <div className="flex flex-wrap gap-4 mt-4">
-                <div className="flex gap-4 flex-1">
-                  <div className="flex-1 min-w-[120px]">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Người lớn
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="9"
-                      value={adults}
-                      onChange={(e) => setAdults(parseInt(e.target.value))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-[120px]">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Trẻ em
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="9"
-                      value={children}
-                      onChange={(e) => setChildren(parseInt(e.target.value))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    />
+                  <div className="flex flex-wrap gap-4 mt-4">
+                    <div className="flex-1 min-w-[120px]">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Số hành khách
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={busPassengers}
+                        onChange={(e) => setBusPassengers(parseInt(e.target.value))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleBusSearch}
+                      disabled={!busFrom || !busTo || !busDate}
+                      className="px-10 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 self-end transition-all"
+                    >
+                      🔍 Tìm xe khách
+                    </button>
                   </div>
                 </div>
-                
-                <button
-                  onClick={handleSearch}
-                  disabled={!fromAirport || !toAirport || !departDate}
-                  className="px-10 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 self-end"
-                >
-                  🔍 Tìm chuyến bay
-                </button>
-              </div>
+              )}
+
+              {/* Other services */}
+              {!['flights', 'hotels', 'buses'].includes(activeTab) && (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🚧</div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Tính năng đang được phát triển
+                  </h3>
+                  <p className="text-gray-600">
+                    Chúng tôi đang nỗ lực hoàn thiện tính năng này. Vui lòng quay lại sau!
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -343,14 +547,19 @@ export default function HomePage() {
       {/* Popular Destinations Section */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Cảm hứng du lịch</h2>
-          <p className="text-gray-600 mb-8">Những điểm đến được yêu thích nhất</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Điểm đến phổ biến</h2>
+          <p className="text-gray-600 mb-8">Những tuyến bay được đặt nhiều nhất</p>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {destinations.map((dest, idx) => (
+            {destinations.length > 0 ? destinations.map((dest, idx) => (
               <div
                 key={idx}
                 className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all cursor-pointer"
+                onClick={() => {
+                  setFromAirport(dest.from);
+                  setToAirport(dest.to);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               >
                 <div className="h-48 bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-6xl">
                   {dest.image}
@@ -364,7 +573,11 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-4 text-center py-8 text-gray-500">
+                Đang tải điểm đến phổ biến...
+              </div>
+            )}
           </div>
         </div>
       </section>
