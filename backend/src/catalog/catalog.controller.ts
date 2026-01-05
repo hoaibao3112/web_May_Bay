@@ -40,6 +40,22 @@ export class CatalogController {
     return this.catalogService.deleteCountry(+id);
   }
 
+  // ===== THÀNH PHỐ =====
+  @Get('thanh-pho')
+  getAllCities(@Query('q') query?: string) {
+    return this.catalogService.getCities(query);
+  }
+
+  @Get('thanh-pho-vn')
+  getVietnamCities(@Query('q') query?: string) {
+    return this.catalogService.getVietnamCities(query);
+  }
+
+  @Get('thanh-pho-quoc-te')
+  getInternationalCities(@Query('q') query?: string) {
+    return this.catalogService.getInternationalCities(query);
+  }
+
   // ===== SÂN BAY =====
   @Get('san-bay')
   getAllAirports(@Query('q') query?: string) {

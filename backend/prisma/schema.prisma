@@ -27,6 +27,8 @@ model User {
   giaoDichThanhToan  GiaoDichThanhToan[]
   danhGia            DanhGia[]
   thongBao           ThongBao[]
+  datPhong           DatPhong[]
+  danhGiaKS          DanhGiaKhachSan[]
 
   @@map("users")
 }
@@ -48,6 +50,7 @@ model QuocGia {
   createdAt DateTime @default(now())
   
   sanBay    SanBay[]
+  khachSan  KhachSan[]
 
   @@map("quoc_gia")
 }
@@ -78,6 +81,143 @@ model SanBay {
   changBayDen ChangBay[] @relation("ChangBayDen")
 
   @@map("san_bay")
+}
+
+model KhachSan {
+  id          Int      @id @default(autoincrement())
+  tenKhachSan String
+  diaChi      String
+  thanhPho    String
+  quocGiaId   Int
+  quocGia     QuocGia  @relation(fields: [quocGiaId], references: [id])
+  soSao       Int      @default(0)
+  moTa        String?  @db.Text
+  hinhAnh     String?  // Main featured image
+  dienThoai   String?
+  email       String?
+  website     String?
+  tienNghi    String?  @db.Text // JSON string: ["WiFi", "Pool", "Gym", "Restaurant", "Bar", "Parking"]
+  giaThapNhat Decimal? @db.Decimal(15, 2)
+  danhGiaTB   Decimal? @db.Decimal(3, 2)
+  soDanhGia   Int      @default(0) // Number of reviews (e.g., 847 đánh giá)
+  gioCheckin  String?  @default("14:00") // Check-in time
+  gioCheckout String?  @default("12:00") // Check-out time
+  chinhSachHuy String? @db.Text // Cancellation policy
+  khoangCachSanBay Decimal? @db.Decimal(5, 2) // Distance to airport in km
+  khoangCachTT     Decimal? @db.Decimal(5, 2) // Distance to city center in km
+  diaDiemGanDay    String? @db.Text // JSON: [{"ten": "Cầu Rồng", "khoangCach": 2.5}]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  phong       PhongKhachSan[]
+  datPhong    DatPhong[]
+  danhGiaKS   DanhGiaKhachSan[]
+  gallery     HinhAnhKhachSan[] // Multiple images
+
+  @@map("khach_san")
+}
+
+model HinhAnhKhachSan {
+  id         Int      @id @default(autoincrement())
+  khachSanId Int
+  khachSan   KhachSan @relation(fields: [khachSanId], references: [id], onDelete: Cascade)
+  urlHinhAnh String
+  moTa       String?  // Caption for the image
+  thuTu      Int      @default(0) // Display order
+  createdAt  DateTime @default(now())
+
+  @@map("hinh_anh_khach_san")
+}
+
+model PhongKhachSan {
+  id          Int      @id @default(autoincrement())
+  khachSanId  Int
+  khachSan    KhachSan @relation(fields: [khachSanId], references: [id])
+  tenPhong    String
+  loaiPhong   String   // Deluxe, Suite, Standard
+  dienTich    Int?     // m2
+  soKhach     Int      @default(2)
+  soGiuong    Int      @default(1)
+  loaiGiuong  String?  // King, Queen, Twin
+  giaTheoNgay Decimal  @db.Decimal(15, 2)
+  hinhAnh     String?  @db.Text // JSON array URLs
+  tienNghi    String?  @db.Text // JSON: ["TV", "Mini bar", "Balcony"]
+  moTa        String?  @db.Text
+  tongSoPhong Int      @default(1)
+  soPhongTrong Int     @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  datPhong    DatPhong[]
+
+  @@map("phong_khach_san")
+}
+
+model DatPhong {
+  id              Int      @id @default(autoincrement())
+  maDatPhong      String   @unique
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id])
+  khachSanId      Int
+  khachSan        KhachSan @relation(fields: [khachSanId], references: [id])
+  phongId         Int
+  phong           PhongKhachSan @relation(fields: [phongId], references: [id])
+  ngayNhanPhong   DateTime
+  ngayTraPhong    DateTime
+  soPhong         Int      @default(1)
+  soNguoiLon      Int      @default(2)
+  soTreEm         Int      @default(0)
+  tongTien        Decimal  @db.Decimal(15, 2)
+  trangThai       TrangThaiDatPhong @default(CHO_XAC_NHAN)
+  ghiChu          String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  thanhToanDP     ThanhToanDatPhong[]
+
+  @@map("dat_phong")
+}
+
+model ThanhToanDatPhong {
+  id              Int      @id @default(autoincrement())
+  datPhongId      Int
+  datPhong        DatPhong @relation(fields: [datPhongId], references: [id])
+  soTien          Decimal  @db.Decimal(15, 2)
+  phuongThuc      String   // CREDIT_CARD, MOMO, VNPAY
+  trangThai       TrangThaiThanhToan @default(KHOI_TAO)
+  maGiaoDich      String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("thanh_toan_dat_phong")
+}
+
+model DanhGiaKhachSan {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id])
+  khachSanId      Int
+  khachSan        KhachSan @relation(fields: [khachSanId], references: [id])
+  diemSachSe      Int      // 1-10
+  diemTienNghi    Int      // 1-10
+  diemViTri       Int      // 1-10
+  diemDichVu      Int      // 1-10
+  diemGiaCa       Int      // 1-10
+  diemTrungBinh   Decimal  @db.Decimal(3, 2)
+  binhLuan        String?  @db.Text
+  hinhAnh         String?  @db.Text // JSON array URLs
+  createdAt       DateTime @default(now())
+
+  @@map("danh_gia_khach_san")
+}
+
+enum TrangThaiDatPhong {
+  CHO_XAC_NHAN
+  DA_XAC_NHAN
+  DANG_LUU_TRU
+  DA_CHECKOUT
+  DA_HUY
+  KHONG_DEN
 }
 
 model HangHangKhong {

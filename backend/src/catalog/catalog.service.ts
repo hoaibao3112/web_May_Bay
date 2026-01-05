@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { VIETNAM_CITIES, INTERNATIONAL_CITIES } from './vietnam-cities.data';
 
 @Injectable()
 export class CatalogService {
@@ -23,6 +24,53 @@ export class CatalogService {
 
   async deleteCountry(id: number) {
     return this.prisma.quocGia.delete({ where: { id } });
+  }
+
+  // Thành phố (từ dữ liệu sân bay)
+  async getCities(query?: string) {
+    const sanBays = await this.prisma.sanBay.findMany({
+      where: query ? {
+        thanhPho: { contains: query },
+      } : undefined,
+      include: { quocGia: true },
+    });
+
+    // Group by thành phố và lấy unique
+    const citiesMap = new Map();
+    sanBays.forEach(sb => {
+      if (!citiesMap.has(sb.thanhPho)) {
+        citiesMap.set(sb.thanhPho, {
+          thanhPho: sb.thanhPho,
+          quocGia: sb.quocGia.tenQuocGia,
+          maQuocGia: sb.quocGia.maQuocGia,
+        });
+      }
+    });
+
+    return Array.from(citiesMap.values());
+  }
+
+  async getVietnamCities(query?: string) {
+    if (query) {
+      const q = query.toLowerCase();
+      return VIETNAM_CITIES.filter(city => 
+        city.name.toLowerCase().includes(q) || 
+        city.code.toLowerCase().includes(q)
+      );
+    }
+    return VIETNAM_CITIES;
+  }
+
+  async getInternationalCities(query?: string) {
+    if (query) {
+      const q = query.toLowerCase();
+      return INTERNATIONAL_CITIES.filter(city => 
+        city.name.toLowerCase().includes(q) || 
+        city.code.toLowerCase().includes(q) ||
+        city.country.toLowerCase().includes(q)
+      );
+    }
+    return INTERNATIONAL_CITIES;
   }
 
   // Sân bay

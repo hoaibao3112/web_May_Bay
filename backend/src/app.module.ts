@@ -15,6 +15,7 @@ import { BaggageModule } from './baggage/baggage.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { HotelsModule } from './hotels/hotels.module';
 import { TestDbController } from './test-db.controller';
 
 @Module({
@@ -35,6 +36,7 @@ import { TestDbController } from './test-db.controller';
     PromotionsModule,
     ReviewsModule,
     NotificationsModule,
+    HotelsModule,
   ],
   controllers: [TestDbController],
 })

@@ -1,13 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import UserDropdown from './components/UserDropdown';
 
 export default function HomePage() {
+  const cityInputRef = useRef<HTMLDivElement>(null);
   const [airports, setAirports] = useState<any[]>([]);
   const [airlines, setAirlines] = useState<any[]>([]);
   const [popularRoutes, setPopularRoutes] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+  const [filteredCities, setFilteredCities] = useState<any[]>([]);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [popularCities, setPopularCities] = useState<any[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [fromAirport, setFromAirport] = useState('');
   const [toAirport, setToAirport] = useState('');
   const [departDate, setDepartDate] = useState('');
@@ -49,6 +56,42 @@ export default function HomePage() {
       .then(data => setPopularRoutes(data))
       .catch(err => console.error('Error loading popular routes:', err));
 
+    // Load cities for hotels
+    fetch('http://localhost:5000/catalog/thanh-pho-vn')
+      .then(res => res.json())
+      .then(data => {
+        console.log('Cities loaded:', data);
+        // Ensure data is array
+        if (Array.isArray(data)) {
+          setCities(data);
+        } else {
+          console.error('Cities data is not an array:', data);
+          setCities([]);
+        }
+        // Set popular cities (top 10)
+        const popular = [
+          { name: 'Đà Nẵng', code: 'DAD', hotels: 2211 },
+          { name: 'Hà Nội', code: 'HAN', hotels: 3542 },
+          { name: 'Hồ Chí Minh', code: 'SGN', hotels: 4123 },
+          { name: 'Đà Lạt', code: 'DLI', hotels: 1763 },
+          { name: 'Vũng Tàu', code: 'VTG', hotels: 986 },
+          { name: 'Nha Trang', code: 'CXR', hotels: 1456 },
+          { name: 'Phú Quốc', code: 'PQC', hotels: 892 },
+          { name: 'Huế', code: 'HUI', hotels: 654 },
+        ];
+        setPopularCities(popular);
+      })
+      .catch(err => {
+        console.error('Error loading cities:', err);
+        setCities([]);
+      });
+
+    // Load recent searches from localStorage
+    const recent = localStorage.getItem('recentHotelSearches');
+    if (recent) {
+      setRecentSearches(JSON.parse(recent));
+    }
+
     // Set default date to tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -62,6 +105,20 @@ export default function HomePage() {
     const nextWeekStr = nextWeek.toISOString().split('T')[0];
     setReturnDate(nextWeekStr);
     setHotelCheckout(nextWeekStr);
+  }, []);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (cityInputRef.current && !cityInputRef.current.contains(event.target as Node)) {
+        setShowCityDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const handleSearch = () => {
@@ -87,7 +144,52 @@ export default function HomePage() {
       alert('Vui lòng điền đầy đủ thông tin tìm kiếm khách sạn');
       return;
     }
-    alert('Chức năng tìm kiếm khách sạn đang được phát triển');
+    
+    // Save to recent searches
+    const recent = [hotelCity, ...recentSearches.filter(s => s !== hotelCity)].slice(0, 5);
+    setRecentSearches(recent);
+    localStorage.setItem('recentHotelSearches', JSON.stringify(recent));
+    
+    // Navigate to hotel search page with parameters
+    const params = new URLSearchParams({
+      thanhPho: hotelCity,
+      ngayNhanPhong: hotelCheckin,
+      ngayTraPhong: hotelCheckout,
+      soNguoi: hotelGuests.toString(),
+      soPhong: hotelRooms.toString(),
+    });
+    window.location.href = `/khachsan?${params.toString()}`;
+  };
+
+  const handleCitySelect = (cityName: string) => {
+    setHotelCity(cityName);
+    setShowCityDropdown(false);
+  };
+
+  const handleCityInputChange = (value: string) => {
+    setHotelCity(value);
+    if (value.length > 0) {
+      // Check if cities is an array
+      if (Array.isArray(cities) && cities.length > 0) {
+        const filtered = cities.filter((city: any) =>
+          city.name.toLowerCase().includes(value.toLowerCase()) ||
+          city.code.toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredCities(filtered);
+        setShowCityDropdown(true);
+      } else {
+        // If cities not loaded yet, show popular cities
+        const filtered = popularCities.filter((city: any) =>
+          city.name.toLowerCase().includes(value.toLowerCase()) ||
+          city.code.toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredCities(filtered);
+        setShowCityDropdown(true);
+      }
+    } else {
+      setFilteredCities([]);
+      setShowCityDropdown(true); // Show popular cities when empty
+    }
   };
 
   const handleBusSearch = () => {
@@ -163,12 +265,7 @@ export default function HomePage() {
               <Link href="/quan-ly-dat-cho" className="text-gray-700 hover:text-blue-600 font-medium">
                 Quản lý đặt chỗ
               </Link>
-              <Link href="/auth/login" className="text-gray-700 hover:text-blue-600 font-medium">
-                Đăng nhập
-              </Link>
-              <Link href="/auth/register" className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
-                Đăng ký
-              </Link>
+              <UserDropdown />
             </nav>
           </div>
         </div>
@@ -357,17 +454,142 @@ export default function HomePage() {
               {activeTab === 'hotels' && (
                 <div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="lg:col-span-2">
+                    <div ref={cityInputRef} className="lg:col-span-2 relative">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Thành phố, địa điểm hoặc tên khách sạn
+                        Thành phố, địa điểm hoặc tên khách sạn:
                       </label>
-                      <input
-                        type="text"
-                        value={hotelCity}
-                        onChange={(e) => setHotelCity(e.target.value)}
-                        placeholder="Nhập thành phố, địa điểm hoặc tên khách sạn"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                      />
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500">
+                          📍
+                        </div>
+                        <input
+                          type="text"
+                          value={hotelCity}
+                          onChange={(e) => handleCityInputChange(e.target.value)}
+                          onFocus={() => {
+                            if (hotelCity.length === 0 || filteredCities.length > 0) {
+                              setShowCityDropdown(true);
+                            }
+                          }}
+                          placeholder="thành phố, khách sạn, điểm đến"
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+                      
+                      {/* Dropdown với thiết kế giống Booking.com */}
+                      {showCityDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl max-h-96 overflow-y-auto">
+                          {/* Nút "Gần tôi" */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              alert('Tính năng định vị đang phát triển');
+                            }}
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b flex items-center gap-3"
+                          >
+                            <span className="text-blue-500 text-xl">🎯</span>
+                            <span className="text-blue-600 font-medium">Gần tôi</span>
+                          </button>
+
+                          {/* Tiếp tục tìm kiếm - Recent searches */}
+                          {recentSearches.length > 0 && hotelCity.length === 0 && (
+                            <div className="border-b">
+                              <div className="px-4 py-2 flex items-center justify-between">
+                                <h3 className="font-semibold text-gray-900">Tiếp tục tìm kiếm</h3>
+                                <button
+                                  onClick={() => {
+                                    setRecentSearches([]);
+                                    localStorage.removeItem('recentHotelSearches');
+                                  }}
+                                  className="text-blue-600 text-sm hover:underline"
+                                >
+                                  Xóa
+                                </button>
+                              </div>
+                              {recentSearches.map((search, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => handleCitySelect(search)}
+                                  className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                                >
+                                  <span className="text-gray-400">🔍</span>
+                                  <span className="text-gray-700">{search}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Điểm đến phổ biến */}
+                          {hotelCity.length === 0 && popularCities.length > 0 && (
+                            <div>
+                              <div className="px-4 py-3">
+                                <h3 className="font-semibold text-gray-900">Điểm đến phổ biến</h3>
+                              </div>
+                              {popularCities.map((city) => (
+                                <button
+                                  key={city.code}
+                                  type="button"
+                                  onClick={() => handleCitySelect(city.name)}
+                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors group"
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="font-semibold text-gray-900 group-hover:text-blue-600">
+                                        {city.name}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        Thành phố {city.name}, Việt Nam
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-blue-600 text-sm font-medium">
+                                        {city.code === 'DAD' ? 'Vùng' : 'Thành Phố'}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {city.hotels?.toLocaleString()} khách sạn
+                                      </div>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Kết quả tìm kiếm */}
+                          {hotelCity.length > 0 && filteredCities.length > 0 && (
+                            <div>
+                              {filteredCities.slice(0, 10).map((city: any) => (
+                                <button
+                                  key={city.id}
+                                  type="button"
+                                  onClick={() => handleCitySelect(city.name)}
+                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors group"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-gray-400">📍</span>
+                                    <div className="flex-1">
+                                      <div className="font-medium text-gray-900 group-hover:text-blue-600">
+                                        {city.name}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {city.code}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* No results */}
+                          {hotelCity.length > 0 && filteredCities.length === 0 && (
+                            <div className="px-4 py-8 text-center text-gray-500">
+                              Không tìm thấy kết quả cho "{hotelCity}"
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     
                     <div>
