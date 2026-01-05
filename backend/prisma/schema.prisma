@@ -266,6 +266,7 @@ model ChangBay {
   updatedAt         DateTime @updatedAt
 
   tonCho            TonCho[]
+  giaVe             GiaVe[]
   donDatVe          DonDatVe[]
 
   @@map("chang_bay")
@@ -296,6 +297,7 @@ model HangVe {
   createdAt   DateTime @default(now())
 
   tonCho      TonCho[]
+  giaVe       GiaVe[]
   donDatVe    DonDatVe[]
 
   @@map("hang_ve")
@@ -338,6 +340,22 @@ model TonCho {
   @@unique([changBayId, hangVeId, nhomGiaId])
   @@map("ton_cho")
 }
+
+model GiaVe {
+  id                Int      @id @default(autoincrement())
+  changBayId        Int
+  changBay          ChangBay @relation(fields: [changBayId], references: [id])
+  hangVeId          Int
+  hangVe            HangVe   @relation(fields: [hangVeId], references: [id])
+  giaBan            Decimal  @db.Decimal(15, 2)
+  soLuongGhe        Int
+  soLuongGheTrong   Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("gia_ve")
+}
+
 
 // ============================
 // ĐƠN ĐẶT VÉ

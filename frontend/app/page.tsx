@@ -126,7 +126,7 @@ export default function HomePage() {
       alert('Vui lòng điền đầy đủ thông tin tìm kiếm');
       return;
     }
-    
+
     const params = new URLSearchParams({
       sanBayDiId: fromAirport,
       sanBayDenId: toAirport,
@@ -144,12 +144,12 @@ export default function HomePage() {
       alert('Vui lòng điền đầy đủ thông tin tìm kiếm khách sạn');
       return;
     }
-    
+
     // Save to recent searches
     const recent = [hotelCity, ...recentSearches.filter(s => s !== hotelCity)].slice(0, 5);
     setRecentSearches(recent);
     localStorage.setItem('recentHotelSearches', JSON.stringify(recent));
-    
+
     // Navigate to hotel search page with parameters
     const params = new URLSearchParams({
       thanhPho: hotelCity,
@@ -298,11 +298,10 @@ export default function HomePage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 ${
-                    activeTab === tab.id
+                  className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 ${activeTab === tab.id
                       ? 'bg-white text-gray-900 shadow-lg'
                       : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30'
-                  }`}
+                    }`}
                 >
                   <span className="text-xl">{tab.icon}</span>
                   <span>{tab.name}</span>
@@ -319,21 +318,19 @@ export default function HomePage() {
                   <div className="flex gap-3 mb-5">
                     <button
                       onClick={() => setTripType('roundtrip')}
-                      className={`px-5 py-2 rounded-lg font-medium transition-all ${
-                        tripType === 'roundtrip'
+                      className={`px-5 py-2 rounded-lg font-medium transition-all ${tripType === 'roundtrip'
                           ? 'bg-blue-100 text-blue-600'
                           : 'text-gray-600 hover:bg-gray-100'
-                      }`}
+                        }`}
                     >
                       ↔️ Khứ hồi
                     </button>
                     <button
                       onClick={() => setTripType('oneway')}
-                      className={`px-5 py-2 rounded-lg font-medium transition-all ${
-                        tripType === 'oneway'
+                      className={`px-5 py-2 rounded-lg font-medium transition-all ${tripType === 'oneway'
                           ? 'bg-blue-100 text-blue-600'
                           : 'text-gray-600 hover:bg-gray-100'
-                      }`}
+                        }`}
                     >
                       → Một chiều
                     </button>
@@ -353,7 +350,7 @@ export default function HomePage() {
                       >
                         <option value="">Chọn điểm đi</option>
                         {airports.map((airport) => (
-                          <option key={airport.id} value={airport.maSanBay}>
+                          <option key={airport.id} value={airport.id}>
                             {airport.tenSanBay} ({airport.maSanBay})
                           </option>
                         ))}
@@ -372,7 +369,7 @@ export default function HomePage() {
                       >
                         <option value="">Chọn điểm đến</option>
                         {airports.map((airport) => (
-                          <option key={airport.id} value={airport.maSanBay}>
+                          <option key={airport.id} value={airport.id}>
                             {airport.tenSanBay} ({airport.maSanBay})
                           </option>
                         ))}
@@ -438,7 +435,7 @@ export default function HomePage() {
                         />
                       </div>
                     </div>
-                    
+
                     <button
                       onClick={handleSearch}
                       disabled={!fromAirport || !toAirport || !departDate}
@@ -475,7 +472,7 @@ export default function HomePage() {
                           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                         />
                       </div>
-                      
+
                       {/* Dropdown với thiết kế giống Booking.com */}
                       {showCityDropdown && (
                         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl max-h-96 overflow-y-auto">
@@ -591,7 +588,7 @@ export default function HomePage() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Ngày nhận phòng
@@ -674,7 +671,7 @@ export default function HomePage() {
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Đến
@@ -750,7 +747,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Nâng tầm chuyến đi</h2>
           <p className="text-gray-600 mb-8">Khám phá những trải nghiệm tuyệt vời</p>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {travelCards.map((card, idx) => (
               <div
@@ -771,7 +768,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Điểm đến phổ biến</h2>
           <p className="text-gray-600 mb-8">Những tuyến bay được đặt nhiều nhất</p>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {destinations.length > 0 ? destinations.map((dest, idx) => (
               <div
@@ -810,7 +807,7 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">
             Tại sao chọn BayNhanh?
           </h2>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="text-5xl mb-4">💰</div>

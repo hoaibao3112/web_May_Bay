@@ -2,6 +2,14 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import UserDropdown from '../../components/UserDropdown';
+
+interface Airport {
+  id: number;
+  maSanBay: string;
+  tenSanBay: string;
+  thanhPho: string;
+}
 
 interface Flight {
   changBayId: number;
@@ -43,10 +51,29 @@ function KetQuaContent() {
   const [sortBy, setSortBy] = useState('GIA_THAP');
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([0, 10000000]);
+  const [airports, setAirports] = useState<Airport[]>([]);
+  const [searchInfo, setSearchInfo] = useState({
+    sanBayDi: '',
+    sanBayDen: '',
+    ngayDi: '',
+    nguoiLon: 1,
+    treEm: 0,
+  });
 
   useEffect(() => {
+    loadAirports();
     searchFlights();
   }, []);
+
+  const loadAirports = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/catalog/san-bay');
+      const data = await res.json();
+      setAirports(data);
+    } catch (error) {
+      console.error('Error loading airports:', error);
+    }
+  };
 
   const searchFlights = async () => {
     setLoading(true);
@@ -62,6 +89,15 @@ function KetQuaContent() {
         setLoading(false);
         return;
       }
+
+      // Store search info for display
+      setSearchInfo({
+        sanBayDi: sanBayDiId,
+        sanBayDen: sanBayDenId,
+        ngayDi: ngayDi,
+        nguoiLon,
+        treEm,
+      });
 
       const res = await fetch('http://localhost:5000/search', {
         method: 'POST',
@@ -83,7 +119,7 @@ function KetQuaContent() {
 
       const data = await res.json();
       console.log('Search results:', data);
-      setFlights(data.chuyenBay || data || []);
+      setFlights(data.ketQua || []);
     } catch (error) {
       console.error('Lỗi tìm kiếm:', error);
       setFlights([]);
@@ -105,25 +141,31 @@ function KetQuaContent() {
     return `${hours}g ${mins}ph`;
   };
 
-  const filteredFlights = flights
+  const filteredFlights = Array.isArray(flights) ? flights
     .filter(flight => {
-      if (selectedAirlines.length > 0 && !selectedAirlines.includes(flight.hangHangKhong.maHang)) {
+      if (selectedAirlines.length > 0 && !selectedAirlines.includes(flight.hang?.maIata || '')) {
         return false;
       }
-      const minPrice = Math.min(...flight.giaVe.map(g => g.giaBan));
+      const prices = flight.giaVe?.map(g => g.tongGia) || [];
+      if (prices.length === 0) return false;
+      const minPrice = Math.min(...prices);
       return minPrice >= priceRange[0] && minPrice <= priceRange[1];
     })
     .sort((a, b) => {
-      const minPriceA = Math.min(...a.giaVe.map(g => g.giaBan));
-      const minPriceB = Math.min(...b.giaVe.map(g => g.giaBan));
-      
+      const pricesA = a.giaVe?.map(g => g.tongGia) || [0];
+      const pricesB = b.giaVe?.map(g => g.tongGia) || [0];
+      const minPriceA = Math.min(...pricesA);
+      const minPriceB = Math.min(...pricesB);
+
       if (sortBy === 'GIA_THAP') return minPriceA - minPriceB;
       if (sortBy === 'GIA_CAO') return minPriceB - minPriceA;
-      if (sortBy === 'GIO_BAY') return a.gioKhoiHanh.localeCompare(b.gioKhoiHanh);
+      if (sortBy === 'GIO_BAY') return new Date(a.gioDi).getTime() - new Date(b.gioDi).getTime();
       return 0;
-    });
+    }) : [];
 
-  const airlines = Array.from(new Set(flights.map(f => f.hangHangKhong.maHang)));
+  const airlines = Array.isArray(flights) && flights.length > 0
+    ? Array.from(new Set(flights.map(f => f.hang?.maIata).filter(Boolean)))
+    : [];
 
   const handleSelectFlight = (changBayId: number, hangVeId: number, giaBan: number) => {
     const params = new URLSearchParams();
@@ -138,49 +180,69 @@ function KetQuaContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => router.push('/')}>
               <span className="text-2xl">✈️</span>
               <span className="text-xl font-bold text-blue-600">BayNhanh</span>
             </div>
-            <div className="flex items-center gap-6">
-              <a href="/quan-ly-dat-cho" className="text-gray-600 hover:text-blue-600">Quản lý đặt chỗ</a>
-              <a href="/auth/login" className="text-blue-600 font-medium">Đăng nhập</a>
-            </div>
+            <nav className="hidden md:flex items-center space-x-6">
+              <a href="/" className="text-gray-700 hover:text-blue-600 font-medium">
+                Vé máy bay
+              </a>
+              <a href="/quan-ly-dat-cho" className="text-gray-700 hover:text-blue-600 font-medium">
+                Quản lý đặt chỗ
+              </a>
+              <UserDropdown />
+            </nav>
           </div>
         </div>
-      </nav>
+      </header>
 
-      <div className="container mx-auto px-4 py-6">
-        {/* Search Summary */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Search Summary - Chuyến Bay Của Bạn */}
+        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl shadow-lg p-6 mb-6 text-white">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-sm text-gray-600">Hành trình</p>
-                <p className="font-semibold text-lg">
-                  {searchParams.get('sanBayDiId')} → {searchParams.get('sanBayDenId')}
-                </p>
+            <div>
+              <p className="text-sm opacity-90 mb-2">Chuyến bay của bạn</p>
+              <div className="flex items-center gap-4 text-lg md:text-xl font-bold">
+                <div className="text-center">
+                  <p>{flights.length > 0 ? flights[0].sanBayDi.thanhPho : searchInfo.sanBayDi}</p>
+                  <p className="text-sm font-normal opacity-90">
+                    ({flights.length > 0 ? flights[0].sanBayDi.maIata : searchInfo.sanBayDi})
+                  </p>
+                </div>
+                <span className="text-2xl">→</span>
+                <div className="text-center">
+                  <p>{flights.length > 0 ? flights[0].sanBayDen.thanhPho : searchInfo.sanBayDen}</p>
+                  <p className="text-sm font-normal opacity-90">
+                    ({flights.length > 0 ? flights[0].sanBayDen.maIata : searchInfo.sanBayDen})
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Ngày bay</p>
-                <p className="font-semibold">📅 {searchParams.get('ngayDi')}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Hành khách</p>
-                <p className="font-semibold">
-                  👤 {searchParams.get('nguoiLon')} người lớn
-                  {parseInt(searchParams.get('treEm') || '0') > 0 && `, ${searchParams.get('treEm')} trẻ em`}
-                </p>
+              <div className="flex items-center gap-6 mt-3 text-sm opacity-90">
+                <span>📅 {new Date(searchInfo.ngayDi).toLocaleDateString('vi-VN', {
+                  weekday: 'short',
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric'
+                })}</span>
+                <span>|</span>
+                <span>
+                  {searchInfo.nguoiLon} hành khách
+                  {searchInfo.treEm > 0 && ` (${searchInfo.treEm} trẻ em)`}
+                </span>
+                <span>|</span>
+                <span>Phổ thông</span>
               </div>
             </div>
             <button
               onClick={() => router.push('/')}
-              className="bg-white border border-blue-300 text-blue-600 px-6 py-2 rounded-lg hover:bg-blue-50 font-medium"
+              className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-gray-50 font-semibold shadow-md transition flex items-center gap-2"
             >
-              🔄 Thay đổi tìm kiếm
+              <span>🔄</span>
+              <span>Đặt lại</span>
             </button>
           </div>
         </div>
@@ -306,20 +368,20 @@ function KetQuaContent() {
                               ✈️
                             </div>
                             <div>
-                              <p className="font-bold text-lg">{flight.hangHangKhong.tenHang}</p>
-                              <p className="text-sm text-gray-600">{flight.soHieu}</p>
+                              <p className="font-bold text-lg">{flight.hang?.tenHang || 'Airline'}</p>
+                              <p className="text-sm text-gray-600">{flight.soHieuChuyenBay}</p>
                             </div>
                           </div>
                           <div className="text-right">
                             <p className="text-sm text-gray-600">Thời gian bay</p>
-                            <p className="font-semibold">{formatDuration(flight.thoiGianBay)}</p>
+                            <p className="font-semibold">{formatDuration(flight.thoiGianBayPhut)}</p>
                           </div>
                         </div>
 
                         {/* Flight Timeline */}
                         <div className="mt-6 flex items-center">
                           <div className="flex-1">
-                            <p className="text-3xl font-bold">{flight.gioKhoiHanh}</p>
+                            <p className="text-3xl font-bold">{new Date(flight.gioDi).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
                             <p className="text-gray-600 mt-1">{flight.sanBayDi.maIata}</p>
                             <p className="text-sm text-gray-500">{flight.sanBayDi.thanhPho}</p>
                           </div>
@@ -337,7 +399,7 @@ function KetQuaContent() {
                           </div>
 
                           <div className="flex-1 text-right">
-                            <p className="text-3xl font-bold">{flight.gioDen}</p>
+                            <p className="text-3xl font-bold">{new Date(flight.gioDen).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
                             <p className="text-gray-600 mt-1">{flight.sanBayDen.maIata}</p>
                             <p className="text-sm text-gray-500">{flight.sanBayDen.thanhPho}</p>
                           </div>
@@ -355,7 +417,7 @@ function KetQuaContent() {
                             >
                               <div className="flex justify-between items-start mb-3">
                                 <div>
-                                  <p className="font-bold text-lg">{fare.tenHang}</p>
+                                  <p className="font-bold text-lg">{fare.tenHangVe}</p>
                                   <p className="text-sm text-gray-600">{fare.nhomGia}</p>
                                 </div>
                                 {fare.soChoCon < 5 && (
@@ -373,10 +435,10 @@ function KetQuaContent() {
                                 <div className="flex items-center gap-2 text-gray-600">
                                   <span>✓</span>
                                   <span>
-                                    {fare.tenHang.includes('Eco') ? 'Hành lý ký gửi 20kg' : 'Hành lý ký gửi 30kg'}
+                                    {fare.tenHangVe?.includes('Eco') || fare.nhomGia?.includes('Eco') ? 'Hành lý ký gửi 20kg' : 'Hành lý ký gửi 30kg'}
                                   </span>
                                 </div>
-                                {fare.nhomGia.includes('Flex') && (
+                                {fare.nhomGia?.includes('Flex') && (
                                   <div className="flex items-center gap-2 text-green-600">
                                     <span>✓</span>
                                     <span>Đổi vé miễn phí</span>
@@ -385,17 +447,17 @@ function KetQuaContent() {
                               </div>
 
                               <div className="border-t pt-3">
-                                {fare.giaGoc > fare.giaBan && (
+                                {(fare.giaCoSo || 0) > (fare.tongGia || 0) && (
                                   <p className="text-sm text-gray-500 line-through">
-                                    {formatCurrency(fare.giaGoc)}
+                                    {formatCurrency(fare.giaCoSo || 0)}
                                   </p>
                                 )}
                                 <p className="text-2xl font-bold text-blue-600 mb-3">
-                                  {formatCurrency(fare.giaBan)}
+                                  {formatCurrency(fare.tongGia || 0)}
                                 </p>
 
                                 <button
-                                  onClick={() => handleSelectFlight(flight.changBayId, fare.hangVeId, fare.giaBan)}
+                                  onClick={() => handleSelectFlight(flight.changBayId, fare.hangVeId, fare.tongGia || 0)}
                                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 group-hover:bg-blue-700 transition"
                                   disabled={fare.soChoCon === 0}
                                 >

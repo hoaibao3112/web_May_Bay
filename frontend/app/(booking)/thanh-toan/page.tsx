@@ -37,7 +37,8 @@ function ThanhToanContent() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutes in seconds
-  const [paymentMethod, setPaymentMethod] = useState('THE_QUOC_TE');
+  const [paymentMethod, setPaymentMethod] = useState('VNPAY');
+  const [error, setError] = useState('');
 
   const bookingId = searchParams.get('bookingId');
   const maDatCho = searchParams.get('maDatCho');
@@ -46,7 +47,13 @@ function ThanhToanContent() {
     if (bookingId) {
       fetchBooking();
     }
-  }, [bookingId]);
+
+    // Kiểm tra nếu có lỗi từ VNPay return
+    const errorMsg = searchParams.get('error');
+    if (errorMsg) {
+      setError(decodeURIComponent(errorMsg));
+    }
+  }, [bookingId, searchParams]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -78,56 +85,44 @@ function ThanhToanContent() {
 
   const handlePayment = async () => {
     setProcessing(true);
+    setError('');
 
     try {
-      // Create payment
+      const token = localStorage.getItem('token');
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // Create payment with VNPay
       const paymentRes = await fetch('http://localhost:5000/payments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          donDatVeId: bookingId,
-          phuongThucThanhToan: paymentMethod,
+          bookingId: parseInt(bookingId || '0'),
+          phuongThuc: paymentMethod,
         }),
       });
 
       if (!paymentRes.ok) {
-        throw new Error('Thanh toán thất bại');
+        const errorData = await paymentRes.json();
+        throw new Error(errorData.message || 'Thanh toán thất bại');
       }
 
       const payment = await paymentRes.json();
 
-      // Mock payment callback (success)
-      const callbackRes = await fetch('http://localhost:5000/payments/callback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          maGiaoDich: payment.maGiaoDich,
-          trangThai: 'THANH_CONG',
-        }),
-      });
-
-      if (!callbackRes.ok) {
-        throw new Error('Xác nhận thanh toán thất bại');
+      // Redirect to VNPay payment URL
+      if (payment.paymentUrl) {
+        window.location.href = payment.paymentUrl;
+      } else {
+        throw new Error('Không nhận được URL thanh toán');
       }
-
-      // Issue ticket
-      const ticketRes = await fetch('http://localhost:5000/tickets/issue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          donDatVeId: bookingId,
-        }),
-      });
-
-      if (!ticketRes.ok) {
-        throw new Error('Xuất vé thất bại');
-      }
-
-      // Redirect to success page
-      router.push(`/xac-nhan?maDatCho=${maDatCho}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Lỗi:', error);
-      alert('Thanh toán thất bại, vui lòng thử lại');
+      setError(error.message || 'Có lỗi xảy ra, vui lòng thử lại');
       setProcessing(false);
     }
   };
@@ -194,6 +189,19 @@ function ThanhToanContent() {
       </nav>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-50 border-2 border-red-500 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">❌</span>
+              <div>
+                <p className="font-bold text-red-900">Thanh toán thất bại!</p>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Timer Warning */}
         {timeLeft < 300 && (
           <div className="mb-6 bg-red-50 border-2 border-red-500 rounded-lg p-4 animate-pulse">
@@ -218,99 +226,97 @@ function ThanhToanContent() {
               <h3 className="font-bold text-lg mb-4">Phương thức thanh toán</h3>
 
               <div className="space-y-3">
+                {/* VNPay */}
                 <label className={`block border-2 rounded-lg p-4 cursor-pointer transition ${
-                  paymentMethod === 'THE_QUOC_TE' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                  paymentMethod === 'VNPAY' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
                 }`}>
                   <div className="flex items-center gap-4">
                     <input
                       type="radio"
                       name="payment"
-                      value="THE_QUOC_TE"
-                      checked={paymentMethod === 'THE_QUOC_TE'}
+                      value="VNPAY"
+                      checked={paymentMethod === 'VNPAY'}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="w-5 h-5 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src="https://vnpay.vn/s1/statics.vnpay.vn/2023/9/06ncktiwd6dc1694418196384.png"
+                          alt="VNPay"
+                          className="h-10"
+                        />
+                        <div>
+                          <p className="font-semibold">VNPay</p>
+                          <p className="text-sm text-gray-600">
+                            Thanh toán qua ví điện tử, thẻ ATM, thẻ tín dụng
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+
+                {/* International Card (Disabled) */}
+                <label className={`block border-2 rounded-lg p-4 cursor-not-allowed opacity-50 border-gray-200`}>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="THE_QUOC_TE"
+                      disabled
+                      className="w-5 h-5"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <span className="text-3xl">💳</span>
                         <div>
                           <p className="font-semibold">Thẻ quốc tế</p>
-                          <p className="text-sm text-gray-600">Visa, Mastercard, JCB, AMEX</p>
+                          <p className="text-sm text-gray-600">Đang cập nhật</p>
                         </div>
                       </div>
                     </div>
                   </div>
-
-                  {paymentMethod === 'THE_QUOC_TE' && (
-                    <div className="mt-4 pt-4 border-t space-y-3">
-                      <input
-                        type="text"
-                        placeholder="Số thẻ (16 chữ số)"
-                        className="w-full border rounded-lg px-4 py-2"
-                      />
-                      <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          placeholder="MM/YY"
-                          className="border rounded-lg px-4 py-2"
-                        />
-                        <input
-                          type="text"
-                          placeholder="CVV/CVC"
-                          className="border rounded-lg px-4 py-2"
-                        />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Tên trên thẻ"
-                        className="w-full border rounded-lg px-4 py-2"
-                      />
-                    </div>
-                  )}
                 </label>
 
-                <label className={`block border-2 rounded-lg p-4 cursor-pointer transition ${
-                  paymentMethod === 'THE_ATM' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
-                }`}>
+                {/* ATM (Disabled) */}
+                <label className={`block border-2 rounded-lg p-4 cursor-not-allowed opacity-50 border-gray-200`}>
                   <div className="flex items-center gap-4">
                     <input
                       type="radio"
                       name="payment"
                       value="THE_ATM"
-                      checked={paymentMethod === 'THE_ATM'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-5 h-5 text-blue-600"
+                      disabled
+                      className="w-5 h-5"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <span className="text-3xl">🏦</span>
                         <div>
                           <p className="font-semibold">Thẻ ATM/Internet Banking</p>
-                          <p className="text-sm text-gray-600">Các ngân hàng Việt Nam</p>
+                          <p className="text-sm text-gray-600">Đang cập nhật</p>
                         </div>
                       </div>
                     </div>
                   </div>
                 </label>
 
-                <label className={`block border-2 rounded-lg p-4 cursor-pointer transition ${
-                  paymentMethod === 'VI_DIEN_TU' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
-                }`}>
+                {/* E-Wallet (Disabled) */}
+                <label className={`block border-2 rounded-lg p-4 cursor-not-allowed opacity-50 border-gray-200`}>
                   <div className="flex items-center gap-4">
                     <input
                       type="radio"
                       name="payment"
                       value="VI_DIEN_TU"
-                      checked={paymentMethod === 'VI_DIEN_TU'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-5 h-5 text-blue-600"
+                      disabled
+                      className="w-5 h-5"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <span className="text-3xl">📱</span>
                         <div>
-                          <p className="font-semibold">Ví điện tử</p>
-                          <p className="text-sm text-gray-600">MoMo, ZaloPay, ViettelPay</p>
+                          <p className="font-semibold">Ví điện tử khác</p>
+                          <p className="text-sm text-gray-600">Đang cập nhật</p>
                         </div>
                       </div>
                     </div>

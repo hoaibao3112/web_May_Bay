@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { SearchFlightDto } from './dto/search-flight.dto';
 
@@ -9,5 +9,10 @@ export class SearchController {
   @Post()
   async searchFlights(@Body() dto: SearchFlightDto) {
     return this.searchService.searchFlights(dto);
+  }
+
+  @Get('chuyen-bay/:id')
+  async getFlightById(@Param('id') id: string) {
+    return this.searchService.getFlightById(parseInt(id));
   }
 }

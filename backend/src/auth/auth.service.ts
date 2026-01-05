@@ -1,10 +1,12 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { GoogleStrategy } from './google.strategy';
+import { EmailService } from './email.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -12,7 +14,8 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private googleStrategy: GoogleStrategy,
-  ) {}
+    private emailService: EmailService,
+  ) { }
 
   async register(dto: RegisterDto) {
     // Kiểm tra email đã tồn tại
@@ -125,6 +128,75 @@ export class AuthService {
     } catch (error) {
       throw new UnauthorizedException('Google authentication failed');
     }
+  }
+
+  /**
+   * Send OTP for password change
+   */
+  async sendPasswordOTP(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Email không tồn tại');
+    }
+
+    // Don't allow OTP for Google accounts without password
+    if (!user.password || user.password === '') {
+      throw new BadRequestException('Tài khoản Google không thể đổi mật khẩu bằng phương thức này');
+    }
+
+    await this.emailService.sendPasswordOTP(email);
+
+    return {
+      message: 'Mã OTP đã được gửi đến email của bạn',
+      expiresIn: '5 phút',
+    };
+  }
+
+  /**
+   * Change password with OTP verification
+   */
+  async changePassword(userId: number, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Người dùng không tồn tại');
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Mật khẩu hiện tại không đúng');
+    }
+
+    // Check if new password is same as current
+    const isSamePassword = await bcrypt.compare(dto.newPassword, user.password);
+    if (isSamePassword) {
+      throw new BadRequestException('Mật khẩu mới phải khác mật khẩu hiện tại');
+    }
+
+    // Verify OTP
+    const isOtpValid = this.emailService.verifyOTP(user.email, dto.otp);
+    if (!isOtpValid) {
+      throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    // Update password
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return {
+      message: 'Đổi mật khẩu thành công',
+    };
   }
 }
 

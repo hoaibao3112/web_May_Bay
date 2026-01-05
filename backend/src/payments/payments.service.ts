@@ -6,7 +6,9 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { BookingsService } from '../bookings/bookings.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHmac } from 'crypto';
+import * as qs from 'qs';
+import * as moment from 'moment';
 
 @Injectable()
 export class PaymentsService {
@@ -21,6 +23,11 @@ export class PaymentsService {
       where: { id: dto.bookingId },
       include: {
         hanhKhach: true,
+        changBay: {
+          include: {
+            chuyenBay: true,
+          },
+        },
       },
     });
 
@@ -66,8 +73,13 @@ export class PaymentsService {
     // Cập nhật trạng thái booking
     await this.bookingsService.updateBookingStatus(booking.id, 'CHO_THANH_TOAN');
 
-    // Mock payment URL (trong thực tế sẽ gọi API cổng thanh toán)
-    const paymentUrl = this.generateMockPaymentUrl(payment.maGiaoDich, tongTien);
+    // Tạo VNPay payment URL
+    const paymentUrl = await this.createVNPayPaymentUrl(
+      payment.maGiaoDich,
+      tongTien,
+      booking.maDatVe,
+      `Thanh toan don dat ve ${booking.maDatVe}`,
+    );
 
     return {
       paymentId: payment.id,
@@ -77,6 +89,139 @@ export class PaymentsService {
       phuongThuc: payment.phuongThuc,
       paymentUrl,
     };
+  }
+
+  // Tạo VNPay payment URL
+  private async createVNPayPaymentUrl(
+    maGiaoDich: string,
+    amount: number,
+    orderInfo: string,
+    orderDescription: string,
+  ): Promise<string> {
+    const tmnCode = process.env.VNP_TMNCODE;
+    const secretKey = process.env.VNP_HASHSECRET;
+    const vnpUrl = process.env.VNP_URL;
+    const returnUrl = process.env.VNP_RETURN_URL || 'http://localhost:3000/xac-nhan';
+
+    const date = new Date();
+    const createDate = moment(date).format('YYYYMMDDHHmmss');
+    const orderId = maGiaoDich;
+
+    const locale = 'vn';
+    const currCode = 'VND';
+
+    let vnp_Params: any = {
+      vnp_Version: '2.1.0',
+      vnp_Command: 'pay',
+      vnp_TmnCode: tmnCode,
+      vnp_Locale: locale,
+      vnp_CurrCode: currCode,
+      vnp_TxnRef: orderId,
+      vnp_OrderInfo: orderDescription,
+      vnp_OrderType: 'other',
+      vnp_Amount: amount * 100, // VNPay yêu cầu số tiền * 100
+      vnp_ReturnUrl: returnUrl,
+      vnp_IpAddr: '127.0.0.1',
+      vnp_CreateDate: createDate,
+    };
+
+    // Sắp xếp params theo thứ tự alphabet
+    vnp_Params = this.sortObject(vnp_Params);
+
+    const signData = qs.stringify(vnp_Params, { encode: false });
+    const hmac = createHmac('sha512', secretKey);
+    const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+    vnp_Params['vnp_SecureHash'] = signed;
+
+    const paymentUrl = vnpUrl + '?' + qs.stringify(vnp_Params, { encode: false });
+
+    return paymentUrl;
+  }
+
+  // Xử lý VNPay return
+  async handleVNPayReturn(vnpParams: any) {
+    const secureHash = vnpParams['vnp_SecureHash'];
+    delete vnpParams['vnp_SecureHash'];
+    delete vnpParams['vnp_SecureHashType'];
+
+    const sortedParams = this.sortObject(vnpParams);
+    const secretKey = process.env.VNP_HASHSECRET;
+    const signData = qs.stringify(sortedParams, { encode: false });
+    const hmac = createHmac('sha512', secretKey);
+    const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+
+    if (secureHash === signed) {
+      const maGiaoDich = vnpParams['vnp_TxnRef'];
+      const rspCode = vnpParams['vnp_ResponseCode'];
+
+      const payment = await this.prisma.thanhToan.findUnique({
+        where: { maGiaoDich },
+        include: { donDatVe: true },
+      });
+
+      if (!payment) {
+        return {
+          success: false,
+          message: 'Không tìm thấy giao dịch',
+          code: '01',
+        };
+      }
+
+      if (rspCode === '00') {
+        // Thanh toán thành công
+        await this.prisma.thanhToan.update({
+          where: { id: payment.id },
+          data: {
+            trangThai: 'THANH_CONG',
+            thongTinCong: vnpParams,
+          },
+        });
+
+        await this.bookingsService.updateBookingStatus(
+          payment.donDatVeId,
+          'DA_THANH_TOAN',
+        );
+
+        return {
+          success: true,
+          message: 'Thanh toán thành công',
+          code: rspCode,
+          bookingId: payment.donDatVeId,
+          maDatCho: payment.donDatVe.maDatVe,
+        };
+      } else {
+        // Thanh toán thất bại
+        await this.prisma.thanhToan.update({
+          where: { id: payment.id },
+          data: {
+            trangThai: 'THAT_BAI',
+            thongTinCong: vnpParams,
+          },
+        });
+
+        return {
+          success: false,
+          message: 'Thanh toán thất bại',
+          code: rspCode,
+        };
+      }
+    } else {
+      return {
+        success: false,
+        message: 'Chữ ký không hợp lệ',
+        code: '97',
+      };
+    }
+  }
+
+  // Sort object by key
+  private sortObject(obj: any) {
+    const sorted: any = {};
+    const keys = Object.keys(obj).sort();
+    keys.forEach((key) => {
+      sorted[key] = obj[key];
+    });
+    return sorted;
   }
 
   // Callback thanh toán (webhook từ cổng thanh toán)

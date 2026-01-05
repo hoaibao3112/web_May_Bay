@@ -6,10 +6,13 @@ import {
   Query,
   UseGuards,
   Request,
+  Res,
+  Req,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { Response } from 'express';
 
 @Controller('payments')
 export class PaymentsController {
@@ -22,6 +25,36 @@ export class PaymentsController {
     return this.paymentsService.createPayment(dto, userId);
   }
 
+  // VNPay return URL
+  @Get('vnpay-return')
+  async vnpayReturn(@Query() query: any, @Res() res: Response) {
+    const result = await this.paymentsService.handleVNPayReturn(query);
+    
+    if (result.success) {
+      // Redirect về trang xác nhận đặt vé thành công
+      return res.redirect(
+        `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:3000'}/xac-nhan?bookingId=${result.bookingId}&maDatCho=${result.maDatCho}&success=true`
+      );
+    } else {
+      // Redirect về trang thanh toán thất bại
+      return res.redirect(
+        `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:3000'}/thanh-toan?error=${encodeURIComponent(result.message)}`
+      );
+    }
+  }
+
+  // VNPay IPN (Instant Payment Notification)
+  @Get('vnpay-ipn')
+  async vnpayIPN(@Query() query: any) {
+    const result = await this.paymentsService.handleVNPayReturn(query);
+    
+    if (result.success) {
+      return { RspCode: '00', Message: 'Success' };
+    } else {
+      return { RspCode: '99', Message: result.message };
+    }
+  }
+
   // Callback từ cổng thanh toán
   @Post('callback')
   async handleCallback(@Body() data: any) {
@@ -32,16 +65,5 @@ export class PaymentsController {
   @Get('status')
   async getPaymentStatus(@Query('maGiaoDich') maGiaoDich: string) {
     return this.paymentsService.getPaymentByTransactionId(maGiaoDich);
-  }
-
-  // Mock payment page (để test)
-  @Get('mock')
-  mockPaymentPage(@Query() query: any) {
-    return {
-      message: 'Mock Payment Gateway',
-      maGiaoDich: query.maGiaoDich,
-      soTien: query.soTien,
-      instructions: 'POST to /payments/callback với { maGiaoDich, status: "SUCCESS", signature: "mock" }',
-    };
   }
 }

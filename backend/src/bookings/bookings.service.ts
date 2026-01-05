@@ -16,12 +16,11 @@ export class BookingsService {
 
   // Tạo đơn đặt vé và giữ chỗ
   async createBooking(dto: CreateBookingDto, userId?: number) {
-    // Kiểm tra tồn chỗ
-    const tonCho = await this.prisma.tonCho.findFirst({
+    // Tìm giá vé theo changBayId và hangVeId
+    const giaVe = await this.prisma.giaVe.findFirst({
       where: {
         changBayId: dto.changBayId,
         hangVeId: dto.hangVeId,
-        nhomGiaId: dto.nhomGiaId,
       },
       include: {
         changBay: {
@@ -34,16 +33,15 @@ export class BookingsService {
           },
         },
         hangVe: true,
-        nhomGia: true,
       },
     });
 
-    if (!tonCho || tonCho.soChoCon < 1) {
+    if (!giaVe || giaVe.soLuongGheTrong < 1) {
       throw new BadRequestException('Không còn chỗ trống cho chuyến bay này');
     }
 
     // Tính tổng tiền (tạm tính cho 1 người)
-    const tongTien = Number(tonCho.giaCoSo) + Number(tonCho.thue) + Number(tonCho.phi);
+    const tongTien = Number(giaVe.giaBan);
 
     // Tạo mã đặt vé
     const maDatVe = this.generatePNR();
@@ -58,12 +56,15 @@ export class BookingsService {
         nguoiDungId: userId,
         changBayId: dto.changBayId,
         hangVeId: dto.hangVeId,
-        nhomGiaId: dto.nhomGiaId,
         trangThai: 'GIU_CHO',
         tongTien,
         tienTe: 'VND',
         hetHanGiuCho,
         searchSessionId: dto.searchSessionId,
+        ...(dto.thongTinLienHe && {
+          email: dto.thongTinLienHe.email,
+          soDienThoai: dto.thongTinLienHe.soDienThoai,
+        }),
       },
       include: {
         changBay: {
@@ -79,10 +80,29 @@ export class BookingsService {
       },
     });
 
+    // Thêm hành khách nếu có
+    if (dto.hanhKhach && dto.hanhKhach.length > 0) {
+      await Promise.all(
+        dto.hanhKhach.map((hk) =>
+          this.prisma.hanhKhach.create({
+            data: {
+              donDatVeId: booking.id,
+              loai: hk.loai as any,
+              ho: hk.ho,
+              ten: hk.ten,
+              gioiTinh: hk.gioiTinh,
+              ngaySinh: new Date(hk.ngaySinh),
+              quocTich: hk.quocTich,
+            },
+          })
+        )
+      );
+    }
+
     // Giảm số chỗ còn lại (tạm giữ)
-    await this.prisma.tonCho.update({
-      where: { id: tonCho.id },
-      data: { soChoCon: tonCho.soChoCon - 1 },
+    await this.prisma.giaVe.update({
+      where: { id: giaVe.id },
+      data: { soLuongGheTrong: giaVe.soLuongGheTrong - 1 },
     });
 
     return booking;

@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto';
 
 @Injectable()
 export class SearchService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async searchFlights(dto: SearchFlightDto) {
     const searchSessionId = randomBytes(16).toString('hex');
@@ -35,19 +35,14 @@ export class SearchService {
         },
         sanBayDi: true,
         sanBayDen: true,
-        tonCho: {
+        giaVe: {
           where: {
-            soChoCon: {
+            soLuongGheTrong: {
               gte: dto.nguoiLon + dto.treEm,
             },
           },
           include: {
-            hangVe: {
-              include: {
-                khoangVe: true,
-              },
-            },
-            nhomGia: true,
+            hangVe: true,
           },
         },
       },
@@ -58,25 +53,25 @@ export class SearchService {
 
     // Format kết quả
     const ketQua = changBays.map((chang) => {
-      const giaCacLoai = chang.tonCho.map((ton) => {
-        const tongGia = Number(ton.giaCoSo) + Number(ton.thue) + Number(ton.phi);
+      const giaCacLoai = chang.giaVe.map((giaVe) => {
+        const tongGia = Number(giaVe.giaBan);
 
         return {
-          tonChoId: ton.id,
-          hangVe: ton.hangVe.maHang,
-          tenHangVe: ton.hangVe.tenHang,
-          khoangVe: ton.hangVe.khoangVe.maKhoang,
-          nhomGia: ton.nhomGia?.tenNhom || 'Standard',
-          nhomGiaId: ton.nhomGiaId,
-          giaCoSo: Number(ton.giaCoSo),
-          thue: Number(ton.thue),
-          phi: Number(ton.phi),
+          giaVeId: giaVe.id,
+          hangVe: giaVe.hangVe.maHang,
+          tenHangVe: giaVe.hangVe.tenHang,
+          khoangVe: giaVe.hangVe.maHang, // Use same as hangVe since khoangVe doesn't exist
+          nhomGia: giaVe.hangVe.tenHang,
+          nhomGiaId: giaVe.hangVeId,
+          giaCoSo: Number(giaVe.giaBan),
+          thue: 0, // Not in current schema
+          phi: 0, // Not in current schema
           tongGia,
-          soChoCon: ton.soChoCon,
-          hanhLyKy: ton.nhomGia?.hanhLyKy || 0,
-          hanhLyXach: ton.nhomGia?.hanhLyXach || 7,
-          choPhepDoi: ton.nhomGia?.choPhepDoi || false,
-          choPhepHoan: ton.nhomGia?.choPhepHoan || false,
+          soChoCon: giaVe.soLuongGheTrong,
+          hanhLyKy: 20, // Default values since not in schema
+          hanhLyXach: 7,
+          choPhepDoi: true,
+          choPhepHoan: false,
         };
       });
 
@@ -125,6 +120,43 @@ export class SearchService {
       thueTotal,
       phiTotal,
       tongCong: giaCoSoTotal + thueTotal + phiTotal,
+    };
+  }
+
+  // Lấy thông tin chuyến bay theo ID
+  async getFlightById(changBayId: number) {
+    const changBay = await this.prisma.changBay.findUnique({
+      where: { id: changBayId },
+      include: {
+        chuyenBay: {
+          include: {
+            hang: true,
+          },
+        },
+        sanBayDi: true,
+        sanBayDen: true,
+      },
+    });
+
+    if (!changBay) {
+      throw new Error('Không tìm thấy chuyến bay');
+    }
+
+    return {
+      maChuyenBay: changBay.chuyenBay.soHieuChuyenBay,
+      sanBayDi: {
+        maIata: changBay.sanBayDi.maIata,
+        tenSanBay: changBay.sanBayDi.tenSanBay,
+        thanhPho: changBay.sanBayDi.thanhPho,
+      },
+      sanBayDen: {
+        maIata: changBay.sanBayDen.maIata,
+        tenSanBay: changBay.sanBayDen.tenSanBay,
+        thanhPho: changBay.sanBayDen.thanhPho,
+      },
+      ngayKhoiHanh: changBay.gioDi,
+      gioDi: changBay.gioDi.toTimeString().slice(0, 5),
+      gioDen: changBay.gioDen.toTimeString().slice(0, 5),
     };
   }
 }

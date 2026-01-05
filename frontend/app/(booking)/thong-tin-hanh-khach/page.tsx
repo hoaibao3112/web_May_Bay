@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Passenger {
@@ -12,10 +12,22 @@ interface Passenger {
   quocTich: string;
 }
 
+interface FlightInfo {
+  maChuyenBay: string;
+  sanBayDi: string;
+  sanBayDen: string;
+  thanhPhoDi: string;
+  thanhPhoDen: string;
+  ngayDi: string;
+  gioDi: string;
+  gioDen: string;
+}
+
 function ThongTinHanhKhachContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [flightInfo, setFlightInfo] = useState<FlightInfo | null>(null);
 
   const seats = searchParams.get('seats')?.split(',') || [];
   const nguoiLon = parseInt(searchParams.get('nguoiLon') || '1');
@@ -36,6 +48,34 @@ function ThongTinHanhKhachContent() {
     email: '',
     soDienThoai: '',
   });
+
+  useEffect(() => {
+    const changBayId = searchParams.get('changBayId');
+    if (changBayId) {
+      fetchFlightInfo(changBayId);
+    }
+  }, [searchParams]);
+
+  const fetchFlightInfo = async (changBayId: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/search/chuyen-bay/${changBayId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFlightInfo({
+          maChuyenBay: data.maChuyenBay || 'VN123',
+          sanBayDi: data.sanBayDi?.maIata || '',
+          sanBayDen: data.sanBayDen?.maIata || '',
+          thanhPhoDi: data.sanBayDi?.thanhPho || '',
+          thanhPhoDen: data.sanBayDen?.thanhPho || '',
+          ngayDi: data.ngayKhoiHanh || '',
+          gioDi: data.gioDi || '',
+          gioDen: data.gioDen || '',
+        });
+      }
+    } catch (error) {
+      console.error('Lỗi tải thông tin chuyến bay:', error);
+    }
+  };
 
   const handlePassengerChange = (index: number, field: keyof Passenger, value: string) => {
     const newPassengers = [...passengers];
@@ -63,12 +103,22 @@ function ThongTinHanhKhachContent() {
         return;
       }
 
-      // Create booking
+      // Create booking with passenger data
       const bookingData = {
         changBayId: parseInt(searchParams.get('changBayId') || '0'),
         hangVeId: parseInt(searchParams.get('hangVeId') || '0'),
-        hanhKhach: passengers,
-        thongTinLienHe: contactInfo,
+        hanhKhach: passengers.map(p => ({
+          loai: p.loai,
+          ho: p.ho,
+          ten: p.ten,
+          ngaySinh: p.ngaySinh,
+          gioiTinh: p.gioiTinh,
+          quocTich: p.quocTich,
+        })),
+        thongTinLienHe: {
+          email: contactInfo.email,
+          soDienThoai: contactInfo.soDienThoai,
+        },
       };
 
       const token = localStorage.getItem('token');
@@ -339,15 +389,42 @@ function ThongTinHanhKhachContent() {
                 <div className="space-y-4 mb-6">
                   <div>
                     <p className="text-sm text-gray-600">Chuyến bay</p>
-                    <p className="font-semibold">VN123</p>
+                    <p className="font-semibold">{flightInfo?.maChuyenBay || 'VN123'}</p>
                   </div>
 
                   <div>
                     <p className="text-sm text-gray-600">Hành trình</p>
-                    <p className="font-semibold">
-                      {searchParams.get('sanBayDiId')} → {searchParams.get('sanBayDenId')}
-                    </p>
-                    <p className="text-sm">{searchParams.get('ngayDi')}</p>
+                    {flightInfo ? (
+                      <>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="text-left">
+                            <p className="font-bold text-lg">{flightInfo.sanBayDi}</p>
+                            <p className="text-xs text-gray-600">{flightInfo.thanhPhoDi}</p>
+                          </div>
+                          <div className="flex-1 text-center px-2">
+                            <div className="text-2xl">✈️</div>
+                            <div className="h-0.5 bg-gray-300"></div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg">{flightInfo.sanBayDen}</p>
+                            <p className="text-xs text-gray-600">{flightInfo.thanhPhoDen}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {new Date(flightInfo.ngayDi).toLocaleDateString('vi-VN', {
+                            weekday: 'short',
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {flightInfo.gioDi} - {flightInfo.gioDen}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="font-semibold">Đang tải...</p>
+                    )}
                   </div>
 
                   <div>
@@ -360,6 +437,53 @@ function ThongTinHanhKhachContent() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Display Passenger Information */}
+                  {passengers.some(p => p.ho || p.ten) && (
+                    <div className="border-t pt-4">
+                      <p className="text-sm text-gray-600 mb-3">Hành khách</p>
+                      <div className="space-y-3">
+                        {passengers.map((passenger, index) => (
+                          (passenger.ho || passenger.ten) && (
+                            <div key={index} className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <p className="font-semibold text-sm">
+                                    {passenger.ho} {passenger.ten}
+                                  </p>
+                                  <div className="text-xs text-gray-600 mt-1 space-y-0.5">
+                                    <p>Ghế: {seats[index]}</p>
+                                    {passenger.ngaySinh && (
+                                      <p>Sinh: {new Date(passenger.ngaySinh).toLocaleDateString('vi-VN')}</p>
+                                    )}
+                                    {passenger.gioiTinh && (
+                                      <p>{passenger.gioiTinh === 'NAM' ? '👨 Nam' : '👩 Nữ'}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                                  {passenger.loai === 'NGUOI_LON' ? 'Người lớn' : 'Trẻ em'}
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Display Contact Information */}
+                  {(contactInfo.email || contactInfo.soDienThoai) && (
+                    <div className="border-t pt-4">
+                      <p className="text-sm text-gray-600 mb-2">Liên hệ</p>
+                      {contactInfo.email && (
+                        <p className="text-sm mb-1">📧 {contactInfo.email}</p>
+                      )}
+                      {contactInfo.soDienThoai && (
+                        <p className="text-sm">📞 +84 {contactInfo.soDienThoai}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t pt-4 mb-6 space-y-2">
