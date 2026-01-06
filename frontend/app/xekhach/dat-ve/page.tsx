@@ -37,7 +37,7 @@ export default function BusBookingPage() {
 
     const [trip, setTrip] = useState<TripDetail | null>(null);
     const [loading, setLoading] = useState(true);
-    
+
     // Form state
     const [contactInfo, setContactInfo] = useState({
         hoTen: '',
@@ -106,9 +106,9 @@ export default function BusBookingPage() {
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', { 
+        return date.toLocaleDateString('vi-VN', {
             weekday: 'short',
-            day: '2-digit', 
+            day: '2-digit',
             month: '2-digit',
             year: 'numeric'
         });
@@ -120,7 +120,7 @@ export default function BusBookingPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Validate form
         if (!contactInfo.hoTen || !contactInfo.soDienThoai || !contactInfo.email) {
             alert('Vui lòng điền đầy đủ thông tin liên hệ');
@@ -132,17 +132,65 @@ export default function BusBookingPage() {
             return;
         }
 
-        // TODO: Submit booking to API
-        console.log('Booking data:', {
-            tripId,
-            contactInfo,
-            passengers,
-            insurance,
-            flexibleTicket,
-        });
+        // Validate tripId exists and is valid
+        if (!tripId) {
+            alert('Không tìm thấy thông tin chuyến xe. Vui lòng chọn lại chuyến xe.');
+            router.push('/xekhach');
+            return;
+        }
 
-        // Navigate to payment page
-        router.push(`/xekhach/thanh-toan?tripId=${tripId}`);
+        const parsedTripId = parseInt(tripId);
+        if (isNaN(parsedTripId) || parsedTripId <= 0) {
+            alert('Mã chuyến xe không hợp lệ. Vui lòng chọn lại chuyến xe.');
+            router.push('/xekhach');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            // Tạo booking
+            const token = localStorage.getItem('accessToken');
+
+            const bookingData = {
+                chuyenXeId: parsedTripId,
+                soLuongGhe: passengers.length,
+                danhSachGhe: passengers.map((p, idx) => `A${idx + 1}`),
+                hanhKhach: passengers.map((p, idx) => ({
+                    hoTenHanhKhach: p.hoTen,
+                    soDienThoai: contactInfo.soDienThoai,
+                    email: contactInfo.email,
+                    soGhe: `A${idx + 1}`,
+                })),
+                ghiChu: '',
+            };
+
+            console.log('Sending booking data:', bookingData);
+
+            const res = await fetch('http://localhost:5000/bus-bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(bookingData),
+            });
+
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || 'Không thể tạo đơn đặt vé');
+            }
+
+            const booking = await res.json();
+
+            // Navigate to payment page with booking ID
+            router.push(`/xekhach/thanh-toan?bookingId=${booking.id}`);
+        } catch (error: any) {
+            console.error('Booking error:', error);
+            alert(error.message || 'Có lỗi xảy ra khi đặt vé');
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (loading) {
@@ -285,7 +333,7 @@ export default function BusBookingPage() {
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Danh xưng*
                                         </label>
-                                        <select 
+                                        <select
                                             value={passenger.gioiTinh}
                                             onChange={(e) => {
                                                 const newPassengers = [...passengers];

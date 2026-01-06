@@ -219,23 +219,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl">✈️</span>
-              <span className="text-xl font-bold text-blue-600">BayNhanh</span>
-            </Link>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/" className="text-gray-700 hover:text-blue-600">Vé máy bay</Link>
-              <Link href="/khachsan" className="text-gray-700 hover:text-blue-600">Khách sạn</Link>
-              <UserDropdown />
-            </nav>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

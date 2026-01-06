@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBusBookingDto } from './dto/create-bus-booking.dto';
+import { CreateBusPaymentDto, VerifyBusPaymentDto } from './dto/create-bus-payment.dto';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -8,6 +9,11 @@ export class BusBookingsService {
     constructor(private prisma: PrismaService) { }
 
     async createBooking(dto: CreateBusBookingDto, userId: number) {
+        // Validate chuyenXeId
+        if (!dto.chuyenXeId || isNaN(dto.chuyenXeId)) {
+            throw new BadRequestException('Mã chuyến xe không hợp lệ');
+        }
+
         // Kiểm tra chuyến xe
         const trip = await this.prisma.chuyenXe.findUnique({
             where: { id: dto.chuyenXeId },
@@ -264,5 +270,95 @@ export class BusBookingsService {
         const timestamp = Date.now().toString();
         const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
         return `VX${timestamp}${random}`;
+    }
+
+    // Tạo thanh toán cho đơn đặt vé xe
+    async createPayment(dto: CreateBusPaymentDto, userId?: number) {
+        // Validate bookingId
+        if (!dto.bookingId || isNaN(dto.bookingId)) {
+            throw new BadRequestException('Mã đơn đặt không hợp lệ');
+        }
+
+        const booking = await this.prisma.donDatVeXe.findUnique({
+            where: { id: dto.bookingId },
+            include: {
+                chuyenXe: {
+                    include: {
+                        tuyenXe: {
+                            include: {
+                                nhaXe: true,
+                            },
+                        },
+                    },
+                },
+                veXe: true,
+            },
+        });
+
+        if (!booking) {
+            throw new NotFoundException('Không tìm thấy đơn đặt vé');
+        }
+
+        if (booking.trangThaiDat !== 'CHO_THANH_TOAN') {
+            throw new BadRequestException('Đơn đặt vé không ở trạng thái cho phép thanh toán');
+        }
+
+        // Tạo mã giao dịch
+        const maGiaoDich = `BUS${Date.now()}${randomBytes(4).toString('hex').toUpperCase()}`;
+
+        // Tạo payment record (sử dụng ThanhToanXe nếu có trong schema)
+        // Hoặc cập nhật trực tiếp vào booking
+        await this.prisma.donDatVeXe.update({
+            where: { id: booking.id },
+            data: {
+                phuongThucThanhToan: dto.phuongThuc,
+                trangThaiDat: 'DA_THANH_TOAN',
+            },
+        });
+
+        // Cập nhật trạng thái vé
+        await this.prisma.veXe.updateMany({
+            where: { donDatVeXeId: booking.id },
+            data: { trangThai: 'HIEU_LUC' },
+        });
+
+        return {
+            success: true,
+            maGiaoDich,
+            booking: {
+                ...booking,
+                trangThaiDat: 'DA_THANH_TOAN',
+                phuongThucThanhToan: dto.phuongThuc,
+            },
+        };
+    }
+
+    // Xác nhận thanh toán
+    async verifyPayment(dto: VerifyBusPaymentDto) {
+        const booking = await this.prisma.donDatVeXe.findUnique({
+            where: { id: dto.bookingId },
+        });
+
+        if (!booking) {
+            throw new NotFoundException('Không tìm thấy đơn đặt vé');
+        }
+
+        const trangThaiMoi = dto.trangThai === 'THANH_CONG' ? 'DA_THANH_TOAN' : 'DA_HUY';
+
+        await this.prisma.donDatVeXe.update({
+            where: { id: dto.bookingId },
+            data: {
+                trangThaiDat: trangThaiMoi as any,
+            },
+        });
+
+        if (dto.trangThai === 'THANH_CONG') {
+            await this.prisma.veXe.updateMany({
+                where: { donDatVeXeId: dto.bookingId },
+                data: { trangThai: 'HIEU_LUC' },
+            });
+        }
+
+        return { success: true, trangThai: trangThaiMoi };
     }
 }
