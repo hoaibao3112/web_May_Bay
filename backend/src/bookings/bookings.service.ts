@@ -12,10 +12,30 @@ import { randomBytes } from 'crypto';
 
 @Injectable()
 export class BookingsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // Tạo đơn đặt vé và giữ chỗ
   async createBooking(dto: CreateBookingDto, userId?: number) {
+    console.log('Creating booking with:', {
+      changBayId: dto.changBayId,
+      hangVeId: dto.hangVeId,
+      changBayIdType: typeof dto.changBayId,
+      hangVeIdType: typeof dto.hangVeId,
+    });
+
+    // Debug: Kiểm tra tất cả GiaVe cho changBayId này
+    const allGiaVeForChangBay = await this.prisma.giaVe.findMany({
+      where: { changBayId: dto.changBayId },
+      select: {
+        id: true,
+        changBayId: true,
+        hangVeId: true,
+        giaBan: true,
+        soLuongGheTrong: true,
+      },
+    });
+    console.log('All GiaVe for changBayId', dto.changBayId, ':', allGiaVeForChangBay);
+
     // Tìm giá vé theo changBayId và hangVeId
     const giaVe = await this.prisma.giaVe.findFirst({
       where: {
@@ -35,6 +55,13 @@ export class BookingsService {
         hangVe: true,
       },
     });
+
+    console.log('Found giaVe:', giaVe ? {
+      id: giaVe.id,
+      soLuongGheTrong: giaVe.soLuongGheTrong,
+      changBayId: giaVe.changBayId,
+      hangVeId: giaVe.hangVeId,
+    } : null);
 
     if (!giaVe || giaVe.soLuongGheTrong < 1) {
       throw new BadRequestException('Không còn chỗ trống cho chuyến bay này');
@@ -61,10 +88,6 @@ export class BookingsService {
         tienTe: 'VND',
         hetHanGiuCho,
         searchSessionId: dto.searchSessionId,
-        ...(dto.thongTinLienHe && {
-          email: dto.thongTinLienHe.email,
-          soDienThoai: dto.thongTinLienHe.soDienThoai,
-        }),
       },
       include: {
         changBay: {
@@ -79,6 +102,18 @@ export class BookingsService {
         hangVe: true,
       },
     });
+
+    // Thêm thông tin liên hệ nếu có
+    if (dto.thongTinLienHe) {
+      await this.prisma.thongTinLienHe.create({
+        data: {
+          donDatVeId: booking.id,
+          hoTen: dto.thongTinLienHe.email.split('@')[0], // Tạm dùng email làm tên
+          email: dto.thongTinLienHe.email,
+          soDienThoai: dto.thongTinLienHe.soDienThoai,
+        },
+      });
+    }
 
     // Thêm hành khách nếu có
     if (dto.hanhKhach && dto.hanhKhach.length > 0) {
@@ -164,35 +199,115 @@ export class BookingsService {
 
   // Lấy thông tin booking
   async getBookingById(id: number) {
-    const booking = await this.prisma.donDatVe.findUnique({
-      where: { id },
-      include: {
-        changBay: {
-          include: {
-            chuyenBay: {
-              include: { hang: true },
+    try {
+      const booking = await this.prisma.donDatVe.findUnique({
+        where: { id },
+        include: {
+          changBay: {
+            include: {
+              chuyenBay: {
+                include: { hang: true },
+              },
+              sanBayDi: true,
+              sanBayDen: true,
             },
-            sanBayDi: true,
-            sanBayDen: true,
+          },
+          hangVe: true,
+          hanhKhach: true,
+          thongTinLienHe: true,
+          thanhToan: true,
+          ve: {
+            include: {
+              hanhKhach: true,
+            },
           },
         },
-        hangVe: true,
-        hanhKhach: true,
-        thongTinLienHe: true,
-        thanhToan: true,
-        ve: {
+      });
+
+      if (!booking) {
+        throw new NotFoundException('Không tìm thấy đơn đặt vé');
+      }
+
+      console.log('Booking found:', {
+        id: booking.id,
+        hasChangBay: !!booking.changBay,
+        hasChuyenBay: !!booking.changBay?.chuyenBay,
+      });
+
+      // Transform changBay to include formatted date/time fields
+      if (booking.changBay && booking.changBay.chuyenBay) {
+        const transformedBooking = {
+          ...booking,
+          changBay: {
+            ...booking.changBay,
+            chuyenBay: {
+              ...booking.changBay.chuyenBay,
+              soHieu: booking.changBay.chuyenBay.soHieuChuyenBay,
+            },
+            ngayKhoiHanh: booking.changBay.gioDi.toISOString().split('T')[0],
+            gioKhoiHanh: booking.changBay.gioDi.toTimeString().slice(0, 5),
+            gioDen: booking.changBay.gioDen.toTimeString().slice(0, 5),
+          },
+        };
+        return transformedBooking;
+      }
+
+      return booking;
+    } catch (error) {
+      // Xử lý lỗi Prisma khi hanhKhach null
+      if (error.message && error.message.includes('Field hanhKhach is required')) {
+        // Query lại nhưng không include hanhKhach
+        const booking = await this.prisma.donDatVe.findUnique({
+          where: { id },
           include: {
-            hanhKhach: true,
+            changBay: {
+              include: {
+                chuyenBay: {
+                  include: { hang: true },
+                },
+                sanBayDi: true,
+                sanBayDen: true,
+              },
+            },
+            hangVe: true,
+            thongTinLienHe: true,
+            thanhToan: true,
           },
-        },
-      },
-    });
+        });
 
-    if (!booking) {
-      throw new NotFoundException('Không tìm thấy đơn đặt vé');
+        if (!booking) {
+          throw new NotFoundException('Không tìm thấy đơn đặt vé');
+        }
+
+        // Thêm hanhKhach rỗng
+        const bookingWithEmptyPassengers = {
+          ...booking,
+          hanhKhach: [],
+          ve: [],
+        };
+
+        // Transform changBay
+        if (bookingWithEmptyPassengers.changBay && bookingWithEmptyPassengers.changBay.chuyenBay) {
+          return {
+            ...bookingWithEmptyPassengers,
+            changBay: {
+              ...bookingWithEmptyPassengers.changBay,
+              chuyenBay: {
+                ...bookingWithEmptyPassengers.changBay.chuyenBay,
+                soHieu: bookingWithEmptyPassengers.changBay.chuyenBay.soHieuChuyenBay,
+              },
+              ngayKhoiHanh: bookingWithEmptyPassengers.changBay.gioDi.toISOString().split('T')[0],
+              gioKhoiHanh: bookingWithEmptyPassengers.changBay.gioDi.toTimeString().slice(0, 5),
+              gioDen: bookingWithEmptyPassengers.changBay.gioDen.toTimeString().slice(0, 5),
+            },
+          };
+        }
+
+        return bookingWithEmptyPassengers;
+      }
+
+      throw error;
     }
-
-    return booking;
   }
 
   // Tra cứu booking theo PNR
@@ -226,6 +341,24 @@ export class BookingsService {
 
     if (!booking) {
       throw new NotFoundException('Không tìm thấy đơn đặt vé với mã: ' + maDatVe);
+    }
+
+    // Transform changBay to include formatted date/time fields
+    if (booking.changBay && booking.changBay.chuyenBay) {
+      const transformedBooking = {
+        ...booking,
+        changBay: {
+          ...booking.changBay,
+          chuyenBay: {
+            ...booking.changBay.chuyenBay,
+            soHieu: booking.changBay.chuyenBay.soHieuChuyenBay,
+          },
+          ngayKhoiHanh: booking.changBay.gioDi.toISOString().split('T')[0],
+          gioKhoiHanh: booking.changBay.gioDi.toTimeString().slice(0, 5),
+          gioDen: booking.changBay.gioDen.toTimeString().slice(0, 5),
+        },
+      };
+      return transformedBooking;
     }
 
     return booking;
@@ -264,6 +397,24 @@ export class BookingsService {
 
     if (!booking) {
       throw new NotFoundException('Không tìm thấy đơn đặt vé');
+    }
+
+    // Transform changBay to include formatted date/time fields
+    if (booking.changBay && booking.changBay.chuyenBay) {
+      const transformedBooking = {
+        ...booking,
+        changBay: {
+          ...booking.changBay,
+          chuyenBay: {
+            ...booking.changBay.chuyenBay,
+            soHieu: booking.changBay.chuyenBay.soHieuChuyenBay,
+          },
+          ngayKhoiHanh: booking.changBay.gioDi.toISOString().split('T')[0],
+          gioKhoiHanh: booking.changBay.gioDi.toTimeString().slice(0, 5),
+          gioDen: booking.changBay.gioDen.toTimeString().slice(0, 5),
+        },
+      };
+      return transformedBooking;
     }
 
     return booking;

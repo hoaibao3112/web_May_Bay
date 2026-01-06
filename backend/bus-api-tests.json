@@ -1,0 +1,139 @@
+{
+    "name": "Bus Booking API Tests",
+    "requests": [
+        {
+            "name": "1. Get All Bus Companies",
+            "method": "GET",
+            "url": "http://localhost:5000/bus-companies",
+            "headers": {
+                "Content-Type": "application/json"
+            }
+        },
+        {
+            "name": "2. Search Bus Trips - SGN to Nha Trang",
+            "method": "POST",
+            "url": "http://localhost:5000/bus-search",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": {
+                "thanhPhoDi": "TP.HCM",
+                "thanhPhoDen": "Nha Trang",
+                "ngayDi": "2026-01-07",
+                "soKhach": 2
+            }
+        },
+        {
+            "name": "3. Get Bus Stations",
+            "method": "GET",
+            "url": "http://localhost:5000/bus-stations",
+            "headers": {
+                "Content-Type": "application/json"
+            }
+        },
+        {
+            "name": "4. Get Popular Routes",
+            "method": "GET",
+            "url": "http://localhost:5000/bus-search/popular-routes?limit=10",
+            "headers": {
+                "Content-Type": "application/json"
+            }
+        },
+        {
+            "name": "5. Create Bus Booking",
+            "method": "POST",
+            "url": "http://localhost:5000/bus-bookings",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": {
+                "chuyenXeId": 1,
+                "soLuongGhe": 2,
+                "danhSachGhe": [
+                    "A1",
+                    "A2"
+                ],
+                "hanhKhach": [
+                    {
+                        "hoTenHanhKhach": "Nguyễn Văn A",
+                        "soDienThoai": "0901234567",
+                        "email": "nguyenvana@gmail.com",
+                        "soGhe": "A1"
+                    },
+                    {
+                        "hoTenHanhKhach": "Trần Thị B",
+                        "soDienThoai": "0901234568",
+                        "email": "tranthib@gmail.com",
+                        "soGhe": "A2"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "6. Get Booking by ID",
+            "method": "GET",
+            "url": "http://localhost:5000/bus-bookings/1",
+            "headers": {
+                "Content-Type": "application/json"
+            }
+        },
+        {
+            "name": "7. Get User Bookings",
+            "method": "GET",
+            "url": "http://localhost:5000/bus-bookings/user/1",
+            "headers": {
+                "Content-Type": "application/json"
+            }
+        },
+        {
+            "name": "8. Update Booking Status - Mark as Paid",
+            "method": "PATCH",
+            "url": "http://localhost:5000/bus-bookings/1/status",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": {
+                "trangThaiDat": "DA_THANH_TOAN",
+                "phuongThucThanhToan": "VNPAY"
+            }
+        },
+        {
+            "name": "9. Submit Review",
+            "method": "POST",
+            "url": "http://localhost:5000/bus-reviews",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": {
+                "nhaXeId": 1,
+                "chuyenXeId": 1,
+                "diemDanhGia": 5,
+                "nhanXet": "Xe rất sạch sẽ, tài xế lái xe an toàn!"
+            }
+        },
+        {
+            "name": "10. Get Company Reviews",
+            "method": "GET",
+            "url": "http://localhost:5000/bus-reviews/company/1?page=1&limit=10",
+            "headers": {
+                "Content-Type": "application/json"
+            }
+        },
+        {
+            "name": "11. Search Stations by City",
+            "method": "GET",
+            "url": "http://localhost:5000/bus-stations/search?city=Hà Nội",
+            "headers": {
+                "Content-Type": "application/json"
+            }
+        },
+        {
+            "name": "12. Get Station Suggestions",
+            "method": "GET",
+            "url": "http://localhost:5000/bus-search/suggestions?q=Sài Gòn",
+            "headers": {
+                "Content-Type": "application/json"
+            }
+        }
+    ]
+}

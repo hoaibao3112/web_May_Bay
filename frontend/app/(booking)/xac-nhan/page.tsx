@@ -11,7 +11,7 @@ interface BookingDetails {
   changBay: {
     chuyenBay: {
       soHieu: string;
-      hangHangKhong: {
+      hang: {
         tenHang: string;
         maHang: string;
       };
@@ -168,7 +168,7 @@ function XacNhanContent() {
                       <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl mb-2">
                         ✈️
                       </div>
-                      <p className="font-bold">{booking.changBay.chuyenBay.hangHangKhong.tenHang}</p>
+                      <p className="font-bold">{booking.changBay.chuyenBay.hang.tenHang}</p>
                       <p className="text-sm text-gray-600">{booking.changBay.chuyenBay.soHieu}</p>
                     </div>
                     <div className="text-right">

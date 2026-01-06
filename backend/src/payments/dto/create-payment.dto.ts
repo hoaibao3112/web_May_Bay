@@ -1,9 +1,10 @@
 import { IsInt, IsString, IsEnum } from 'class-validator';
 
 export enum PhuongThucThanhToan {
-  THE = 'THE',
+  VNPAY = 'VNPAY',
+  MOMO = 'MOMO',
+  ZALOPAY = 'ZALOPAY',
   ATM = 'ATM',
-  VI = 'VI',
   QR = 'QR',
 }
 

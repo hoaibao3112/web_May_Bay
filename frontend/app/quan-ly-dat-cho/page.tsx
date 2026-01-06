@@ -26,13 +26,13 @@ export default function QuanLyDatChoPage() {
 
     try {
       const res = await fetch(`http://localhost:5000/bookings/pnr/${searchForm.maDatCho}`);
-      
+
       if (!res.ok) {
         throw new Error('Không tìm thấy đặt chỗ');
       }
 
       const data = await res.json();
-      
+
       // Verify email matches
       if (data.thongTinLienHe.email.toLowerCase() !== searchForm.email.toLowerCase()) {
         throw new Error('Email không khớp với đặt chỗ');
@@ -118,7 +118,7 @@ export default function QuanLyDatChoPage() {
           {/* Search Form */}
           <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
             <h2 className="text-2xl font-bold mb-6 text-center">Tra cứu đặt chỗ</h2>
-            
+
             <form onSubmit={handleSearch} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -189,7 +189,7 @@ export default function QuanLyDatChoPage() {
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="font-bold">{booking.changBay.chuyenBay.hangHangKhong.tenHang}</p>
+                      <p className="font-bold">{booking.changBay.chuyenBay.hang.tenHang}</p>
                       <p className="text-sm text-gray-600">{booking.changBay.chuyenBay.soHieu}</p>
                     </div>
                     <div className="text-right">

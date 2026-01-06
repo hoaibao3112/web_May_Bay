@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import UserDropdown from '../components/UserDropdown';
+import LocationAutocomplete from '../components/LocationAutocomplete';
 
 interface Hotel {
   id: number;
@@ -181,11 +182,9 @@ function KhachSanContent() {
               {/* Location */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">📍 Địa điểm</label>
-                <input
-                  type="text"
+                <LocationAutocomplete
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  onChange={setCity}
                   placeholder="Nhập thành phố"
                 />
               </div>

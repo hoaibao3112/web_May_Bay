@@ -29,6 +29,8 @@ model User {
   thongBao           ThongBao[]
   datPhong           DatPhong[]
   danhGiaKS          DanhGiaKhachSan[]
+  donDatVeXe         DonDatVeXe[]
+  danhGiaNhaXe       DanhGiaNhaXe[]
 
   @@map("users")
 }
@@ -611,4 +613,277 @@ model DanhGia {
   @@map("danh_gia")
 }
 
+// ============================
+// HỆ THỐNG ĐẶT VÉ XE KHÁCH
+// ============================
 
+// 1. Nhà xe (Bus Company)
+model NhaXe {
+  id                 Int      @id @default(autoincrement())
+  maNhaXe            String   @unique @db.VarChar(10)
+  tenNhaXe           String   @db.VarChar(191)
+  logo               String?  @db.VarChar(500)
+  soDienThoai        String?  @db.VarChar(20)
+  email              String?  @db.VarChar(191)
+  diaChi             String?  @db.Text
+  moTa               String?  @db.Text
+  danhGiaTrungBinh   Decimal? @db.Decimal(2, 1) @default(0)
+  trangThai          TrangThaiNhaXe @default(HOAT_DONG)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  xe                 Xe[]
+  tuyenXe            TuyenXe[]
+  danhGiaNhaXe       DanhGiaNhaXe[]
+
+  @@map("nha_xe")
+}
+
+enum TrangThaiNhaXe {
+  HOAT_DONG
+  TAM_NGUNG
+  NGUNG_HOAT_DONG
+}
+
+// 2. Bến xe (Bus Station)
+model BenXe {
+  id          Int      @id @default(autoincrement())
+  maBenXe     String   @unique @db.VarChar(10)
+  tenBenXe    String   @db.VarChar(191)
+  thanhPho    String   @db.VarChar(100)
+  diaChi      String?  @db.Text
+  khuVuc      String?  @db.VarChar(50)
+  soDienThoai String?  @db.VarChar(20)
+  viDo        Decimal? @db.Decimal(10, 8)
+  kinhDo      Decimal? @db.Decimal(11, 8)
+  trangThai   TrangThaiBenXe @default(HOAT_DONG)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tuyenXeDi   TuyenXe[] @relation("TuyenXeDi")
+  tuyenXeDen  TuyenXe[] @relation("TuyenXeDen")
+
+  @@map("ben_xe")
+}
+
+enum TrangThaiBenXe {
+  HOAT_DONG
+  TAM_DONG
+  DONG_CUA
+}
+
+// 3. Loại xe (Bus Type)
+model LoaiXe {
+  id         Int      @id @default(autoincrement())
+  maLoaiXe   String   @unique @db.VarChar(20)
+  tenLoaiXe  String   @db.VarChar(100)
+  moTa       String?  @db.Text
+  soGhe      Int
+  soTang     Int      @default(1)
+  tienNghi   Json?    // WiFi, điều hòa, nước uống, toilet...
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  xe         Xe[]
+
+  @@map("loai_xe")
+}
+
+// 4. Xe (Bus)
+model Xe {
+  id          Int      @id @default(autoincrement())
+  nhaXeId     Int
+  nhaXe       NhaXe    @relation(fields: [nhaXeId], references: [id])
+  loaiXeId    Int
+  loaiXe      LoaiXe   @relation(fields: [loaiXeId], references: [id])
+  bienSoXe    String   @unique @db.VarChar(20)
+  soGhe       Int
+  namSanXuat  Int?
+  mauXe       String?  @db.VarChar(50)
+  trangThai   TrangThaiXe @default(SAN_SANG)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  chuyenXe    ChuyenXe[]
+  gheXe       GheXe[]
+
+  @@map("xe")
+}
+
+enum TrangThaiXe {
+  SAN_SANG
+  DANG_CHAY
+  BAO_TRI
+  HONG
+}
+
+// 5. Tuyến xe (Bus Route)
+model TuyenXe {
+  id                   Int      @id @default(autoincrement())
+  maTuyen              String   @unique @db.VarChar(20)
+  nhaXeId              Int
+  nhaXe                NhaXe    @relation(fields: [nhaXeId], references: [id])
+  benXeDiId            Int
+  benXeDi              BenXe    @relation("TuyenXeDi", fields: [benXeDiId], references: [id])
+  benXeDenId           Int
+  benXeDen             BenXe    @relation("TuyenXeDen", fields: [benXeDenId], references: [id])
+  khoangCach           Int?     // km
+  thoiGianChayDuKien   Int?     // phút
+  moTa                 String?  @db.Text
+  trangThai            TrangThaiTuyenXe @default(HOAT_DONG)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  chuyenXe             ChuyenXe[]
+
+  @@map("tuyen_xe")
+}
+
+enum TrangThaiTuyenXe {
+  HOAT_DONG
+  TAM_NGUNG
+  NGUNG_HOAT_DONG
+}
+
+// 6. Chuyến xe (Bus Trip)
+model ChuyenXe {
+  id            Int      @id @default(autoincrement())
+  maChuyenXe    String   @unique @db.VarChar(20)
+  tuyenXeId     Int
+  tuyenXe       TuyenXe  @relation(fields: [tuyenXeId], references: [id])
+  xeId          Int
+  xe            Xe       @relation(fields: [xeId], references: [id])
+  gioDi         DateTime
+  gioDen        DateTime
+  giaVe         Decimal  @db.Decimal(15, 2)
+  soGheTrong    Int
+  trangThai     TrangThaiChuyenXe @default(SAP_KHOI_HANH)
+  ghiChu        String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  diemDung      DiemDung[]
+  donDatVeXe    DonDatVeXe[]
+
+  @@map("chuyen_xe")
+}
+
+enum TrangThaiChuyenXe {
+  SAP_KHOI_HANH
+  DANG_CHAY
+  HOAN_THANH
+  HUY
+  TRE_GIO
+}
+
+// 7. Điểm dừng (Bus Stop)
+model DiemDung {
+  id            Int      @id @default(autoincrement())
+  chuyenXeId    Int
+  chuyenXe      ChuyenXe @relation(fields: [chuyenXeId], references: [id])
+  thuTu         Int
+  tenDiemDung   String   @db.VarChar(191)
+  diaChi        String?  @db.Text
+  gioDen        DateTime?
+  gioDi         DateTime?
+  thoiGianDung  Int?     // phút
+  createdAt     DateTime @default(now())
+
+  @@map("diem_dung")
+}
+
+// 8. Ghế xe (Bus Seat)
+model GheXe {
+  id        Int      @id @default(autoincrement())
+  xeId      Int
+  xe        Xe       @relation(fields: [xeId], references: [id])
+  soGhe     String   @db.VarChar(10)
+  tang      Int      @default(1)
+  loaiGhe   LoaiGhe  @default(THUONG)
+  viTri     Json?    // {row: 1, col: 1}
+  trangThai TrangThaiGheXe @default(HOAT_DONG)
+  createdAt DateTime @default(now())
+
+  @@unique([xeId, soGhe], name: "unique_ghe_xe")
+  @@map("ghe_xe")
+}
+
+enum LoaiGhe {
+  THUONG
+  VIP
+  GIUONG_NAM
+}
+
+enum TrangThaiGheXe {
+  HOAT_DONG
+  BAO_TRI
+  KHONG_SU_DUNG
+}
+
+// 9. Đơn đặt vé xe (Bus Booking)
+model DonDatVeXe {
+  id                  Int      @id @default(autoincrement())
+  maDonDat            String   @unique @db.VarChar(20)
+  nguoiDungId         Int
+  nguoiDung           User     @relation(fields: [nguoiDungId], references: [id])
+  chuyenXeId          Int
+  chuyenXe            ChuyenXe @relation(fields: [chuyenXeId], references: [id])
+  soLuongGhe          Int
+  tongTien            Decimal  @db.Decimal(15, 2)
+  trangThaiDat        TrangThaiDatVeXe @default(CHO_THANH_TOAN)
+  phuongThucThanhToan String?  @db.VarChar(50)
+  ghiChu              String?  @db.Text
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  veXe                VeXe[]
+
+  @@map("don_dat_ve_xe")
+}
+
+enum TrangThaiDatVeXe {
+  CHO_THANH_TOAN
+  DA_THANH_TOAN
+  DA_HUY
+  DA_HOAN
+}
+
+// 10. Vé xe (Bus Ticket)
+model VeXe {
+  id               Int      @id @default(autoincrement())
+  donDatVeXeId     Int
+  donDatVeXe       DonDatVeXe @relation(fields: [donDatVeXeId], references: [id])
+  soVe             String   @unique @db.VarChar(191)
+  hoTenHanhKhach   String   @db.VarChar(191)
+  soDienThoai      String?  @db.VarChar(20)
+  email            String?  @db.VarChar(191)
+  soGhe            String   @db.VarChar(10)
+  giaVe            Decimal  @db.Decimal(15, 2)
+  trangThai        TrangThaiVeXe @default(HIEU_LUC)
+  ngayXuat         DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  @@map("ve_xe")
+}
+
+enum TrangThaiVeXe {
+  HIEU_LUC
+  DA_SU_DUNG
+  DA_HUY
+  DA_HOAN
+}
+
+// 11. Đánh giá nhà xe (Bus Company Review)
+model DanhGiaNhaXe {
+  id            Int      @id @default(autoincrement())
+  nhaXeId       Int
+  nhaXe         NhaXe    @relation(fields: [nhaXeId], references: [id])
+  nguoiDungId   Int
+  nguoiDung     User     @relation(fields: [nguoiDungId], references: [id])
+  chuyenXeId    Int?
+  diemDanhGia   Int      // 1-5
+  nhanXet       String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  @@map("danh_gia_nha_xe")
+}

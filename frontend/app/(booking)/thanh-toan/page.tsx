@@ -12,7 +12,7 @@ interface Booking {
   changBay: {
     chuyenBay: {
       soHieu: string;
-      hangHangKhong: {
+      hang: {
         tenHang: string;
       };
     };
@@ -92,7 +92,7 @@ function ThanhToanContent() {
       const headers: any = {
         'Content-Type': 'application/json',
       };
-      
+
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
@@ -227,9 +227,8 @@ function ThanhToanContent() {
 
               <div className="space-y-3">
                 {/* VNPay */}
-                <label className={`block border-2 rounded-lg p-4 cursor-pointer transition ${
-                  paymentMethod === 'VNPAY' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
-                }`}>
+                <label className={`block border-2 rounded-lg p-4 cursor-pointer transition ${paymentMethod === 'VNPAY' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                  }`}>
                   <div className="flex items-center gap-4">
                     <input
                       type="radio"
@@ -354,7 +353,7 @@ function ThanhToanContent() {
                 <div>
                   <p className="text-sm text-gray-600">Chuyến bay</p>
                   <p className="font-semibold">{booking.changBay.chuyenBay.soHieu}</p>
-                  <p className="text-sm text-gray-500">{booking.changBay.chuyenBay.hangHangKhong.tenHang}</p>
+                  <p className="text-sm text-gray-500">{booking.changBay.chuyenBay.hang.tenHang}</p>
                 </div>
 
                 <div>

@@ -36,6 +36,19 @@ export default function HomePage() {
   const [busTo, setBusTo] = useState('');
   const [busDate, setBusDate] = useState('');
   const [busPassengers, setBusPassengers] = useState(1);
+  const [busStationSuggestions, setBusStationSuggestions] = useState<any[]>([]);
+  const [showBusFromDropdown, setShowBusFromDropdown] = useState(false);
+  const [showBusToDropdown, setShowBusToDropdown] = useState(false);
+  const [popularBusCities] = useState([
+    'TP.HCM',
+    'Hà Nội',
+    'Đà Nẵng',
+    'Nha Trang',
+    'Đà Lạt',
+    'Cần Thơ',
+    'Vũng Tàu',
+    'Huế',
+  ]);
 
   useEffect(() => {
     // Load airports
@@ -192,12 +205,43 @@ export default function HomePage() {
     }
   };
 
+  const handleBusStationInput = async (value: string, type: 'from' | 'to') => {
+    if (type === 'from') {
+      setBusFrom(value);
+    } else {
+      setBusTo(value);
+    }
+
+    if (value.length > 1) {
+      try {
+        const response = await fetch(`http://localhost:5000/bus-search/suggestions?q=${encodeURIComponent(value)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setBusStationSuggestions(data);
+        }
+      } catch (error) {
+        console.error('Error fetching bus station suggestions:', error);
+        setBusStationSuggestions([]);
+      }
+    } else {
+      setBusStationSuggestions([]);
+    }
+  };
+
   const handleBusSearch = () => {
     if (!busFrom || !busTo || !busDate) {
       alert('Vui lòng điền đầy đủ thông tin tìm kiếm xe khách');
       return;
     }
-    alert('Chức năng tìm kiếm xe khách đang được phát triển');
+
+    // Navigate to bus search results page
+    const params = new URLSearchParams({
+      from: busFrom,
+      to: busTo,
+      date: busDate,
+      passengers: busPassengers.toString(),
+    });
+    window.location.href = `/xekhach?${params.toString()}`;
   };
 
   // Service tabs data
@@ -299,8 +343,8 @@ export default function HomePage() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 ${activeTab === tab.id
-                      ? 'bg-white text-gray-900 shadow-lg'
-                      : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30'
+                    ? 'bg-white text-gray-900 shadow-lg'
+                    : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30'
                     }`}
                 >
                   <span className="text-xl">{tab.icon}</span>
@@ -319,8 +363,8 @@ export default function HomePage() {
                     <button
                       onClick={() => setTripType('roundtrip')}
                       className={`px-5 py-2 rounded-lg font-medium transition-all ${tripType === 'roundtrip'
-                          ? 'bg-blue-100 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-blue-100 text-blue-600'
+                        : 'text-gray-600 hover:bg-gray-100'
                         }`}
                     >
                       ↔️ Khứ hồi
@@ -328,8 +372,8 @@ export default function HomePage() {
                     <button
                       onClick={() => setTripType('oneway')}
                       className={`px-5 py-2 rounded-lg font-medium transition-all ${tripType === 'oneway'
-                          ? 'bg-blue-100 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-blue-100 text-blue-600'
+                        : 'text-gray-600 hover:bg-gray-100'
                         }`}
                     >
                       → Một chiều
@@ -659,30 +703,164 @@ export default function HomePage() {
               {activeTab === 'buses' && (
                 <div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
+                    {/* From Station with Autocomplete */}
+                    <div className="relative">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Từ
                       </label>
-                      <input
-                        type="text"
-                        value={busFrom}
-                        onChange={(e) => setBusFrom(e.target.value)}
-                        placeholder="Nhập thành phố, nhà ga hoặc địa điểm"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                      />
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500">
+                          🚌
+                        </div>
+                        <input
+                          type="text"
+                          value={busFrom}
+                          onChange={(e) => handleBusStationInput(e.target.value, 'from')}
+                          onFocus={() => setShowBusFromDropdown(true)}
+                          placeholder="Nhập thành phố, nhà ga hoặc địa điểm"
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+
+                      {/* Dropdown for From Station */}
+                      {showBusFromDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl max-h-96 overflow-y-auto">
+                          {busStationSuggestions.length > 0 ? (
+                            <div>
+                              <div className="px-4 py-2 bg-gray-50 border-b">
+                                <h3 className="font-semibold text-gray-900 text-sm">Bến xe gợi ý</h3>
+                              </div>
+                              {busStationSuggestions.map((station: any) => (
+                                <button
+                                  key={station.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setBusFrom(station.thanhPho);
+                                    setShowBusFromDropdown(false);
+                                  }}
+                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors group"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-gray-400">📍</span>
+                                    <div className="flex-1">
+                                      <div className="font-medium text-gray-900 group-hover:text-blue-600">
+                                        {station.tenBenXe}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {station.thanhPho} - {station.maBenXe}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="px-4 py-2 bg-gray-50 border-b">
+                                <h3 className="font-semibold text-gray-900 text-sm">Thành phố phổ biến</h3>
+                              </div>
+                              {popularBusCities.map((city) => (
+                                <button
+                                  key={city}
+                                  type="button"
+                                  onClick={() => {
+                                    setBusFrom(city);
+                                    setShowBusFromDropdown(false);
+                                  }}
+                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors group"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-blue-500">🏙️</span>
+                                    <div className="font-medium text-gray-900 group-hover:text-blue-600">
+                                      {city}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
-                    <div>
+                    {/* To Station with Autocomplete */}
+                    <div className="relative">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Đến
                       </label>
-                      <input
-                        type="text"
-                        value={busTo}
-                        onChange={(e) => setBusTo(e.target.value)}
-                        placeholder="Nhập thành phố, nhà ga hoặc địa điểm"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                      />
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500">
+                          🚩
+                        </div>
+                        <input
+                          type="text"
+                          value={busTo}
+                          onChange={(e) => handleBusStationInput(e.target.value, 'to')}
+                          onFocus={() => setShowBusToDropdown(true)}
+                          placeholder="Nhập thành phố, nhà ga hoặc địa điểm"
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+
+                      {/* Dropdown for To Station */}
+                      {showBusToDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl max-h-96 overflow-y-auto">
+                          {busStationSuggestions.length > 0 ? (
+                            <div>
+                              <div className="px-4 py-2 bg-gray-50 border-b">
+                                <h3 className="font-semibold text-gray-900 text-sm">Bến xe gợi ý</h3>
+                              </div>
+                              {busStationSuggestions.map((station: any) => (
+                                <button
+                                  key={station.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setBusTo(station.thanhPho);
+                                    setShowBusToDropdown(false);
+                                  }}
+                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors group"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-gray-400">📍</span>
+                                    <div className="flex-1">
+                                      <div className="font-medium text-gray-900 group-hover:text-blue-600">
+                                        {station.tenBenXe}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {station.thanhPho} - {station.maBenXe}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="px-4 py-2 bg-gray-50 border-b">
+                                <h3 className="font-semibold text-gray-900 text-sm">Thành phố phổ biến</h3>
+                              </div>
+                              {popularBusCities.map((city) => (
+                                <button
+                                  key={city}
+                                  type="button"
+                                  onClick={() => {
+                                    setBusTo(city);
+                                    setShowBusToDropdown(false);
+                                  }}
+                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors group"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-blue-500">🏙️</span>
+                                    <div className="font-medium text-gray-900 group-hover:text-blue-600">
+                                      {city}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -715,6 +893,7 @@ export default function HomePage() {
 
                     <button
                       onClick={handleBusSearch}
+
                       disabled={!busFrom || !busTo || !busDate}
                       className="px-10 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 self-end transition-all"
                     >

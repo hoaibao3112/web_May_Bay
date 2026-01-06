@@ -8,6 +8,8 @@ import {
   Query,
   UseGuards,
   Request,
+  Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -17,13 +19,21 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 
 @Controller('bookings')
 export class BookingsController {
+  private readonly logger = new Logger(BookingsController.name);
+
   constructor(private bookingsService: BookingsService) {}
 
   // Tạo booking mới
   @Post()
   async createBooking(@Body() dto: CreateBookingDto, @Request() req?) {
-    const userId = req?.user?.id;
-    return this.bookingsService.createBooking(dto, userId);
+    try {
+      this.logger.log('Received booking request:', JSON.stringify(dto));
+      const userId = req?.user?.id;
+      return await this.bookingsService.createBooking(dto, userId);
+    } catch (error) {
+      this.logger.error('Error creating booking:', error.message, error.stack);
+      throw new BadRequestException(error.message || 'Không thể tạo đơn đặt vé');
+    }
   }
 
   // Thêm hành khách vào booking

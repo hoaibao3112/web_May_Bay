@@ -130,6 +130,8 @@ function ThongTinHanhKhachContent() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      console.log('Sending booking data:', bookingData);
+
       const res = await fetch('http://localhost:5000/bookings', {
         method: 'POST',
         headers,
@@ -137,7 +139,9 @@ function ThongTinHanhKhachContent() {
       });
 
       if (!res.ok) {
-        throw new Error('Đặt chỗ thất bại');
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Booking failed:', res.status, errorData);
+        throw new Error(`Đặt chỗ thất bại: ${errorData.message || res.statusText}`);
       }
 
       const booking = await res.json();

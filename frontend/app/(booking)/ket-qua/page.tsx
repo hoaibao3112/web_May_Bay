@@ -14,10 +14,11 @@ interface Airport {
 interface Flight {
   changBayId: number;
   chuyenBayId: number;
-  soHieu: string;
-  hangHangKhong: {
-    maHang: string;
+  soHieuChuyenBay: string;
+  hang: {
+    maIata: string;
     tenHang: string;
+    logo?: string;
   };
   sanBayDi: {
     maIata: string;
@@ -29,17 +30,18 @@ interface Flight {
     tenSanBay: string;
     thanhPho: string;
   };
-  ngayKhoiHanh: string;
-  gioKhoiHanh: string;
+  gioDi: string;
   gioDen: string;
-  thoiGianBay: number;
+  thoiGianBayPhut: number;
   giaVe: {
-    hangVeId: number;
-    tenHang: string;
-    giaGoc: number;
-    giaBan: number;
-    soChoCon: number;
+    giaVeId: number;
+    hangVe: string;
+    tenHangVe: string;
     nhomGia: string;
+    nhomGiaId: number;
+    giaCoSo: number;
+    tongGia: number;
+    soChoCon: number;
   }[];
 }
 
@@ -84,6 +86,8 @@ function KetQuaContent() {
       const nguoiLon = parseInt(searchParams.get('nguoiLon') || '1');
       const treEm = parseInt(searchParams.get('treEm') || '0');
 
+      console.log('Search params:', { sanBayDiId, sanBayDenId, ngayDi, nguoiLon, treEm });
+
       if (!sanBayDiId || !sanBayDenId || !ngayDi) {
         console.error('Missing required search parameters');
         setLoading(false);
@@ -99,26 +103,35 @@ function KetQuaContent() {
         treEm,
       });
 
+      const requestBody = {
+        sanBayDiId: parseInt(sanBayDiId),
+        sanBayDenId: parseInt(sanBayDenId),
+        ngayDi,
+        loaiChuyen: 'ONE_WAY',
+        nguoiLon,
+        treEm,
+        soSinh: 0,
+      };
+
+      console.log('Request body:', requestBody);
+
       const res = await fetch('http://localhost:5000/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sanBayDiId: parseInt(sanBayDiId),
-          sanBayDenId: parseInt(sanBayDenId),
-          ngayDi,
-          loaiChuyen: 'ONE_WAY',
-          nguoiLon,
-          treEm,
-          soSinh: 0,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('Response status:', res.status);
+
       if (!res.ok) {
+        const errorText = await res.text();
+        console.error('API Error:', errorText);
         throw new Error('Search failed');
       }
 
       const data = await res.json();
       console.log('Search results:', data);
+      console.log('Number of flights:', data.ketQua?.length || 0);
       setFlights(data.ketQua || []);
     } catch (error) {
       console.error('Lỗi tìm kiếm:', error);
@@ -168,6 +181,14 @@ function KetQuaContent() {
     : [];
 
   const handleSelectFlight = (changBayId: number, hangVeId: number, giaBan: number) => {
+    // Validate parameters before converting to string
+    if (!changBayId || !hangVeId) {
+      console.error('Invalid flight selection: missing changBayId or hangVeId');
+      return;
+    }
+    
+    console.log('Selecting flight:', { changBayId, hangVeId, giaBan });
+    
     const params = new URLSearchParams();
     params.set('changBayId', changBayId.toString());
     params.set('hangVeId', hangVeId.toString());
@@ -412,7 +433,7 @@ function KetQuaContent() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {flight.giaVe.map((fare) => (
                             <div
-                              key={fare.hangVeId}
+                              key={fare.giaVeId}
                               className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 transition cursor-pointer group"
                             >
                               <div className="flex justify-between items-start mb-3">
@@ -457,9 +478,9 @@ function KetQuaContent() {
                                 </p>
 
                                 <button
-                                  onClick={() => handleSelectFlight(flight.changBayId, fare.hangVeId, fare.tongGia || 0)}
+                                  onClick={() => handleSelectFlight(flight.changBayId, fare.nhomGiaId, fare.tongGia || 0)}
                                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 group-hover:bg-blue-700 transition"
-                                  disabled={fare.soChoCon === 0}
+                                  disabled={fare.soChoCon === 0 || !flight.changBayId || !fare.nhomGiaId}
                                 >
                                   {fare.soChoCon === 0 ? 'Hết chỗ' : 'Chọn'}
                                 </button>

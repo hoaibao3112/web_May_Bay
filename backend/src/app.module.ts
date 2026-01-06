@@ -16,6 +16,11 @@ import { PromotionsModule } from './promotions/promotions.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HotelsModule } from './hotels/hotels.module';
+import { BusCompaniesModule } from './bus-companies/bus-companies.module';
+import { BusStationsModule } from './bus-stations/bus-stations.module';
+import { BusSearchModule } from './bus-search/bus-search.module';
+import { BusBookingsModule } from './bus-bookings/bus-bookings.module';
+import { BusReviewsModule } from './bus-reviews/bus-reviews.module';
 import { TestDbController } from './test-db.controller';
 
 @Module({
@@ -37,8 +42,13 @@ import { TestDbController } from './test-db.controller';
     ReviewsModule,
     NotificationsModule,
     HotelsModule,
+    BusCompaniesModule,
+    BusStationsModule,
+    BusSearchModule,
+    BusBookingsModule,
+    BusReviewsModule,
   ],
   controllers: [TestDbController],
 })
-export class AppModule {}
+export class AppModule { }
 
