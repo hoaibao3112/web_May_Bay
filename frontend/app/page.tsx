@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import UserDropdown from './components/UserDropdown';
+import LocationAutocomplete from './components/LocationAutocomplete';
 
 export default function HomePage() {
   const cityInputRef = useRef<HTMLDivElement>(null);
@@ -294,27 +294,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl">✈️</span>
-              <span className="text-xl font-bold text-blue-600">BayNhanh</span>
-            </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/tim-chuyen" className="text-gray-700 hover:text-blue-600 font-medium">
-                Vé máy bay
-              </Link>
-              <Link href="/quan-ly-dat-cho" className="text-gray-700 hover:text-blue-600 font-medium">
-                Quản lý đặt chỗ
-              </Link>
-              <UserDropdown />
-            </nav>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section with Background Image */}
       <section className="relative h-[600px] overflow-hidden">
         {/* Background Image */}
@@ -704,163 +683,27 @@ export default function HomePage() {
                 <div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* From Station with Autocomplete */}
-                    <div className="relative">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Từ
+                        🚌 Từ
                       </label>
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500">
-                          🚌
-                        </div>
-                        <input
-                          type="text"
-                          value={busFrom}
-                          onChange={(e) => handleBusStationInput(e.target.value, 'from')}
-                          onFocus={() => setShowBusFromDropdown(true)}
-                          placeholder="Nhập thành phố, nhà ga hoặc địa điểm"
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                        />
-                      </div>
-
-                      {/* Dropdown for From Station */}
-                      {showBusFromDropdown && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl max-h-96 overflow-y-auto">
-                          {busStationSuggestions.length > 0 ? (
-                            <div>
-                              <div className="px-4 py-2 bg-gray-50 border-b">
-                                <h3 className="font-semibold text-gray-900 text-sm">Bến xe gợi ý</h3>
-                              </div>
-                              {busStationSuggestions.map((station: any) => (
-                                <button
-                                  key={station.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setBusFrom(station.thanhPho);
-                                    setShowBusFromDropdown(false);
-                                  }}
-                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors group"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-gray-400">📍</span>
-                                    <div className="flex-1">
-                                      <div className="font-medium text-gray-900 group-hover:text-blue-600">
-                                        {station.tenBenXe}
-                                      </div>
-                                      <div className="text-sm text-gray-500">
-                                        {station.thanhPho} - {station.maBenXe}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="px-4 py-2 bg-gray-50 border-b">
-                                <h3 className="font-semibold text-gray-900 text-sm">Thành phố phổ biến</h3>
-                              </div>
-                              {popularBusCities.map((city) => (
-                                <button
-                                  key={city}
-                                  type="button"
-                                  onClick={() => {
-                                    setBusFrom(city);
-                                    setShowBusFromDropdown(false);
-                                  }}
-                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors group"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-blue-500">🏙️</span>
-                                    <div className="font-medium text-gray-900 group-hover:text-blue-600">
-                                      {city}
-                                    </div>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      <LocationAutocomplete
+                        value={busFrom}
+                        onChange={(value) => setBusFrom(value)}
+                        placeholder="hồ chí minh"
+                      />
                     </div>
 
                     {/* To Station with Autocomplete */}
-                    <div className="relative">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Đến
+                        🚩 Đến
                       </label>
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500">
-                          🚩
-                        </div>
-                        <input
-                          type="text"
-                          value={busTo}
-                          onChange={(e) => handleBusStationInput(e.target.value, 'to')}
-                          onFocus={() => setShowBusToDropdown(true)}
-                          placeholder="Nhập thành phố, nhà ga hoặc địa điểm"
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                        />
-                      </div>
-
-                      {/* Dropdown for To Station */}
-                      {showBusToDropdown && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl max-h-96 overflow-y-auto">
-                          {busStationSuggestions.length > 0 ? (
-                            <div>
-                              <div className="px-4 py-2 bg-gray-50 border-b">
-                                <h3 className="font-semibold text-gray-900 text-sm">Bến xe gợi ý</h3>
-                              </div>
-                              {busStationSuggestions.map((station: any) => (
-                                <button
-                                  key={station.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setBusTo(station.thanhPho);
-                                    setShowBusToDropdown(false);
-                                  }}
-                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors group"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-gray-400">📍</span>
-                                    <div className="flex-1">
-                                      <div className="font-medium text-gray-900 group-hover:text-blue-600">
-                                        {station.tenBenXe}
-                                      </div>
-                                      <div className="text-sm text-gray-500">
-                                        {station.thanhPho} - {station.maBenXe}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="px-4 py-2 bg-gray-50 border-b">
-                                <h3 className="font-semibold text-gray-900 text-sm">Thành phố phổ biến</h3>
-                              </div>
-                              {popularBusCities.map((city) => (
-                                <button
-                                  key={city}
-                                  type="button"
-                                  onClick={() => {
-                                    setBusTo(city);
-                                    setShowBusToDropdown(false);
-                                  }}
-                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors group"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-blue-500">🏙️</span>
-                                    <div className="font-medium text-gray-900 group-hover:text-blue-600">
-                                      {city}
-                                    </div>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      <LocationAutocomplete
+                        value={busTo}
+                        onChange={(value) => setBusTo(value)}
+                        placeholder="hà nội"
+                      />
                     </div>
 
                     <div>

@@ -54,6 +54,7 @@ function KetQuaContent() {
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([0, 10000000]);
   const [airports, setAirports] = useState<Airport[]>([]);
+  const [showSearchForm, setShowSearchForm] = useState(false);
   const [searchInfo, setSearchInfo] = useState({
     sanBayDi: '',
     sanBayDen: '',
@@ -61,11 +62,48 @@ function KetQuaContent() {
     nguoiLon: 1,
     treEm: 0,
   });
+  const [searchForm, setSearchForm] = useState({
+    loaiChuyen: 'MOT_CHIEU',
+    sanBayDiId: '',
+    sanBayDenId: '',
+    ngayDi: '',
+    ngayVe: '',
+    nguoiLon: 1,
+    treEm: 0,
+    soSinh: 0,
+    hangVe: 'ECONOMY',
+  });
 
   useEffect(() => {
     loadAirports();
-    searchFlights();
   }, []);
+
+  useEffect(() => {
+    // Initialize search form from URL params
+    const sanBayDiId = searchParams.get('sanBayDiId') || '';
+    const sanBayDenId = searchParams.get('sanBayDenId') || '';
+    const ngayDi = searchParams.get('ngayDi') || '';
+    const nguoiLon = parseInt(searchParams.get('nguoiLon') || '1');
+    const treEm = parseInt(searchParams.get('treEm') || '0');
+    const soSinh = parseInt(searchParams.get('soSinh') || '0');
+    
+    setSearchForm({
+      loaiChuyen: 'MOT_CHIEU',
+      sanBayDiId,
+      sanBayDenId,
+      ngayDi,
+      ngayVe: '',
+      nguoiLon,
+      treEm,
+      soSinh,
+      hangVe: 'ECONOMY',
+    });
+    
+    // Tìm kiếm lại khi URL thay đổi
+    if (sanBayDiId && sanBayDenId && ngayDi) {
+      searchFlights();
+    }
+  }, [searchParams]);
 
   const loadAirports = async () => {
     try {
@@ -153,7 +191,21 @@ function KetQuaContent() {
     const mins = minutes % 60;
     return `${hours}g ${mins}ph`;
   };
-
+  const handleNewSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const params = new URLSearchParams({
+      sanBayDiId: searchForm.sanBayDiId,
+      sanBayDenId: searchForm.sanBayDenId,
+      ngayDi: searchForm.ngayDi,
+      loaiChuyen: searchForm.loaiChuyen,
+      nguoiLon: searchForm.nguoiLon.toString(),
+      treEm: searchForm.treEm.toString(),
+      soSinh: searchForm.soSinh.toString(),
+    });
+    router.push(`/ket-qua?${params.toString()}`);
+    setShowSearchForm(false);
+  };
   const filteredFlights = Array.isArray(flights) ? flights
     .filter(flight => {
       if (selectedAirlines.length > 0 && !selectedAirlines.includes(flight.hang?.maIata || '')) {
@@ -200,27 +252,6 @@ function KetQuaContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => router.push('/')}>
-              <span className="text-2xl">✈️</span>
-              <span className="text-xl font-bold text-blue-600">BayNhanh</span>
-            </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <a href="/" className="text-gray-700 hover:text-blue-600 font-medium">
-                Vé máy bay
-              </a>
-              <a href="/quan-ly-dat-cho" className="text-gray-700 hover:text-blue-600 font-medium">
-                Quản lý đặt chỗ
-              </a>
-              <UserDropdown />
-            </nav>
-          </div>
-        </div>
-      </header>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Search Summary - Chuyến Bay Của Bạn */}
         <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl shadow-lg p-6 mb-6 text-white">
@@ -259,14 +290,209 @@ function KetQuaContent() {
               </div>
             </div>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => setShowSearchForm(!showSearchForm)}
               className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-gray-50 font-semibold shadow-md transition flex items-center gap-2"
             >
-              <span>🔄</span>
-              <span>Đặt lại</span>
+              <span>🔍</span>
+              <span>Đổi tìm kiếm</span>
             </button>
           </div>
         </div>
+
+        {/* Search Form Modal/Expandable */}
+        {showSearchForm && (
+          <div className="bg-white rounded-xl shadow-xl p-8 mb-6 max-w-5xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">🔍 Tìm chuyến bay mới</h2>
+              <button
+                onClick={() => setShowSearchForm(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex gap-4 mb-6">
+              <button
+                onClick={() => setSearchForm({ ...searchForm, loaiChuyen: 'MOT_CHIEU' })}
+                className={`px-6 py-2 rounded-lg font-medium ${
+                  searchForm.loaiChuyen === 'MOT_CHIEU'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Một chiều
+              </button>
+              <button
+                onClick={() => setSearchForm({ ...searchForm, loaiChuyen: 'KHU_HOI' })}
+                className={`px-6 py-2 rounded-lg font-medium ${
+                  searchForm.loaiChuyen === 'KHU_HOI'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Khứ hồi
+              </button>
+              <button
+                onClick={() => setSearchForm({ ...searchForm, loaiChuyen: 'NHIEU_THANH_PHO' })}
+                className={`px-6 py-2 rounded-lg font-medium ${
+                  searchForm.loaiChuyen === 'NHIEU_THANH_PHO'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Nhiều thành phố
+              </button>
+            </div>
+
+            <form onSubmit={handleNewSearch} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Từ */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    📍 Từ
+                  </label>
+                  <select
+                    value={searchForm.sanBayDiId}
+                    onChange={(e) => setSearchForm({ ...searchForm, sanBayDiId: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Chọn điểm đi</option>
+                    {airports.map((airport) => (
+                      <option key={airport.id} value={airport.id}>
+                        {airport.maIata} - {airport.tenSanBay} ({airport.thanhPho})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Đến */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    📍 Đến
+                  </label>
+                  <select
+                    value={searchForm.sanBayDenId}
+                    onChange={(e) => setSearchForm({ ...searchForm, sanBayDenId: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Chọn điểm đến</option>
+                    {airports.map((airport) => (
+                      <option key={airport.id} value={airport.id}>
+                        {airport.maIata} - {airport.tenSanBay} ({airport.thanhPho})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Ngày đi */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    📅 Ngày đi
+                  </label>
+                  <input
+                    type="date"
+                    value={searchForm.ngayDi}
+                    onChange={(e) => setSearchForm({ ...searchForm, ngayDi: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Ngày về */}
+                {searchForm.loaiChuyen === 'KHU_HOI' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      📅 Ngày về
+                    </label>
+                    <input
+                      type="date"
+                      value={searchForm.ngayVe}
+                      onChange={(e) => setSearchForm({ ...searchForm, ngayVe: e.target.value })}
+                      min={searchForm.ngayDi || new Date().toISOString().split('T')[0]}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+
+                {/* Hạng vé */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    💺 Hạng vé
+                  </label>
+                  <select
+                    value={searchForm.hangVe}
+                    onChange={(e) => setSearchForm({ ...searchForm, hangVe: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="ECONOMY">Phổ thông</option>
+                    <option value="BUSINESS">Thương gia</option>
+                    <option value="FIRST">Hạng nhất</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Hành khách */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    👤 Người lớn
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="9"
+                    value={searchForm.nguoiLon}
+                    onChange={(e) => setSearchForm({ ...searchForm, nguoiLon: parseInt(e.target.value) })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">12 tuổi trở lên</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    👦 Trẻ em
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="9"
+                    value={searchForm.treEm}
+                    onChange={(e) => setSearchForm({ ...searchForm, treEm: parseInt(e.target.value) })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">2-11 tuổi</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    👶 Sơ sinh
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="9"
+                    value={searchForm.soSinh}
+                    onChange={(e) => setSearchForm({ ...searchForm, soSinh: parseInt(e.target.value) })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Dưới 2 tuổi</p>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-blue-800 transition shadow-lg flex items-center justify-center gap-2"
+              >
+                <span>🔍</span>
+                <span>Tìm chuyến bay</span>
+              </button>
+            </form>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Filters Sidebar */}

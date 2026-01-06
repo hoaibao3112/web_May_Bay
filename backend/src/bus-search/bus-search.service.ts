@@ -9,21 +9,30 @@ export class BusSearchService {
     async searchTrips(searchDto: SearchBusDto) {
         const { ngayDi, benXeDiId, benXeDenId, thanhPhoDi, thanhPhoDen, soKhach, loaiXe, nhaXeId, giaMin, giaMax } = searchDto;
 
-        // Parse date
-        const startDate = new Date(ngayDi);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(ngayDi);
-        endDate.setHours(23, 59, 59, 999);
-
         const where: any = {
-            gioDi: {
-                gte: startDate,
-                lte: endDate,
-            },
             trangThai: {
                 in: ['SAP_KHOI_HANH', 'DANG_CHAY'],
             },
         };
+
+        // Parse date - only if provided
+        if (ngayDi) {
+            const startDate = new Date(ngayDi);
+            
+            // Validate date
+            if (isNaN(startDate.getTime())) {
+                throw new Error('Ngày đi không hợp lệ');
+            }
+            
+            startDate.setHours(0, 0, 0, 0);
+            const endDate = new Date(ngayDi);
+            endDate.setHours(23, 59, 59, 999);
+            
+            where.gioDi = {
+                gte: startDate,
+                lte: endDate,
+            };
+        }
 
         // Filter by seats available
         if (soKhach) {
@@ -40,28 +49,26 @@ export class BusSearchService {
         }
 
         // Filter by route
-        if (benXeDiId || benXeDenId || thanhPhoDi || thanhPhoDen) {
-            where.tuyenXe = {};
+        where.tuyenXe = {};
 
-            if (benXeDiId) {
-                where.tuyenXe.benXeDiId = benXeDiId;
-            }
+        if (benXeDiId) {
+            where.tuyenXe.benXeDiId = benXeDiId;
+        }
 
-            if (benXeDenId) {
-                where.tuyenXe.benXeDenId = benXeDenId;
-            }
+        if (benXeDenId) {
+            where.tuyenXe.benXeDenId = benXeDenId;
+        }
 
-            if (thanhPhoDi) {
-                where.tuyenXe.benXeDi = {
-                    thanhPho: { contains: thanhPhoDi },
-                };
-            }
+        if (thanhPhoDi) {
+            where.tuyenXe.benXeDi = {
+                thanhPho: { contains: thanhPhoDi },
+            };
+        }
 
-            if (thanhPhoDen) {
-                where.tuyenXe.benXeDen = {
-                    thanhPho: { contains: thanhPhoDen },
-                };
-            }
+        if (thanhPhoDen) {
+            where.tuyenXe.benXeDen = {
+                thanhPho: { contains: thanhPhoDen },
+            };
         }
 
         // Filter by bus company
@@ -167,5 +174,49 @@ export class BusSearchService {
             },
             take: 10,
         });
+    }
+
+    async getTripById(id: number) {
+        const trip = await this.prisma.chuyenXe.findUnique({
+            where: { id },
+            include: {
+                tuyenXe: {
+                    include: {
+                        benXeDi: true,
+                        benXeDen: true,
+                        nhaXe: true,
+                    },
+                },
+                xe: {
+                    include: {
+                        loaiXe: true,
+                    },
+                },
+                diemDung: {
+                    orderBy: { thuTu: 'asc' },
+                },
+            },
+        });
+
+        if (!trip) {
+            throw new Error('Không tìm thấy chuyến xe');
+        }
+
+        return {
+            id: trip.id,
+            maChuyenXe: trip.maChuyenXe,
+            nhaXe: trip.tuyenXe.nhaXe,
+            benXeDi: trip.tuyenXe.benXeDi,
+            benXeDen: trip.tuyenXe.benXeDen,
+            gioDi: trip.gioDi,
+            gioDen: trip.gioDen,
+            giaVe: trip.giaVe,
+            soGheTrong: trip.soGheTrong,
+            loaiXe: trip.xe.loaiXe,
+            tienNghi: trip.xe.loaiXe.tienNghi,
+            diemDung: trip.diemDung,
+            khoangCach: trip.tuyenXe.khoangCach,
+            thoiGianChay: trip.tuyenXe.thoiGianChayDuKien,
+        };
     }
 }

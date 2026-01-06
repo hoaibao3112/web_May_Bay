@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, Param, ParseIntPipe } from '@nestjs/common';
 import { BusSearchService } from './bus-search.service';
 import { SearchBusDto } from './dto/search-bus.dto';
 
@@ -19,5 +19,10 @@ export class BusSearchController {
     @Get('suggestions')
     suggestStations(@Query('q') query: string) {
         return this.busSearchService.suggestStations(query);
+    }
+
+    @Get(':id')
+    getTripById(@Param('id', ParseIntPipe) id: number) {
+        return this.busSearchService.getTripById(id);
     }
 }

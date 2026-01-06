@@ -8,6 +8,13 @@ interface City {
   code: string;
 }
 
+interface BusStation {
+  id: number;
+  tenBenXe: string;
+  thanhPho: string;
+  diaChi?: string;
+}
+
 interface LocationAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
@@ -22,6 +29,7 @@ export default function LocationAutocomplete({
   className = ""
 }: LocationAutocompleteProps) {
   const [cities, setCities] = useState<City[]>([]);
+  const [popularCities, setPopularCities] = useState<string[]>([]);
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +48,38 @@ export default function LocationAutocomplete({
         console.error('Lỗi tải danh sách thành phố:', error);
       }
     };
+    
+    const fetchPopularCities = async () => {
+      try {
+        // Lấy danh sách các thành phố có bến xe
+        const res = await fetch('http://localhost:5000/bus-stations');
+        if (res.ok) {
+          const stations: BusStation[] = await res.json();
+          // Lấy các thành phố duy nhất và phổ biến
+          const citiesSet = new Set(stations.map(s => s.thanhPho));
+          const popular = Array.from(citiesSet)
+            .filter(city => city) // Loại bỏ null/undefined
+            .slice(0, 8); // Top 8 thành phố
+          setPopularCities(popular);
+        }
+      } catch (error) {
+        console.error('Lỗi tải thành phố phổ biến:', error);
+        // Fallback với các thành phố phổ biến
+        setPopularCities([
+          'Hồ Chí Minh', 
+          'Hà Nội', 
+          'Đà Nẵng', 
+          'Nha Trang',
+          'Đà Lạt',
+          'Cần Thơ',
+          'Vũng Tàu',
+          'Huế'
+        ]);
+      }
+    };
+    
     fetchCities();
+    fetchPopularCities();
   }, []);
 
   // Lọc thành phố khi người dùng nhập
@@ -88,15 +127,14 @@ export default function LocationAutocomplete({
     setShowSuggestions(true);
   };
 
-  const handleSelectCity = (city: City) => {
-    onChange(city.name);
+  const handleSelectCity = (cityName: string) => {
+    onChange(cityName);
     setShowSuggestions(false);
   };
 
   const handleInputFocus = () => {
-    if (value && filteredCities.length > 0) {
-      setShowSuggestions(true);
-    }
+    // Hiển thị gợi ý khi focus
+    setShowSuggestions(true);
   };
 
   return (
@@ -112,33 +150,71 @@ export default function LocationAutocomplete({
       />
       
       {/* Dropdown Suggestions */}
-      {showSuggestions && filteredCities.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto">
-          {filteredCities.map((city) => (
-            <button
-              key={city.id}
-              onClick={() => handleSelectCity(city)}
-              className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">📍</span>
-                  <div>
-                    <div className="font-medium text-gray-900">{city.name}</div>
-                    <div className="text-xs text-gray-500">Việt Nam</div>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-400 font-mono">{city.code}</span>
+      {showSuggestions && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+          {/* Nếu đang gõ và có kết quả tìm kiếm */}
+          {value && filteredCities.length > 0 && (
+            <>
+              <div className="px-4 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b">
+                KẾT QUẢ TÌM KIẾM
               </div>
-            </button>
-          ))}
-        </div>
-      )}
+              {filteredCities.map((city) => (
+                <button
+                  key={city.id}
+                  onClick={() => handleSelectCity(city.name)}
+                  className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">📍</span>
+                      <div>
+                        <div className="font-medium text-gray-900">{city.name}</div>
+                        <div className="text-xs text-gray-500">Việt Nam</div>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-400 font-mono uppercase">{city.code}</span>
+                  </div>
+                </button>
+              ))}
+            </>
+          )}
 
-      {/* No Results */}
-      {showSuggestions && value && filteredCities.length === 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-          <p className="text-gray-500 text-center">Không tìm thấy thành phố nào</p>
+          {/* Nếu đang gõ nhưng không có kết quả */}
+          {value && filteredCities.length === 0 && (
+            <div className="p-4">
+              <p className="text-gray-500 text-center text-sm">
+                ❌ Không tìm thấy thành phố "{value}"
+              </p>
+              <p className="text-gray-400 text-center text-xs mt-1">
+                Vui lòng thử từ khóa khác
+              </p>
+            </div>
+          )}
+
+          {/* Nếu chưa gõ gì - hiển thị các thành phố phổ biến */}
+          {!value && popularCities.length > 0 && (
+            <>
+              <div className="px-4 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b flex items-center gap-2">
+                <span>⭐</span>
+                <span>ĐIỂM ĐẾN PHỔ BIẾN</span>
+              </div>
+              {popularCities.map((cityName, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSelectCity(cityName)}
+                  className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">🚌</span>
+                    <div>
+                      <div className="font-medium text-gray-900">{cityName}</div>
+                      <div className="text-xs text-gray-500">Nhiều tuyến xe khách</div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>
