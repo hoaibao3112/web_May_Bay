@@ -12,25 +12,27 @@ datasource db {
 // ============================
 
 model User {
-  id            Int      @id @default(autoincrement())
-  email         String   @unique
-  password      String
-  hoTen         String
-  soDienThoai   String?
-  vaiTro        VaiTro   @default(CUSTOMER)
-  googleId      String?  @unique
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  donDatVe           DonDatVe[]
-  thanhToan          ThanhToan[]
-  giaoDichThanhToan  GiaoDichThanhToan[]
-  danhGia            DanhGia[]
-  thongBao           ThongBao[]
-  datPhong           DatPhong[]
-  danhGiaKS          DanhGiaKhachSan[]
-  donDatVeXe         DonDatVeXe[]
-  danhGiaNhaXe       DanhGiaNhaXe[]
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  hoTen       String
+  soDienThoai String?
+  vaiTro      VaiTro   @default(CUSTOMER)
+  googleId    String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  donDatVe          DonDatVe[]
+  thanhToan         ThanhToan[]
+  giaoDichThanhToan GiaoDichThanhToan[]
+  danhGia           DanhGia[]
+  thongBao          ThongBao[]
+  datPhong          DatPhong[]
+  danhGiaKS         DanhGiaKhachSan[]
+  donDatVeXe        DonDatVeXe[]
+  danhGiaNhaXe      DanhGiaNhaXe[]
+  donThueXe         DonThueXe[]
+  danhGiaNhaCungCap DanhGiaNhaCungCap[]
 
   @@map("users")
 }
@@ -46,13 +48,13 @@ enum VaiTro {
 // ============================
 
 model QuocGia {
-  id        Int      @id @default(autoincrement())
-  maQuocGia String   @unique @db.VarChar(3) // VNM, USA, THA
+  id         Int      @id @default(autoincrement())
+  maQuocGia  String   @unique @db.VarChar(3) // VNM, USA, THA
   tenQuocGia String
-  createdAt DateTime @default(now())
-  
-  sanBay    SanBay[]
-  khachSan  KhachSan[]
+  createdAt  DateTime @default(now())
+
+  sanBay   SanBay[]
+  khachSan KhachSan[]
 
   @@map("quoc_gia")
 }
@@ -61,60 +63,61 @@ model TienTe {
   id        Int      @id @default(autoincrement())
   maTienTe  String   @unique @db.VarChar(3) // VND, USD, THB
   tenTienTe String
-  tyGia     Decimal  @db.Decimal(15, 4) @default(1.0)
+  tyGia     Decimal  @default(1.0) @db.Decimal(15, 4)
   createdAt DateTime @default(now())
 
   @@map("tien_te")
 }
 
 model SanBay {
-  id          Int      @id @default(autoincrement())
-  maIata      String   @unique @db.VarChar(3) // SGN, HAN, BKK
-  maSanBay    String   @unique @db.VarChar(3) // Alias cho maIata
-  tenSanBay   String
-  thanhPho    String
-  quocGiaId   Int
-  quocGia     QuocGia  @relation(fields: [quocGiaId], references: [id])
-  kinhDo      Decimal? @db.Decimal(10, 6)
-  viDo        Decimal? @db.Decimal(10, 6)
-  createdAt   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  maIata    String   @unique @db.VarChar(3) // SGN, HAN, BKK
+  maSanBay  String   @unique @db.VarChar(3) // Alias cho maIata
+  tenSanBay String
+  thanhPho  String
+  quocGiaId Int
+  quocGia   QuocGia  @relation(fields: [quocGiaId], references: [id])
+  kinhDo    Decimal? @db.Decimal(10, 6)
+  viDo      Decimal? @db.Decimal(10, 6)
+  createdAt DateTime @default(now())
 
-  changBayDi  ChangBay[] @relation("ChangBayDi")
-  changBayDen ChangBay[] @relation("ChangBayDen")
+  changBayDi       ChangBay[]         @relation("ChangBayDi")
+  changBayDen      ChangBay[]         @relation("ChangBayDen")
+  tuyenDuongThueXe TuyenDuongThueXe[]
 
   @@map("san_bay")
 }
 
 model KhachSan {
-  id          Int      @id @default(autoincrement())
-  tenKhachSan String
-  diaChi      String
-  thanhPho    String
-  quocGiaId   Int
-  quocGia     QuocGia  @relation(fields: [quocGiaId], references: [id])
-  soSao       Int      @default(0)
-  moTa        String?  @db.Text
-  hinhAnh     String?  // Main featured image
-  dienThoai   String?
-  email       String?
-  website     String?
-  tienNghi    String?  @db.Text // JSON string: ["WiFi", "Pool", "Gym", "Restaurant", "Bar", "Parking"]
-  giaThapNhat Decimal? @db.Decimal(15, 2)
-  danhGiaTB   Decimal? @db.Decimal(3, 2)
-  soDanhGia   Int      @default(0) // Number of reviews (e.g., 847 đánh giá)
-  gioCheckin  String?  @default("14:00") // Check-in time
-  gioCheckout String?  @default("12:00") // Check-out time
-  chinhSachHuy String? @db.Text // Cancellation policy
+  id               Int      @id @default(autoincrement())
+  tenKhachSan      String
+  diaChi           String
+  thanhPho         String
+  quocGiaId        Int
+  quocGia          QuocGia  @relation(fields: [quocGiaId], references: [id])
+  soSao            Int      @default(0)
+  moTa             String?  @db.Text
+  hinhAnh          String? // Main featured image
+  dienThoai        String?
+  email            String?
+  website          String?
+  tienNghi         String?  @db.Text // JSON string: ["WiFi", "Pool", "Gym", "Restaurant", "Bar", "Parking"]
+  giaThapNhat      Decimal? @db.Decimal(15, 2)
+  danhGiaTB        Decimal? @db.Decimal(3, 2)
+  soDanhGia        Int      @default(0) // Number of reviews (e.g., 847 đánh giá)
+  gioCheckin       String?  @default("14:00") // Check-in time
+  gioCheckout      String?  @default("12:00") // Check-out time
+  chinhSachHuy     String?  @db.Text // Cancellation policy
   khoangCachSanBay Decimal? @db.Decimal(5, 2) // Distance to airport in km
   khoangCachTT     Decimal? @db.Decimal(5, 2) // Distance to city center in km
-  diaDiemGanDay    String? @db.Text // JSON: [{"ten": "Cầu Rồng", "khoangCach": 2.5}]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  diaDiemGanDay    String?  @db.Text // JSON: [{"ten": "Cầu Rồng", "khoangCach": 2.5}]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  phong       PhongKhachSan[]
-  datPhong    DatPhong[]
-  danhGiaKS   DanhGiaKhachSan[]
-  gallery     HinhAnhKhachSan[] // Multiple images
+  phong     PhongKhachSan[]
+  datPhong  DatPhong[]
+  danhGiaKS DanhGiaKhachSan[]
+  gallery   HinhAnhKhachSan[] // Multiple images
 
   @@map("khach_san")
 }
@@ -124,7 +127,7 @@ model HinhAnhKhachSan {
   khachSanId Int
   khachSan   KhachSan @relation(fields: [khachSanId], references: [id], onDelete: Cascade)
   urlHinhAnh String
-  moTa       String?  // Caption for the image
+  moTa       String? // Caption for the image
   thuTu      Int      @default(0) // Display order
   createdAt  DateTime @default(now())
 
@@ -132,83 +135,83 @@ model HinhAnhKhachSan {
 }
 
 model PhongKhachSan {
-  id          Int      @id @default(autoincrement())
-  khachSanId  Int
-  khachSan    KhachSan @relation(fields: [khachSanId], references: [id])
-  tenPhong    String
-  loaiPhong   String   // Deluxe, Suite, Standard
-  dienTich    Int?     // m2
-  soKhach     Int      @default(2)
-  soGiuong    Int      @default(1)
-  loaiGiuong  String?  // King, Queen, Twin
-  giaTheoNgay Decimal  @db.Decimal(15, 2)
-  hinhAnh     String?  @db.Text // JSON array URLs
-  tienNghi    String?  @db.Text // JSON: ["TV", "Mini bar", "Balcony"]
-  moTa        String?  @db.Text
-  tongSoPhong Int      @default(1)
-  soPhongTrong Int     @default(1)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  khachSanId   Int
+  khachSan     KhachSan @relation(fields: [khachSanId], references: [id])
+  tenPhong     String
+  loaiPhong    String // Deluxe, Suite, Standard
+  dienTich     Int? // m2
+  soKhach      Int      @default(2)
+  soGiuong     Int      @default(1)
+  loaiGiuong   String? // King, Queen, Twin
+  giaTheoNgay  Decimal  @db.Decimal(15, 2)
+  hinhAnh      String?  @db.Text // JSON array URLs
+  tienNghi     String?  @db.Text // JSON: ["TV", "Mini bar", "Balcony"]
+  moTa         String?  @db.Text
+  tongSoPhong  Int      @default(1)
+  soPhongTrong Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  datPhong    DatPhong[]
+  datPhong DatPhong[]
 
   @@map("phong_khach_san")
 }
 
 model DatPhong {
-  id              Int      @id @default(autoincrement())
-  maDatPhong      String   @unique
-  userId          Int
-  user            User     @relation(fields: [userId], references: [id])
-  khachSanId      Int
-  khachSan        KhachSan @relation(fields: [khachSanId], references: [id])
-  phongId         Int
-  phong           PhongKhachSan @relation(fields: [phongId], references: [id])
-  ngayNhanPhong   DateTime
-  ngayTraPhong    DateTime
-  soPhong         Int      @default(1)
-  soNguoiLon      Int      @default(2)
-  soTreEm         Int      @default(0)
-  tongTien        Decimal  @db.Decimal(15, 2)
-  trangThai       TrangThaiDatPhong @default(CHO_XAC_NHAN)
-  ghiChu          String?  @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            Int               @id @default(autoincrement())
+  maDatPhong    String            @unique
+  userId        Int
+  user          User              @relation(fields: [userId], references: [id])
+  khachSanId    Int
+  khachSan      KhachSan          @relation(fields: [khachSanId], references: [id])
+  phongId       Int
+  phong         PhongKhachSan     @relation(fields: [phongId], references: [id])
+  ngayNhanPhong DateTime
+  ngayTraPhong  DateTime
+  soPhong       Int               @default(1)
+  soNguoiLon    Int               @default(2)
+  soTreEm       Int               @default(0)
+  tongTien      Decimal           @db.Decimal(15, 2)
+  trangThai     TrangThaiDatPhong @default(CHO_XAC_NHAN)
+  ghiChu        String?           @db.Text
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
-  thanhToanDP     ThanhToanDatPhong[]
+  thanhToanDP ThanhToanDatPhong[]
 
   @@map("dat_phong")
 }
 
 model ThanhToanDatPhong {
-  id              Int      @id @default(autoincrement())
-  datPhongId      Int
-  datPhong        DatPhong @relation(fields: [datPhongId], references: [id])
-  soTien          Decimal  @db.Decimal(15, 2)
-  phuongThuc      String   // CREDIT_CARD, MOMO, VNPAY
-  trangThai       TrangThaiThanhToan @default(KHOI_TAO)
-  maGiaoDich      String?  @unique
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id         Int                @id @default(autoincrement())
+  datPhongId Int
+  datPhong   DatPhong           @relation(fields: [datPhongId], references: [id])
+  soTien     Decimal            @db.Decimal(15, 2)
+  phuongThuc String // CREDIT_CARD, MOMO, VNPAY
+  trangThai  TrangThaiThanhToan @default(KHOI_TAO)
+  maGiaoDich String?            @unique
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
 
   @@map("thanh_toan_dat_phong")
 }
 
 model DanhGiaKhachSan {
-  id              Int      @id @default(autoincrement())
-  userId          Int
-  user            User     @relation(fields: [userId], references: [id])
-  khachSanId      Int
-  khachSan        KhachSan @relation(fields: [khachSanId], references: [id])
-  diemSachSe      Int      // 1-10
-  diemTienNghi    Int      // 1-10
-  diemViTri       Int      // 1-10
-  diemDichVu      Int      // 1-10
-  diemGiaCa       Int      // 1-10
-  diemTrungBinh   Decimal  @db.Decimal(3, 2)
-  binhLuan        String?  @db.Text
-  hinhAnh         String?  @db.Text // JSON array URLs
-  createdAt       DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  khachSanId    Int
+  khachSan      KhachSan @relation(fields: [khachSanId], references: [id])
+  diemSachSe    Int // 1-10
+  diemTienNghi  Int // 1-10
+  diemViTri     Int // 1-10
+  diemDichVu    Int // 1-10
+  diemGiaCa     Int // 1-10
+  diemTrungBinh Decimal  @db.Decimal(3, 2)
+  binhLuan      String?  @db.Text
+  hinhAnh       String?  @db.Text // JSON array URLs
+  createdAt     DateTime @default(now())
 
   @@map("danh_gia_khach_san")
 }
@@ -223,14 +226,14 @@ enum TrangThaiDatPhong {
 }
 
 model HangHangKhong {
-  id            Int      @id @default(autoincrement())
-  maIata        String   @unique @db.VarChar(2) // VN, VJ, QH
-  tenHang       String
-  logo          String?
-  createdAt     DateTime @default(now())
-  danhGia       DanhGia[]
+  id        Int       @id @default(autoincrement())
+  maIata    String    @unique @db.VarChar(2) // VN, VJ, QH
+  tenHang   String
+  logo      String?
+  createdAt DateTime  @default(now())
+  danhGia   DanhGia[]
 
-  chuyenBay     ChuyenBay[]
+  chuyenBay ChuyenBay[]
 
   @@map("hang_hang_khong")
 }
@@ -240,36 +243,36 @@ model HangHangKhong {
 // ============================
 
 model ChuyenBay {
-  id                  Int      @id @default(autoincrement())
-  hangId              Int
-  hang                HangHangKhong @relation(fields: [hangId], references: [id])
-  soHieuChuyenBay     String   // VN123
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id              Int           @id @default(autoincrement())
+  hangId          Int
+  hang            HangHangKhong @relation(fields: [hangId], references: [id])
+  soHieuChuyenBay String // VN123
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  changBay            ChangBay[]
+  changBay ChangBay[]
 
   @@map("chuyen_bay")
 }
 
 model ChangBay {
-  id                Int      @id @default(autoincrement())
-  chuyenBayId       Int
-  chuyenBay         ChuyenBay @relation(fields: [chuyenBayId], references: [id])
-  thuTuChang        Int      // 1, 2 (cho multi-city)
-  sanBayDiId        Int
-  sanBayDi          SanBay   @relation("ChangBayDi", fields: [sanBayDiId], references: [id])
-  sanBayDenId       Int
-  sanBayDen         SanBay   @relation("ChangBayDen", fields: [sanBayDenId], references: [id])
-  gioDi             DateTime
-  gioDen            DateTime
-  thoiGianBayPhut   Int
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id              Int       @id @default(autoincrement())
+  chuyenBayId     Int
+  chuyenBay       ChuyenBay @relation(fields: [chuyenBayId], references: [id])
+  thuTuChang      Int // 1, 2 (cho multi-city)
+  sanBayDiId      Int
+  sanBayDi        SanBay    @relation("ChangBayDi", fields: [sanBayDiId], references: [id])
+  sanBayDenId     Int
+  sanBayDen       SanBay    @relation("ChangBayDen", fields: [sanBayDenId], references: [id])
+  gioDi           DateTime
+  gioDen          DateTime
+  thoiGianBayPhut Int
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  tonCho            TonCho[]
-  giaVe             GiaVe[]
-  donDatVe          DonDatVe[]
+  tonCho   TonCho[]
+  giaVe    GiaVe[]
+  donDatVe DonDatVe[]
 
   @@map("chang_bay")
 }
@@ -284,80 +287,79 @@ model KhoangVe {
   tenKhoang String
   createdAt DateTime @default(now())
 
-  hangVe    HangVe[]
+  hangVe HangVe[]
 
   @@map("khoang_ve")
 }
 
 model HangVe {
-  id          Int      @id @default(autoincrement())
-  khoangVeId  Int
-  khoangVe    KhoangVe @relation(fields: [khoangVeId], references: [id])
-  maHang      String   @unique // Y, M, J, C, F
-  tenHang     String
-  moTa        String?
-  createdAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  khoangVeId Int
+  khoangVe   KhoangVe @relation(fields: [khoangVeId], references: [id])
+  maHang     String   @unique // Y, M, J, C, F
+  tenHang    String
+  moTa       String?
+  createdAt  DateTime @default(now())
 
-  tonCho      TonCho[]
-  giaVe       GiaVe[]
-  donDatVe    DonDatVe[]
+  tonCho   TonCho[]
+  giaVe    GiaVe[]
+  donDatVe DonDatVe[]
 
   @@map("hang_ve")
 }
 
 model NhomGiaVe {
-  id            Int      @id @default(autoincrement())
-  tenNhom       String   // Eco Saver, Eco Flex, Business
-  hangVeId      Int?
-  hanhLyKy      Int      @default(0) // kg
-  hanhLyXach    Int      @default(7) // kg
-  choPhepDoi    Boolean  @default(false)
-  choPhepHoan   Boolean  @default(false)
-  phiDoi        Decimal  @db.Decimal(15, 2) @default(0)
-  phiHoan       Decimal  @db.Decimal(15, 2) @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  tenNhom     String // Eco Saver, Eco Flex, Business
+  hangVeId    Int?
+  hanhLyKy    Int      @default(0) // kg
+  hanhLyXach  Int      @default(7) // kg
+  choPhepDoi  Boolean  @default(false)
+  choPhepHoan Boolean  @default(false)
+  phiDoi      Decimal  @default(0) @db.Decimal(15, 2)
+  phiHoan     Decimal  @default(0) @db.Decimal(15, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  tonCho        TonCho[]
+  tonCho TonCho[]
 
   @@map("nhom_gia_ve")
 }
 
 model TonCho {
-  id          Int      @id @default(autoincrement())
-  changBayId  Int
-  changBay    ChangBay @relation(fields: [changBayId], references: [id])
-  hangVeId    Int
-  hangVe      HangVe   @relation(fields: [hangVeId], references: [id])
-  nhomGiaId   Int?
-  nhomGia     NhomGiaVe? @relation(fields: [nhomGiaId], references: [id])
-  tongSoCho   Int
-  soChoCon    Int
-  giaCoSo     Decimal  @db.Decimal(15, 2)
-  thue        Decimal  @db.Decimal(15, 2) @default(0)
-  phi         Decimal  @db.Decimal(15, 2) @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int        @id @default(autoincrement())
+  changBayId Int
+  changBay   ChangBay   @relation(fields: [changBayId], references: [id])
+  hangVeId   Int
+  hangVe     HangVe     @relation(fields: [hangVeId], references: [id])
+  nhomGiaId  Int?
+  nhomGia    NhomGiaVe? @relation(fields: [nhomGiaId], references: [id])
+  tongSoCho  Int
+  soChoCon   Int
+  giaCoSo    Decimal    @db.Decimal(15, 2)
+  thue       Decimal    @default(0) @db.Decimal(15, 2)
+  phi        Decimal    @default(0) @db.Decimal(15, 2)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@unique([changBayId, hangVeId, nhomGiaId])
   @@map("ton_cho")
 }
 
 model GiaVe {
-  id                Int      @id @default(autoincrement())
-  changBayId        Int
-  changBay          ChangBay @relation(fields: [changBayId], references: [id])
-  hangVeId          Int
-  hangVe            HangVe   @relation(fields: [hangVeId], references: [id])
-  giaBan            Decimal  @db.Decimal(15, 2)
-  soLuongGhe        Int
-  soLuongGheTrong   Int
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  changBayId      Int
+  changBay        ChangBay @relation(fields: [changBayId], references: [id])
+  hangVeId        Int
+  hangVe          HangVe   @relation(fields: [hangVeId], references: [id])
+  giaBan          Decimal  @db.Decimal(15, 2)
+  soLuongGhe      Int
+  soLuongGheTrong Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("gia_ve")
 }
-
 
 // ============================
 // ĐƠN ĐẶT VÉ
@@ -378,16 +380,16 @@ model DonDatVe {
   tienTe          String            @default("VND") @db.VarChar(3)
   hetHanGiuCho    DateTime?
   searchSessionId String?
-  maKhuyenMai     String?           // Mã khuyến mãi đã áp dụng
-  giamGia         Decimal?          @db.Decimal(15, 2) @default(0)
+  maKhuyenMai     String? // Mã khuyến mãi đã áp dụng
+  giamGia         Decimal?          @default(0) @db.Decimal(15, 2)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
-  hanhKhach           HanhKhach[]
-  thanhToan           ThanhToan[]
-  ve                  Ve[]
-  thongTinLienHe      ThongTinLienHe?
-  giaoDichThanhToan   GiaoDichThanhToan[]
+  hanhKhach         HanhKhach[]
+  thanhToan         ThanhToan[]
+  ve                Ve[]
+  thongTinLienHe    ThongTinLienHe?
+  giaoDichThanhToan GiaoDichThanhToan[]
 
   @@map("don_dat_ve")
 }
@@ -407,26 +409,26 @@ enum TrangThaiDonDatVe {
 }
 
 model HanhKhach {
-  id          Int      @id @default(autoincrement())
-  donDatVeId  Int
-  donDatVe    DonDatVe @relation(fields: [donDatVeId], references: [id])
-  loai        LoaiHanhKhach // NGUOI_LON, TRE_EM, SO_SINH
-  ho          String
-  ten         String
-  gioiTinh    String   // NAM, NU
-  ngaySinh    DateTime
-  soCccd      String?
-  soHoChieu   String?
-  ngayHetHan  DateTime?
-  quocTich    String?
-  soGhe       String?  // Số ghế đã chọn
-  daCheckin   Boolean  @default(false)
+  id              Int           @id @default(autoincrement())
+  donDatVeId      Int
+  donDatVe        DonDatVe      @relation(fields: [donDatVeId], references: [id])
+  loai            LoaiHanhKhach // NGUOI_LON, TRE_EM, SO_SINH
+  ho              String
+  ten             String
+  gioiTinh        String // NAM, NU
+  ngaySinh        DateTime
+  soCccd          String?
+  soHoChieu       String?
+  ngayHetHan      DateTime?
+  quocTich        String?
+  soGhe           String? // Số ghế đã chọn
+  daCheckin       Boolean       @default(false)
   thoiGianCheckin DateTime?
-  maBoardingPass String?
-  createdAt   DateTime @default(now())
+  maBoardingPass  String?
+  createdAt       DateTime      @default(now())
 
-  ve          Ve[]
-  hanhLy      HanhLy[]
+  ve     Ve[]
+  hanhLy HanhLy[]
 
   @@map("hanh_khach")
 }
@@ -454,19 +456,19 @@ model ThongTinLienHe {
 // ============================
 
 model ThanhToan {
-  id                Int             @id @default(autoincrement())
-  donDatVeId        Int
-  donDatVe          DonDatVe        @relation(fields: [donDatVeId], references: [id])
-  nguoiDungId       Int?
-  nguoiDung         User?           @relation(fields: [nguoiDungId], references: [id])
-  maGiaoDich        String          @unique
-  soTien            Decimal         @db.Decimal(15, 2)
-  tienTe            String          @default("VND") @db.VarChar(3)
-  phuongThuc        String          // THE, ATM, VI, QR
-  trangThai         TrangThaiThanhToan @default(KHOI_TAO)
-  thongTinCong      Json?           // callback data
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @default(now()) @updatedAt
+  id           Int                @id @default(autoincrement())
+  donDatVeId   Int
+  donDatVe     DonDatVe           @relation(fields: [donDatVeId], references: [id])
+  nguoiDungId  Int?
+  nguoiDung    User?              @relation(fields: [nguoiDungId], references: [id])
+  maGiaoDich   String             @unique
+  soTien       Decimal            @db.Decimal(15, 2)
+  tienTe       String             @default("VND") @db.VarChar(3)
+  phuongThuc   String // THE, ATM, VI, QR
+  trangThai    TrangThaiThanhToan @default(KHOI_TAO)
+  thongTinCong Json? // callback data
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @default(now()) @updatedAt
 
   @@map("thanh_toan")
 }
@@ -480,17 +482,17 @@ enum TrangThaiThanhToan {
 }
 
 model GiaoDichThanhToan {
-  id           Int                      @id @default(autoincrement())
-  donDatVeId   Int
-  donDatVe     DonDatVe                 @relation(fields: [donDatVeId], references: [id], map: "fk_gdtt_don_dat_ve")
-  nguoiDungId  Int
-  nguoiDung    User                     @relation(fields: [nguoiDungId], references: [id], map: "fk_gdtt_users")
-  maGiaoDich   String                   @db.VarChar(100)
-  soTien       Decimal                  @db.Decimal(15, 2)
-  phuongThuc   PhuongThucThanhToan
-  trangThai    TrangThaiGiaoDich
-  createdAt    DateTime                 @default(now())
-  updatedAt    DateTime                 @default(now()) @updatedAt
+  id          Int                 @id @default(autoincrement())
+  donDatVeId  Int
+  donDatVe    DonDatVe            @relation(fields: [donDatVeId], references: [id], map: "fk_gdtt_don_dat_ve")
+  nguoiDungId Int
+  nguoiDung   User                @relation(fields: [nguoiDungId], references: [id], map: "fk_gdtt_users")
+  maGiaoDich  String              @db.VarChar(100)
+  soTien      Decimal             @db.Decimal(15, 2)
+  phuongThuc  PhuongThucThanhToan
+  trangThai   TrangThaiGiaoDich
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @default(now()) @updatedAt
 
   @@index([donDatVeId], map: "idx_gdtt_donDatVeId")
   @@index([nguoiDungId], map: "idx_gdtt_nguoiDungId")
@@ -517,15 +519,15 @@ enum TrangThaiGiaoDich {
 // ============================
 
 model Ve {
-  id          Int      @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   donDatVeId  Int
-  donDatVe    DonDatVe @relation(fields: [donDatVeId], references: [id])
+  donDatVe    DonDatVe    @relation(fields: [donDatVeId], references: [id])
   hanhKhachId Int
-  hanhKhach   HanhKhach @relation(fields: [hanhKhachId], references: [id])
-  soVe        String   @unique // 7381234567890
+  hanhKhach   HanhKhach   @relation(fields: [hanhKhachId], references: [id])
+  soVe        String      @unique // 7381234567890
   trangThai   TrangThaiVe @default(HIEU_LUC)
-  ngayXuat    DateTime @default(now())
-  createdAt   DateTime @default(now())
+  ngayXuat    DateTime    @default(now())
+  createdAt   DateTime    @default(now())
 
   @@map("ve")
 }
@@ -546,7 +548,7 @@ model KhuyenMai {
   maKhuyenMai       String   @unique // SUMMER2024
   tenKhuyenMai      String
   moTa              String?  @db.Text
-  loaiGiam          String   // PERCENT, FIXED
+  loaiGiam          String // PERCENT, FIXED
   giaTriGiam        Decimal  @db.Decimal(15, 2)
   giamToiDa         Decimal? @db.Decimal(15, 2)
   giaTriDonToiThieu Decimal  @db.Decimal(15, 2)
@@ -566,15 +568,15 @@ model KhuyenMai {
 // ============================
 
 model ThongBao {
-  id           Int      @id @default(autoincrement())
-  nguoiDungId  Int
-  nguoiDung    User     @relation(fields: [nguoiDungId], references: [id])
-  loai         String   // DELAY, CANCELLED, GATE_CHANGE, ON_TIME
-  tieuDe       String
-  noiDung      String   @db.Text
-  lienKet      String?
-  daDo         Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  nguoiDungId Int
+  nguoiDung   User     @relation(fields: [nguoiDungId], references: [id])
+  loai        String // DELAY, CANCELLED, GATE_CHANGE, ON_TIME
+  tieuDe      String
+  noiDung     String   @db.Text
+  lienKet     String?
+  daDo        Boolean  @default(false)
+  createdAt   DateTime @default(now())
 
   @@map("thong_bao")
 }
@@ -584,14 +586,14 @@ model ThongBao {
 // ============================
 
 model HanhLy {
-  id            Int       @id @default(autoincrement())
-  hanhKhachId   Int
-  hanhKhach     HanhKhach @relation(fields: [hanhKhachId], references: [id])
-  loai          String    // KY_GUI, XACH_TAY
-  soKien        Int
-  khoiLuong     Decimal   @db.Decimal(10, 2)
-  phiPhatSinh   Decimal   @db.Decimal(15, 2) @default(0)
-  createdAt     DateTime  @default(now())
+  id          Int       @id @default(autoincrement())
+  hanhKhachId Int
+  hanhKhach   HanhKhach @relation(fields: [hanhKhachId], references: [id])
+  loai        String // KY_GUI, XACH_TAY
+  soKien      Int
+  khoiLuong   Decimal   @db.Decimal(10, 2)
+  phiPhatSinh Decimal   @default(0) @db.Decimal(15, 2)
+  createdAt   DateTime  @default(now())
 
   @@map("hanh_ly")
 }
@@ -601,14 +603,14 @@ model HanhLy {
 // ============================
 
 model DanhGia {
-  id               Int            @id @default(autoincrement())
-  nguoiDungId      Int
-  nguoiDung        User           @relation(fields: [nguoiDungId], references: [id])
-  hangHangKhongId  Int
-  hangHangKhong    HangHangKhong  @relation(fields: [hangHangKhongId], references: [id])
-  soSao            Int            // 1-5
-  nhanXet          String?        @db.Text
-  createdAt        DateTime       @default(now())
+  id              Int           @id @default(autoincrement())
+  nguoiDungId     Int
+  nguoiDung       User          @relation(fields: [nguoiDungId], references: [id])
+  hangHangKhongId Int
+  hangHangKhong   HangHangKhong @relation(fields: [hangHangKhongId], references: [id])
+  soSao           Int // 1-5
+  nhanXet         String?       @db.Text
+  createdAt       DateTime      @default(now())
 
   @@map("danh_gia")
 }
@@ -619,22 +621,22 @@ model DanhGia {
 
 // 1. Nhà xe (Bus Company)
 model NhaXe {
-  id                 Int      @id @default(autoincrement())
-  maNhaXe            String   @unique @db.VarChar(10)
-  tenNhaXe           String   @db.VarChar(191)
-  logo               String?  @db.VarChar(500)
-  soDienThoai        String?  @db.VarChar(20)
-  email              String?  @db.VarChar(191)
-  diaChi             String?  @db.Text
-  moTa               String?  @db.Text
-  danhGiaTrungBinh   Decimal? @db.Decimal(2, 1) @default(0)
-  trangThai          TrangThaiNhaXe @default(HOAT_DONG)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id               Int            @id @default(autoincrement())
+  maNhaXe          String         @unique @db.VarChar(10)
+  tenNhaXe         String         @db.VarChar(191)
+  logo             String?        @db.VarChar(500)
+  soDienThoai      String?        @db.VarChar(20)
+  email            String?        @db.VarChar(191)
+  diaChi           String?        @db.Text
+  moTa             String?        @db.Text
+  danhGiaTrungBinh Decimal?       @default(0) @db.Decimal(2, 1)
+  trangThai        TrangThaiNhaXe @default(HOAT_DONG)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
-  xe                 Xe[]
-  tuyenXe            TuyenXe[]
-  danhGiaNhaXe       DanhGiaNhaXe[]
+  xe           Xe[]
+  tuyenXe      TuyenXe[]
+  danhGiaNhaXe DanhGiaNhaXe[]
 
   @@map("nha_xe")
 }
@@ -647,21 +649,21 @@ enum TrangThaiNhaXe {
 
 // 2. Bến xe (Bus Station)
 model BenXe {
-  id          Int      @id @default(autoincrement())
-  maBenXe     String   @unique @db.VarChar(10)
-  tenBenXe    String   @db.VarChar(191)
-  thanhPho    String   @db.VarChar(100)
-  diaChi      String?  @db.Text
-  khuVuc      String?  @db.VarChar(50)
-  soDienThoai String?  @db.VarChar(20)
-  viDo        Decimal? @db.Decimal(10, 8)
-  kinhDo      Decimal? @db.Decimal(11, 8)
+  id          Int            @id @default(autoincrement())
+  maBenXe     String         @unique @db.VarChar(10)
+  tenBenXe    String         @db.VarChar(191)
+  thanhPho    String         @db.VarChar(100)
+  diaChi      String?        @db.Text
+  khuVuc      String?        @db.VarChar(50)
+  soDienThoai String?        @db.VarChar(20)
+  viDo        Decimal?       @db.Decimal(10, 8)
+  kinhDo      Decimal?       @db.Decimal(11, 8)
   trangThai   TrangThaiBenXe @default(HOAT_DONG)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
-  tuyenXeDi   TuyenXe[] @relation("TuyenXeDi")
-  tuyenXeDen  TuyenXe[] @relation("TuyenXeDen")
+  tuyenXeDi  TuyenXe[] @relation("TuyenXeDi")
+  tuyenXeDen TuyenXe[] @relation("TuyenXeDen")
 
   @@map("ben_xe")
 }
@@ -674,38 +676,38 @@ enum TrangThaiBenXe {
 
 // 3. Loại xe (Bus Type)
 model LoaiXe {
-  id         Int      @id @default(autoincrement())
-  maLoaiXe   String   @unique @db.VarChar(20)
-  tenLoaiXe  String   @db.VarChar(100)
-  moTa       String?  @db.Text
-  soGhe      Int
-  soTang     Int      @default(1)
-  tienNghi   Json?    // WiFi, điều hòa, nước uống, toilet...
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  maLoaiXe  String   @unique @db.VarChar(20)
+  tenLoaiXe String   @db.VarChar(100)
+  moTa      String?  @db.Text
+  soGhe     Int
+  soTang    Int      @default(1)
+  tienNghi  Json? // WiFi, điều hòa, nước uống, toilet...
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  xe         Xe[]
+  xe Xe[]
 
   @@map("loai_xe")
 }
 
 // 4. Xe (Bus)
 model Xe {
-  id          Int      @id @default(autoincrement())
-  nhaXeId     Int
-  nhaXe       NhaXe    @relation(fields: [nhaXeId], references: [id])
-  loaiXeId    Int
-  loaiXe      LoaiXe   @relation(fields: [loaiXeId], references: [id])
-  bienSoXe    String   @unique @db.VarChar(20)
-  soGhe       Int
-  namSanXuat  Int?
-  mauXe       String?  @db.VarChar(50)
-  trangThai   TrangThaiXe @default(SAN_SANG)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int         @id @default(autoincrement())
+  nhaXeId    Int
+  nhaXe      NhaXe       @relation(fields: [nhaXeId], references: [id])
+  loaiXeId   Int
+  loaiXe     LoaiXe      @relation(fields: [loaiXeId], references: [id])
+  bienSoXe   String      @unique @db.VarChar(20)
+  soGhe      Int
+  namSanXuat Int?
+  mauXe      String?     @db.VarChar(50)
+  trangThai  TrangThaiXe @default(SAN_SANG)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
-  chuyenXe    ChuyenXe[]
-  gheXe       GheXe[]
+  chuyenXe ChuyenXe[]
+  gheXe    GheXe[]
 
   @@map("xe")
 }
@@ -719,22 +721,22 @@ enum TrangThaiXe {
 
 // 5. Tuyến xe (Bus Route)
 model TuyenXe {
-  id                   Int      @id @default(autoincrement())
-  maTuyen              String   @unique @db.VarChar(20)
-  nhaXeId              Int
-  nhaXe                NhaXe    @relation(fields: [nhaXeId], references: [id])
-  benXeDiId            Int
-  benXeDi              BenXe    @relation("TuyenXeDi", fields: [benXeDiId], references: [id])
-  benXeDenId           Int
-  benXeDen             BenXe    @relation("TuyenXeDen", fields: [benXeDenId], references: [id])
-  khoangCach           Int?     // km
-  thoiGianChayDuKien   Int?     // phút
-  moTa                 String?  @db.Text
-  trangThai            TrangThaiTuyenXe @default(HOAT_DONG)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                 Int              @id @default(autoincrement())
+  maTuyen            String           @unique @db.VarChar(20)
+  nhaXeId            Int
+  nhaXe              NhaXe            @relation(fields: [nhaXeId], references: [id])
+  benXeDiId          Int
+  benXeDi            BenXe            @relation("TuyenXeDi", fields: [benXeDiId], references: [id])
+  benXeDenId         Int
+  benXeDen           BenXe            @relation("TuyenXeDen", fields: [benXeDenId], references: [id])
+  khoangCach         Int? // km
+  thoiGianChayDuKien Int? // phút
+  moTa               String?          @db.Text
+  trangThai          TrangThaiTuyenXe @default(HOAT_DONG)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
-  chuyenXe             ChuyenXe[]
+  chuyenXe ChuyenXe[]
 
   @@map("tuyen_xe")
 }
@@ -747,23 +749,23 @@ enum TrangThaiTuyenXe {
 
 // 6. Chuyến xe (Bus Trip)
 model ChuyenXe {
-  id            Int      @id @default(autoincrement())
-  maChuyenXe    String   @unique @db.VarChar(20)
-  tuyenXeId     Int
-  tuyenXe       TuyenXe  @relation(fields: [tuyenXeId], references: [id])
-  xeId          Int
-  xe            Xe       @relation(fields: [xeId], references: [id])
-  gioDi         DateTime
-  gioDen        DateTime
-  giaVe         Decimal  @db.Decimal(15, 2)
-  soGheTrong    Int
-  trangThai     TrangThaiChuyenXe @default(SAP_KHOI_HANH)
-  ghiChu        String?  @db.Text
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id         Int               @id @default(autoincrement())
+  maChuyenXe String            @unique @db.VarChar(20)
+  tuyenXeId  Int
+  tuyenXe    TuyenXe           @relation(fields: [tuyenXeId], references: [id])
+  xeId       Int
+  xe         Xe                @relation(fields: [xeId], references: [id])
+  gioDi      DateTime
+  gioDen     DateTime
+  giaVe      Decimal           @db.Decimal(15, 2)
+  soGheTrong Int
+  trangThai  TrangThaiChuyenXe @default(SAP_KHOI_HANH)
+  ghiChu     String?           @db.Text
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 
-  diemDung      DiemDung[]
-  donDatVeXe    DonDatVeXe[]
+  diemDung   DiemDung[]
+  donDatVeXe DonDatVeXe[]
 
   @@map("chuyen_xe")
 }
@@ -778,31 +780,31 @@ enum TrangThaiChuyenXe {
 
 // 7. Điểm dừng (Bus Stop)
 model DiemDung {
-  id            Int      @id @default(autoincrement())
-  chuyenXeId    Int
-  chuyenXe      ChuyenXe @relation(fields: [chuyenXeId], references: [id])
-  thuTu         Int
-  tenDiemDung   String   @db.VarChar(191)
-  diaChi        String?  @db.Text
-  gioDen        DateTime?
-  gioDi         DateTime?
-  thoiGianDung  Int?     // phút
-  createdAt     DateTime @default(now())
+  id           Int       @id @default(autoincrement())
+  chuyenXeId   Int
+  chuyenXe     ChuyenXe  @relation(fields: [chuyenXeId], references: [id])
+  thuTu        Int
+  tenDiemDung  String    @db.VarChar(191)
+  diaChi       String?   @db.Text
+  gioDen       DateTime?
+  gioDi        DateTime?
+  thoiGianDung Int? // phút
+  createdAt    DateTime  @default(now())
 
   @@map("diem_dung")
 }
 
 // 8. Ghế xe (Bus Seat)
 model GheXe {
-  id        Int      @id @default(autoincrement())
+  id        Int            @id @default(autoincrement())
   xeId      Int
-  xe        Xe       @relation(fields: [xeId], references: [id])
-  soGhe     String   @db.VarChar(10)
-  tang      Int      @default(1)
-  loaiGhe   LoaiGhe  @default(THUONG)
-  viTri     Json?    // {row: 1, col: 1}
+  xe        Xe             @relation(fields: [xeId], references: [id])
+  soGhe     String         @db.VarChar(10)
+  tang      Int            @default(1)
+  loaiGhe   LoaiGhe        @default(THUONG)
+  viTri     Json? // {row: 1, col: 1}
   trangThai TrangThaiGheXe @default(HOAT_DONG)
-  createdAt DateTime @default(now())
+  createdAt DateTime       @default(now())
 
   @@unique([xeId, soGhe], name: "unique_ghe_xe")
   @@map("ghe_xe")
@@ -822,21 +824,21 @@ enum TrangThaiGheXe {
 
 // 9. Đơn đặt vé xe (Bus Booking)
 model DonDatVeXe {
-  id                  Int      @id @default(autoincrement())
-  maDonDat            String   @unique @db.VarChar(20)
+  id                  Int              @id @default(autoincrement())
+  maDonDat            String           @unique @db.VarChar(20)
   nguoiDungId         Int
-  nguoiDung           User     @relation(fields: [nguoiDungId], references: [id])
+  nguoiDung           User             @relation(fields: [nguoiDungId], references: [id])
   chuyenXeId          Int
-  chuyenXe            ChuyenXe @relation(fields: [chuyenXeId], references: [id])
+  chuyenXe            ChuyenXe         @relation(fields: [chuyenXeId], references: [id])
   soLuongGhe          Int
-  tongTien            Decimal  @db.Decimal(15, 2)
+  tongTien            Decimal          @db.Decimal(15, 2)
   trangThaiDat        TrangThaiDatVeXe @default(CHO_THANH_TOAN)
-  phuongThucThanhToan String?  @db.VarChar(50)
-  ghiChu              String?  @db.Text
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  phuongThucThanhToan String?          @db.VarChar(50)
+  ghiChu              String?          @db.Text
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
-  veXe                VeXe[]
+  veXe VeXe[]
 
   @@map("don_dat_ve_xe")
 }
@@ -850,18 +852,18 @@ enum TrangThaiDatVeXe {
 
 // 10. Vé xe (Bus Ticket)
 model VeXe {
-  id               Int      @id @default(autoincrement())
-  donDatVeXeId     Int
-  donDatVeXe       DonDatVeXe @relation(fields: [donDatVeXeId], references: [id])
-  soVe             String   @unique @db.VarChar(191)
-  hoTenHanhKhach   String   @db.VarChar(191)
-  soDienThoai      String?  @db.VarChar(20)
-  email            String?  @db.VarChar(191)
-  soGhe            String   @db.VarChar(10)
-  giaVe            Decimal  @db.Decimal(15, 2)
-  trangThai        TrangThaiVeXe @default(HIEU_LUC)
-  ngayXuat         DateTime @default(now())
-  createdAt        DateTime @default(now())
+  id             Int           @id @default(autoincrement())
+  donDatVeXeId   Int
+  donDatVeXe     DonDatVeXe    @relation(fields: [donDatVeXeId], references: [id])
+  soVe           String        @unique @db.VarChar(191)
+  hoTenHanhKhach String        @db.VarChar(191)
+  soDienThoai    String?       @db.VarChar(20)
+  email          String?       @db.VarChar(191)
+  soGhe          String        @db.VarChar(10)
+  giaVe          Decimal       @db.Decimal(15, 2)
+  trangThai      TrangThaiVeXe @default(HIEU_LUC)
+  ngayXuat       DateTime      @default(now())
+  createdAt      DateTime      @default(now())
 
   @@map("ve_xe")
 }
@@ -875,15 +877,274 @@ enum TrangThaiVeXe {
 
 // 11. Đánh giá nhà xe (Bus Company Review)
 model DanhGiaNhaXe {
-  id            Int      @id @default(autoincrement())
-  nhaXeId       Int
-  nhaXe         NhaXe    @relation(fields: [nhaXeId], references: [id])
-  nguoiDungId   Int
-  nguoiDung     User     @relation(fields: [nguoiDungId], references: [id])
-  chuyenXeId    Int?
-  diemDanhGia   Int      // 1-5
-  nhanXet       String?  @db.Text
-  createdAt     DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  nhaXeId     Int
+  nhaXe       NhaXe    @relation(fields: [nhaXeId], references: [id])
+  nguoiDungId Int
+  nguoiDung   User     @relation(fields: [nguoiDungId], references: [id])
+  chuyenXeId  Int?
+  diemDanhGia Int // 1-5
+  nhanXet     String?  @db.Text
+  createdAt   DateTime @default(now())
 
   @@map("danh_gia_nha_xe")
+}
+
+// ============================
+// HỆ THỐNG CHO THUÊ XE / ĐƯA ĐÓN SÂN BAY
+// ============================
+
+// 1. Nhà cung cấp xe (Car Rental Company)
+model NhaCungCapXe {
+  id                 Int                 @id @default(autoincrement())
+  maNhaCungCap       String              @unique @db.VarChar(20)
+  tenNhaCungCap      String              @db.VarChar(191)
+  logo               String?             @db.VarChar(500)
+  soDienThoai        String?             @db.VarChar(20)
+  email              String?             @db.VarChar(191)
+  website            String?             @db.VarChar(255)
+  diaChi             String?             @db.Text
+  moTa               String?             @db.Text
+  danhGiaTrungBinh   Decimal?            @default(0) @db.Decimal(2, 1)
+  soDanhGia          Int                 @default(0)
+  chinhSachHuy       String?             @db.Text
+  chinhSachThanhToan String?             @db.Text
+  trangThai          TrangThaiNhaCungCap @default(HOAT_DONG)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  xeThue            XeThue[]
+  giaThueXe         GiaThueXe[]
+  donThueXe         DonThueXe[]
+  danhGiaNhaCungCap DanhGiaNhaCungCap[]
+
+  @@index([trangThai])
+  @@map("nha_cung_cap_xe")
+}
+
+enum TrangThaiNhaCungCap {
+  HOAT_DONG
+  TAM_NGUNG
+  NGUNG_HOAT_DONG
+}
+
+// 2. Loại xe thuê (Car Type)
+model LoaiXeThue {
+  id          Int      @id @default(autoincrement())
+  maLoaiXe    String   @unique @db.VarChar(20)
+  tenLoaiXe   String   @db.VarChar(100)
+  moTa        String?  @db.Text
+  soHanhKhach Int
+  soHanhLy    Int
+  hinhAnh     String?  @db.VarChar(500)
+  tienNghi    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  xeThue    XeThue[]
+  giaThueXe GiaThueXe[]
+  donThueXe DonThueXe[]
+
+  @@map("loai_xe_thue")
+}
+
+// 3. Xe thuê (Vehicle)
+model XeThue {
+  id           Int             @id @default(autoincrement())
+  nhaCungCapId Int
+  nhaCungCap   NhaCungCapXe    @relation(fields: [nhaCungCapId], references: [id])
+  loaiXeId     Int
+  loaiXe       LoaiXeThue      @relation(fields: [loaiXeId], references: [id])
+  bienSoXe     String          @unique @db.VarChar(20)
+  mauXe        String?         @db.VarChar(50)
+  namSanXuat   Int?
+  soHanhKhach  Int
+  soHanhLy     Int
+  hinhAnh      String?         @db.Text
+  trangThai    TrangThaiXeThue @default(SAN_SANG)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  donThueXe DonThueXe[]
+
+  @@index([nhaCungCapId])
+  @@index([loaiXeId])
+  @@index([trangThai])
+  @@map("xe_thue")
+}
+
+enum TrangThaiXeThue {
+  SAN_SANG
+  DANG_THUE
+  BAO_TRI
+  KHONG_KHA_DUNG
+}
+
+// 4. Tuyến đường thuê xe (Route)
+model TuyenDuongThueXe {
+  id             Int                 @id @default(autoincrement())
+  maTuyen        String              @unique @db.VarChar(20)
+  diemDi         String              @db.VarChar(191)
+  diemDen        String              @db.VarChar(191)
+  diemDiId       Int?
+  sanBayDi       SanBay?             @relation(fields: [diemDiId], references: [id])
+  khoangCach     Decimal?            @db.Decimal(10, 2)
+  thoiGianDuKien Int?
+  moTa           String?             @db.Text
+  trangThai      TrangThaiTuyenDuong @default(HOAT_DONG)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  giaThueXe GiaThueXe[]
+
+  @@index([diemDiId])
+  @@map("tuyen_duong_thue_xe")
+}
+
+enum TrangThaiTuyenDuong {
+  HOAT_DONG
+  TAM_NGUNG
+  NGUNG_HOAT_DONG
+}
+
+// 5. Giá thuê xe (Rental Price)
+model GiaThueXe {
+  id           Int               @id @default(autoincrement())
+  nhaCungCapId Int
+  nhaCungCap   NhaCungCapXe      @relation(fields: [nhaCungCapId], references: [id])
+  loaiXeId     Int
+  loaiXe       LoaiXeThue        @relation(fields: [loaiXeId], references: [id])
+  tuyenDuongId Int?
+  tuyenDuong   TuyenDuongThueXe? @relation(fields: [tuyenDuongId], references: [id])
+  giaTheoGio   Decimal?          @db.Decimal(15, 2)
+  giaTheoNgay  Decimal?          @db.Decimal(15, 2)
+  giaTheoTuyen Decimal?          @db.Decimal(15, 2)
+  donViTienTe  String            @default("VND") @db.VarChar(3)
+  giamGia      Decimal?          @default(0) @db.Decimal(15, 2)
+  phuThu       Json?
+  apDungTu     DateTime?
+  apDungDen    DateTime?
+  trangThai    TrangThaiGia      @default(HOAT_DONG)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@unique([nhaCungCapId, loaiXeId, tuyenDuongId])
+  @@index([nhaCungCapId, loaiXeId])
+  @@index([tuyenDuongId])
+  @@map("gia_thue_xe")
+}
+
+enum TrangThaiGia {
+  HOAT_DONG
+  HET_HAN
+  TAM_NGUNG
+}
+
+// 6. Đơn thuê xe (Car Rental Booking)
+model DonThueXe {
+  id           Int          @id @default(autoincrement())
+  maDonThue    String       @unique @db.VarChar(20)
+  nguoiDungId  Int
+  nguoiDung    User         @relation(fields: [nguoiDungId], references: [id])
+  nhaCungCapId Int
+  nhaCungCap   NhaCungCapXe @relation(fields: [nhaCungCapId], references: [id])
+  xeThueId     Int?
+  xeThue       XeThue?      @relation(fields: [xeThueId], references: [id])
+  loaiXeId     Int
+  loaiXe       LoaiXeThue   @relation(fields: [loaiXeId], references: [id])
+
+  diemDon           String    @db.VarChar(191)
+  diaChiDon         String?   @db.Text
+  diemTra           String    @db.VarChar(191)
+  diaChiTra         String?   @db.Text
+  thoiGianDon       DateTime
+  thoiGianTraDuKien DateTime?
+
+  soHanhKhach  Int
+  soHanhLy     Int
+  tenHanhKhach String  @db.VarChar(191)
+  soDienThoai  String  @db.VarChar(20)
+  email        String? @db.VarChar(191)
+  ghiChu       String? @db.Text
+
+  soHieuChuyenBay String?   @db.VarChar(20)
+  gioHaCanh       DateTime?
+
+  giaThue     Decimal @db.Decimal(15, 2)
+  phuThu      Decimal @default(0) @db.Decimal(15, 2)
+  giamGia     Decimal @default(0) @db.Decimal(15, 2)
+  tongTien    Decimal @db.Decimal(15, 2)
+  donViTienTe String  @default("VND") @db.VarChar(3)
+
+  trangThai           TrangThaiDonThueXe @default(CHO_XAC_NHAN)
+  phuongThucThanhToan String?            @db.VarChar(50)
+
+  tenTaiXe         String? @db.VarChar(191)
+  soDienThoaiTaiXe String? @db.VarChar(20)
+  bienSoXe         String? @db.VarChar(20)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  thanhToanThueXe   ThanhToanThueXe[]
+  danhGiaNhaCungCap DanhGiaNhaCungCap[]
+
+  @@index([nguoiDungId])
+  @@index([nhaCungCapId])
+  @@index([thoiGianDon])
+  @@index([trangThai])
+  @@map("don_thue_xe")
+}
+
+enum TrangThaiDonThueXe {
+  CHO_XAC_NHAN
+  DA_XAC_NHAN
+  TAI_XE_DANG_DEN
+  DANG_PHUC_VU
+  HOAN_THANH
+  DA_HUY
+  KHONG_DEN
+}
+
+// 7. Thanh toán thuê xe (Car Rental Payment)
+model ThanhToanThueXe {
+  id               Int                @id @default(autoincrement())
+  donThueXeId      Int
+  donThueXe        DonThueXe          @relation(fields: [donThueXeId], references: [id])
+  soTien           Decimal            @db.Decimal(15, 2)
+  phuongThuc       String             @db.VarChar(50)
+  trangThai        TrangThaiThanhToan @default(KHOI_TAO)
+  maGiaoDich       String?            @unique @db.VarChar(100)
+  thongTinGiaoDich Json?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([donThueXeId])
+  @@map("thanh_toan_thue_xe")
+}
+
+// 8. Đánh giá nhà cung cấp (Car Rental Review)
+model DanhGiaNhaCungCap {
+  id           Int          @id @default(autoincrement())
+  nguoiDungId  Int
+  nguoiDung    User         @relation(fields: [nguoiDungId], references: [id])
+  nhaCungCapId Int
+  nhaCungCap   NhaCungCapXe @relation(fields: [nhaCungCapId], references: [id])
+  donThueXeId  Int?
+  donThueXe    DonThueXe?   @relation(fields: [donThueXeId], references: [id])
+
+  diemXe        Int
+  diemTaiXe     Int
+  diemDungGio   Int
+  diemSachSe    Int
+  diemGiaCa     Int
+  diemTrungBinh Decimal @db.Decimal(3, 2)
+
+  binhLuan  String?  @db.Text
+  hinhAnh   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([nguoiDungId])
+  @@index([nhaCungCapId])
+  @@map("danh_gia_nha_cung_cap")
 }
