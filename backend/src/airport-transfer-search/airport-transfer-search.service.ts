@@ -6,29 +6,52 @@ import { SearchAirportTransferDto } from './dto/search-airport-transfer.dto';
 export class AirportTransferSearchService {
     constructor(private prisma: PrismaService) { }
 
+    // Helper function to parse JSON or CSV string
+    private parseJsonOrCsv(data: any): any[] {
+        if (!data) return [];
+
+        // If already an array, return it
+        if (Array.isArray(data)) return data;
+
+        // If it's an object but not array, return empty
+        if (typeof data === 'object') return [];
+
+        // If it's not a string, return empty
+        if (typeof data !== 'string') return [];
+
+        // Try parsing as JSON first
+        try {
+            const parsed = JSON.parse(data);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            // If JSON parse fails, treat as CSV string
+            return data.split(',').map(item => item.trim()).filter(item => item);
+        }
+    }
+
     async searchServices(searchDto: SearchAirportTransferDto) {
         const { sanBayId, ngayDon, soHanhKhach, loaiXe, giaMin, giaMax, nhaCungCapId, loaiDichVu } = searchDto;
 
         // Build WHERE conditions dynamically
         let whereConditions = 'WHERE dv.trangThai = \'active\' AND dv.sanBayId = ' + sanBayId;
-        
+
         if (loaiXe) {
             whereConditions += ` AND dv.loaiXe = '${loaiXe}'`;
         }
-        
+
         if (soHanhKhach) {
             whereConditions += ` AND dv.soChoNgoi >= ${soHanhKhach}`;
         }
-        
+
         if (nhaCungCapId) {
             whereConditions += ` AND dv.nhaCungCapId = ${nhaCungCapId}`;
         }
-        
+
         if (giaMin) {
             const priceField = loaiDichVu === 'khu_hoi' ? 'giaTienKhuHoi' : 'giaTienMotChieu';
             whereConditions += ` AND dv.${priceField} >= ${giaMin}`;
         }
-        
+
         if (giaMax) {
             const priceField = loaiDichVu === 'khu_hoi' ? 'giaTienKhuHoi' : 'giaTienMotChieu';
             whereConditions += ` AND dv.${priceField} <= ${giaMax}`;
@@ -52,6 +75,13 @@ export class AirportTransferSearchService {
             ORDER BY ncc.danhGiaTrungBinh DESC, dv.giaTienMotChieu ASC
         `);
 
+        // DEBUG: Log the search results
+        console.log('🔍 Search query returned', services.length, 'services');
+        if (services.length > 0) {
+            console.log('🔍 First service ID:', services[0].id);
+            console.log('🔍 All service IDs:', services.map(s => s.id));
+        }
+
         return services.map((service: any) => ({
             id: service.id,
             nhaCungCap: {
@@ -73,8 +103,8 @@ export class AirportTransferSearchService {
             giaTienMotChieu: parseFloat(service.giaTienMotChieu),
             giaTienKhuHoi: service.giaTienKhuHoi ? parseFloat(service.giaTienKhuHoi) : null,
             moTa: service.moTa,
-            tienIch: service.tienIch ? JSON.parse(service.tienIch) : [],
-            hinhAnh: service.hinhAnh ? JSON.parse(service.hinhAnh) : [],
+            tienIch: service.tienIch ? this.parseJsonOrCsv(service.tienIch) : [],
+            hinhAnh: service.hinhAnh ? this.parseJsonOrCsv(service.hinhAnh) : [],
         }));
     }
 
@@ -129,8 +159,8 @@ export class AirportTransferSearchService {
             giaTienMotChieu: parseFloat(result.giaTienMotChieu),
             giaTienKhuHoi: result.giaTienKhuHoi ? parseFloat(result.giaTienKhuHoi) : null,
             moTa: result.moTa,
-            tienIch: result.tienIch ? JSON.parse(result.tienIch) : [],
-            hinhAnh: result.hinhAnh ? JSON.parse(result.hinhAnh) : [],
+            tienIch: result.tienIch ? this.parseJsonOrCsv(result.tienIch) : [],
+            hinhAnh: result.hinhAnh ? this.parseJsonOrCsv(result.hinhAnh) : [],
         };
     }
 

@@ -9,6 +9,9 @@ export class AirportTransferBookingsController {
 
     @Post()
     createBooking(@Body() createBookingDto: CreateAirportTransferBookingDto) {
+        // DEBUG: Log the received DTO
+        console.log('🎯 Controller received DTO:', createBookingDto);
+        console.log('🎯 dichVuId from DTO:', createBookingDto.dichVuId);
         return this.airportTransferBookingsService.createBooking(createBookingDto);
     }
 
@@ -33,5 +36,10 @@ export class AirportTransferBookingsController {
     @Post('payment')
     processPayment(@Body() paymentDto: CreateAirportTransferPaymentDto) {
         return this.airportTransferBookingsService.processPayment(paymentDto);
+    }
+
+    @Get(':bookingId/payments')
+    getPaymentsByBookingId(@Param('bookingId', ParseIntPipe) bookingId: number) {
+        return this.airportTransferBookingsService.getPaymentsByBookingId(bookingId);
     }
 }

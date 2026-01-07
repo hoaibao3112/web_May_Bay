@@ -25,10 +25,17 @@ export class AirportTransferBookingsService {
             ghiChu,
         } = createBookingDto;
 
+        // DEBUG: Log the received data
+        console.log('📥 Received dichVuId:', dichVuId);
+
         // Get service details to calculate price
         const service: any = await this.prisma.$queryRaw`
             SELECT * FROM dich_vu_dua_don WHERE id = ${dichVuId}
         `;
+
+        // DEBUG: Log query result
+        console.log('📊 Query result:', service);
+        console.log('📊 Service found:', service && service.length > 0 ? 'YES' : 'NO');
 
         if (!service || service.length === 0) {
             throw new Error('Dịch vụ không tồn tại');
@@ -95,7 +102,13 @@ export class AirportTransferBookingsService {
 
         const bookingId = result[0].id;
 
-        return this.getBookingById(bookingId);
+        // DEBUG: Log the created booking ID
+        console.log('✅ Booking created with ID:', bookingId);
+
+        const createdBooking = await this.getBookingById(bookingId);
+        console.log('✅ Retrieved booking:', createdBooking ? 'SUCCESS' : 'FAILED');
+
+        return createdBooking;
     }
 
     async getBookingById(id: number) {
@@ -239,10 +252,18 @@ export class AirportTransferBookingsService {
     async processPayment(paymentDto: CreateAirportTransferPaymentDto) {
         const { bookingId, phuongThucThanhToan, soTien } = paymentDto;
 
+        // DEBUG: Log payment request
+        console.log('💳 Processing payment for booking ID:', bookingId);
+        console.log('💳 Payment data:', paymentDto);
+
         // Get booking details
         const booking: any = await this.prisma.$queryRaw`
             SELECT * FROM dat_dich_vu_dua_don WHERE id = ${bookingId}
         `;
+
+        // DEBUG: Log query result
+        console.log('💳 Booking query result:', booking);
+        console.log('💳 Booking found:', booking && booking.length > 0 ? 'YES' : 'NO');
 
         if (!booking || booking.length === 0) {
             throw new Error('Không tìm thấy đặt chỗ');
@@ -250,12 +271,33 @@ export class AirportTransferBookingsService {
 
         const bookingData = booking[0];
 
+        // Check if already paid
+        if (bookingData.trangThaiThanhToan === 'paid') {
+            throw new Error('Đặt chỗ đã được thanh toán');
+        }
+
         // Verify amount
         if (parseFloat(bookingData.tongTien) !== soTien) {
             throw new Error('Số tiền thanh toán không khớp');
         }
 
-        // Update payment status
+        // Generate transaction code
+        const maGiaoDich = `${phuongThucThanhToan.toUpperCase()}${Date.now()}${bookingId}`;
+
+        // Create payment record
+        await this.prisma.$queryRaw`
+            INSERT INTO thanh_toan_dua_don (
+                datDichVuId, soTien, phuongThucThanhToan, 
+                trangThai, maGiaoDich, thoiGianThanhToan,
+                moTa, createdAt, updatedAt
+            ) VALUES (
+                ${bookingId}, ${soTien}, ${phuongThucThanhToan},
+                'completed', ${maGiaoDich}, NOW(),
+                'Thanh toán thành công', NOW(), NOW()
+            )
+        `;
+
+        // Update booking payment status
         await this.prisma.$queryRaw`
             UPDATE dat_dich_vu_dua_don 
             SET 
@@ -269,8 +311,31 @@ export class AirportTransferBookingsService {
         return {
             message: 'Thanh toán thành công',
             bookingId,
+            maGiaoDich,
             soTien,
             phuongThucThanhToan,
+            thoiGianThanhToan: new Date(),
         };
+    }
+
+    async getPaymentsByBookingId(bookingId: number) {
+        const payments: any = await this.prisma.$queryRaw`
+            SELECT * FROM thanh_toan_dua_don 
+            WHERE datDichVuId = ${bookingId}
+            ORDER BY createdAt DESC
+        `;
+
+        return payments.map((payment: any) => ({
+            id: payment.id,
+            soTien: parseFloat(payment.soTien),
+            phuongThucThanhToan: payment.phuongThucThanhToan,
+            trangThai: payment.trangThai,
+            maGiaoDich: payment.maGiaoDich,
+            maGiaoDichNganHang: payment.maGiaoDichNganHang,
+            nganHang: payment.nganHang,
+            moTa: payment.moTa,
+            thoiGianThanhToan: payment.thoiGianThanhToan,
+            createdAt: payment.createdAt,
+        }));
     }
 }

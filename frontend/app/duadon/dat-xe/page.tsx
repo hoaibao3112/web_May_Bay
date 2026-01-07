@@ -114,6 +114,11 @@ export default function AirportTransferBookingPage() {
                 ghiChu: contactInfo.ghiChu,
             };
 
+            // DEBUG: Xem data đang gửi lên
+            console.log('🔍 SERVICE ID FROM URL:', serviceId);
+            console.log('🔍 BOOKING DATA:', bookingData);
+            console.log('🔍 dichVuId (parsed):', bookingData.dichVuId);
+
             const res = await fetch('http://localhost:5000/airport-transfer-bookings', {
                 method: 'POST',
                 headers: {
