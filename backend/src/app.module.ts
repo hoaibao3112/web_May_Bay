@@ -29,6 +29,7 @@ import { AirportTransferSearchModule } from './airport-transfer-search/airport-t
 import { AirportTransferBookingsModule } from './airport-transfer-bookings/airport-transfer-bookings.module';
 import { AirportTransferCompaniesModule } from './airport-transfer-companies/airport-transfer-companies.module';
 import { AirportTransferReviewsModule } from './airport-transfer-reviews/airport-transfer-reviews.module';
+import { AdminModule } from './admin/admin.module';
 import { TestDbController } from './test-db.controller';
 
 @Module({
@@ -63,6 +64,7 @@ import { TestDbController } from './test-db.controller';
     AirportTransferBookingsModule,
     AirportTransferCompaniesModule,
     AirportTransferReviewsModule,
+    AdminModule,
   ],
   controllers: [TestDbController],
 })
