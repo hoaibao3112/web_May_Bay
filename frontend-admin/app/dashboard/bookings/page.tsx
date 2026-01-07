@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FiSearch, FiFilter, FiEye, FiX, FiCheck } from 'react-icons/fi';
 import { getFlightBookings, getBusBookings, getCarBookings, getTransferBookings } from '@/lib/api';
 
 export default function BookingsPage() {
+    const router = useRouter();
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('all');
@@ -223,8 +225,18 @@ export default function BookingsPage() {
                         <tbody className="divide-y divide-slate-800">
                             {paginatedBookings.map((booking) => {
                                 const typeInfo = getTypeLabel(booking.type);
+                                const detailUrl = booking.type === 'flight'
+                                    ? `/dashboard/bookings/flights/${booking.id}`
+                                    : booking.type === 'car'
+                                        ? `/dashboard/bookings/cars/${booking.id}`
+                                        : '#';
+
                                 return (
-                                    <tr key={booking.id} className="hover:bg-slate-800/50 transition-colors">
+                                    <tr
+                                        key={booking.id}
+                                        onClick={() => detailUrl !== '#' && router.push(detailUrl)}
+                                        className="hover:bg-slate-800/50 transition-colors cursor-pointer"
+                                    >
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-white">{booking.code}</div>
                                         </td>
