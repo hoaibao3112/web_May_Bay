@@ -20,13 +20,15 @@ interface LocationAutocompleteProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  city?: string;
 }
 
 export default function LocationAutocomplete({
   value,
   onChange,
   placeholder = "Nhập thành phố",
-  className = ""
+  className = "",
+  city
 }: LocationAutocompleteProps) {
   const [cities, setCities] = useState<City[]>([]);
   const [popularCities, setPopularCities] = useState<string[]>([]);
@@ -48,7 +50,7 @@ export default function LocationAutocomplete({
         console.error('Lỗi tải danh sách thành phố:', error);
       }
     };
-    
+
     const fetchPopularCities = async () => {
       try {
         // Lấy danh sách các thành phố có bến xe
@@ -66,9 +68,9 @@ export default function LocationAutocomplete({
         console.error('Lỗi tải thành phố phổ biến:', error);
         // Fallback với các thành phố phổ biến
         setPopularCities([
-          'Hồ Chí Minh', 
-          'Hà Nội', 
-          'Đà Nẵng', 
+          'Hồ Chí Minh',
+          'Hà Nội',
+          'Đà Nẵng',
           'Nha Trang',
           'Đà Lạt',
           'Cần Thơ',
@@ -77,7 +79,7 @@ export default function LocationAutocomplete({
         ]);
       }
     };
-    
+
     fetchCities();
     fetchPopularCities();
   }, []);
@@ -90,7 +92,7 @@ export default function LocationAutocomplete({
     }
 
     const searchTerm = value.toLowerCase().trim();
-    
+
     // Loại bỏ dấu tiếng Việt để tìm kiếm tốt hơn
     const removeDiacritics = (str: string) => {
       return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -100,14 +102,47 @@ export default function LocationAutocomplete({
       const cityName = city.name.toLowerCase();
       const cityNameNoDiacritics = removeDiacritics(cityName);
       const searchNoDiacritics = removeDiacritics(searchTerm);
-      
-      return cityName.includes(searchTerm) || 
-             cityNameNoDiacritics.includes(searchNoDiacritics) ||
-             city.code.toLowerCase().includes(searchTerm);
+
+      return cityName.includes(searchTerm) ||
+        cityNameNoDiacritics.includes(searchNoDiacritics) ||
+        city.code.toLowerCase().includes(searchTerm);
     });
 
     setFilteredCities(filtered.slice(0, 10)); // Giới hạn 10 gợi ý
   }, [value, cities]);
+
+  // Tìm kiếm địa điểm dựa trên thành phố (đối với đưa đón sân bay)
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      if (!city || value.length < 1) return;
+
+      setIsLoading(true);
+      try {
+        const res = await fetch(`http://localhost:5000/airport-transfer-search/suggest-destinations?q=${encodeURIComponent(value)}&city=${encodeURIComponent(city)}`);
+        if (res.ok) {
+          const data = await res.json();
+          // Map backend format to local format
+          const suggestions = data.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            code: d.type,
+            type: d.type,
+            city: d.city
+          }));
+          setFilteredCities(suggestions);
+        }
+      } catch (error) {
+        console.error('Lỗi tải gợi ý điểm đến:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (city) {
+      const timeoutId = setTimeout(fetchDestinations, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [value, city]);
 
   // Đóng dropdown khi click bên ngoài
   useEffect(() => {
@@ -148,34 +183,58 @@ export default function LocationAutocomplete({
         placeholder={placeholder}
         autoComplete="off"
       />
-      
+
       {/* Dropdown Suggestions */}
       {showSuggestions && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
-          {/* Nếu đang gõ và có kết quả tìm kiếm */}
-          {value && filteredCities.length > 0 && (
+          {/* Nếu đang gõ hoặc đã chọn thành phố và có kết quả tìm kiếm */}
+          {(value || city) && filteredCities.length > 0 && (
             <>
               <div className="px-4 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b">
-                KẾT QUẢ TÌM KIẾM
+                {city ? 'ĐỊA ĐIỂM GỢI Ý' : 'KẾT QUẢ TÌM KIẾM'}
               </div>
-              {filteredCities.map((city) => (
-                <button
-                  key={city.id}
-                  onClick={() => handleSelectCity(city.name)}
-                  className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">📍</span>
-                      <div>
-                        <div className="font-medium text-gray-900">{city.name}</div>
-                        <div className="text-xs text-gray-500">Việt Nam</div>
+              {isLoading ? (
+                <div className="p-4 text-center text-gray-500 text-sm">Đang tải...</div>
+              ) : (
+                filteredCities.map((item: any) => {
+                  // Icon và mô tả dựa trên loại địa điểm
+                  let icon = '📍';
+                  let description = 'Việt Nam';
+                  
+                  if (city) {
+                    // Khi có city, hiển thị theo type từ backend
+                    if (item.type === 'hotel') {
+                      icon = '🏨';
+                      description = item.city || city;
+                    } else if (item.type === 'district') {
+                      icon = '🏙️';
+                      description = 'Quận/Huyện';
+                    } else if (item.type === 'area') {
+                      icon = '🗺️';
+                      description = 'Khu vực';
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSelectCity(item.name)}
+                      className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{icon}</span>
+                          <div>
+                            <div className="font-medium text-gray-900">{item.name}</div>
+                            <div className="text-xs text-gray-500">{description}</div>
+                          </div>
+                        </div>
+                        {!city && <span className="text-xs text-gray-400 font-mono uppercase">{item.code}</span>}
                       </div>
-                    </div>
-                    <span className="text-xs text-gray-400 font-mono uppercase">{city.code}</span>
-                  </div>
-                </button>
-              ))}
+                    </button>
+                  );
+                })
+              )}
             </>
           )}
 
@@ -191,8 +250,8 @@ export default function LocationAutocomplete({
             </div>
           )}
 
-          {/* Nếu chưa gõ gì - hiển thị các thành phố phổ biến */}
-          {!value && popularCities.length > 0 && (
+          {/* Nếu chưa gõ gì và không có thành phố được chọn - hiển thị các thành phố phổ biến */}
+          {!value && !city && popularCities.length > 0 && (
             <>
               <div className="px-4 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b flex items-center gap-2">
                 <span>⭐</span>

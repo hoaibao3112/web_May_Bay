@@ -28,6 +28,18 @@ export class CarRentalSearchService {
 
         if (tuyenDuongId) {
             whereClause.tuyenDuongId = tuyenDuongId;
+        } else if (diemDi || diemDen) {
+            whereClause.tuyenDuong = {};
+            if (diemDi) {
+                whereClause.tuyenDuong.diemDi = {
+                    contains: diemDi,
+                };
+            }
+            if (diemDen) {
+                whereClause.tuyenDuong.diemDen = {
+                    contains: diemDen,
+                };
+            }
         }
 
         if (nhaCungCapId) {

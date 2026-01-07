@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import LocationAutocomplete from './components/LocationAutocomplete';
+import AirportAutocomplete from './components/AirportAutocomplete';
 
 export default function HomePage() {
   const cityInputRef = useRef<HTMLDivElement>(null);
@@ -49,6 +50,26 @@ export default function HomePage() {
     'Vũng Tàu',
     'Huế',
   ]);
+
+  // Car rental search state
+  const [carPickupLocation, setCarPickupLocation] = useState('');
+  const [carDropoffLocation, setCarDropoffLocation] = useState('');
+  const [carPickupDate, setCarPickupDate] = useState('');
+  const [carPickupTime, setCarPickupTime] = useState('00:00');
+  const [carDropoffDate, setCarDropoffDate] = useState('');
+  const [carDropoffTime, setCarDropoffTime] = useState('00:00');
+  const [carPassengers, setCarPassengers] = useState(2);
+  const [carLuggage, setCarLuggage] = useState(2);
+
+  // Airport transfer search state
+  const [atPickupLocation, setAtPickupLocation] = useState('');
+  const [atDropoffLocation, setAtDropoffLocation] = useState('');
+  const [atAirportId, setAtAirportId] = useState<number | null>(null);
+  const [atCity, setAtCity] = useState('');
+  const [atDate, setAtDate] = useState('');
+  const [atTime, setAtTime] = useState('00:00');
+  const [atPassengers, setAtPassengers] = useState(2);
+  const [atLuggage, setAtLuggage] = useState(2);
 
   useEffect(() => {
     // Load airports
@@ -112,12 +133,15 @@ export default function HomePage() {
     setDepartDate(tomorrowStr);
     setHotelCheckin(tomorrowStr);
     setBusDate(tomorrowStr);
+    setCarPickupDate(tomorrowStr);
+    setAtDate(tomorrowStr);
 
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 8);
     const nextWeekStr = nextWeek.toISOString().split('T')[0];
     setReturnDate(nextWeekStr);
     setHotelCheckout(nextWeekStr);
+    setCarDropoffDate(nextWeekStr);
   }, []);
 
   // Click outside to close dropdown
@@ -242,6 +266,45 @@ export default function HomePage() {
       passengers: busPassengers.toString(),
     });
     window.location.href = `/xekhach?${params.toString()}`;
+  };
+
+  const handleCarRentalSearch = () => {
+    if (!carPickupLocation || !carPickupDate || !carPickupTime) {
+      alert('Vui lòng điền đầy đủ thông tin điểm đón và thời gian');
+      return;
+    }
+
+    // Navigate to car rental search results page
+    const params = new URLSearchParams({
+      from: carPickupLocation,
+      to: carDropoffLocation || carPickupLocation,
+      pickupDate: carPickupDate,
+      pickupTime: carPickupTime,
+      dropoffDate: carDropoffDate || carPickupDate,
+      dropoffTime: carDropoffTime,
+      passengers: carPassengers.toString(),
+      luggage: carLuggage.toString(),
+    });
+    window.location.href = `/thuexe?${params.toString()}`;
+  };
+
+  const handleAirportTransferSearch = () => {
+    if (!atPickupLocation || !atDate || !atTime) {
+      alert('Vui lòng điền đầy đủ thông tin điểm đón và thời gian');
+      return;
+    }
+
+    // Navigate to airport transfer results page
+    const params = new URLSearchParams({
+      pickupLocation: atPickupLocation,
+      dropoffLocation: atDropoffLocation,
+      date: atDate,
+      time: atTime,
+      passengers: atPassengers.toString(),
+      luggage: atLuggage.toString(),
+    });
+    if (atAirportId) params.append('airportId', atAirportId.toString());
+    window.location.href = `/duadon?${params.toString()}`;
   };
 
   // Service tabs data
@@ -746,8 +809,241 @@ export default function HomePage() {
                 </div>
               )}
 
+              {/* Car Rental Search */}
+              {activeTab === 'car-rental' && (
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Pickup Location */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        🚗 Từ sân bay, địa chỉ, tòa nhà
+                      </label>
+                      <LocationAutocomplete
+                        value={carPickupLocation}
+                        onChange={(value) => setCarPickupLocation(value)}
+                        placeholder="Sân bay quốc tế Nội Bài (HAN)"
+                      />
+                    </div>
+
+                    {/* Dropoff Location */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        📍 Đến khu vực, địa chỉ, tòa nhà
+                      </label>
+                      <LocationAutocomplete
+                        value={carDropoffLocation}
+                        onChange={(value) => setCarDropoffLocation(value)}
+                        placeholder="Hồ Hoàn Kiếm"
+                      />
+                    </div>
+
+                    {/* Pickup Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày đón
+                      </label>
+                      <input
+                        type="date"
+                        value={carPickupDate}
+                        onChange={(e) => setCarPickupDate(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+
+                    {/* Pickup Time */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Giờ đón
+                      </label>
+                      <input
+                        type="time"
+                        value={carPickupTime}
+                        onChange={(e) => setCarPickupTime(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Second Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                    {/* Dropoff Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày trả (Tùy chọn)
+                      </label>
+                      <input
+                        type="date"
+                        value={carDropoffDate}
+                        onChange={(e) => setCarDropoffDate(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+
+                    {/* Dropoff Time */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Giờ trả dự kiến
+                      </label>
+                      <input
+                        type="time"
+                        value={carDropoffTime}
+                        onChange={(e) => setCarDropoffTime(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+
+                    {/* Passengers */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Số hành khách
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={carPassengers}
+                        onChange={(e) => setCarPassengers(parseInt(e.target.value))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+
+                    {/* Luggage */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Số hành lý
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="20"
+                        value={carLuggage}
+                        onChange={(e) => setCarLuggage(parseInt(e.target.value))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Search Button */}
+                  <div className="flex justify-end mt-4">
+                    <button
+                      onClick={handleCarRentalSearch}
+                      disabled={!carPickupLocation || !carPickupDate || !carPickupTime}
+                      className="px-10 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+                    >
+                      🔍 Tìm xe
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Airport Transfer Search */}
+              {activeTab === 'airport-transfer' && (
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Pickup Location */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        🚗 Từ sân bay, địa chỉ, tòa nhà
+                      </label>
+                      <AirportAutocomplete
+                        value={atPickupLocation}
+                        onChange={(value, id, city) => {
+                          setAtPickupLocation(value);
+                          if (id) setAtAirportId(id);
+                          if (city) setAtCity(city);
+                        }}
+                        placeholder="Sân bay quốc tế Nội Bài (HAN)"
+                      />
+                    </div>
+
+                    {/* Dropoff Location */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        📍 Đến khu vực, địa chỉ, tòa nhà
+                      </label>
+                      <LocationAutocomplete
+                        value={atDropoffLocation}
+                        onChange={(value) => setAtDropoffLocation(value)}
+                        placeholder="Hồ Hoàn Kiếm"
+                        city={atCity}
+                      />
+                    </div>
+
+                    {/* Pickup Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày đón
+                      </label>
+                      <input
+                        type="date"
+                        value={atDate}
+                        onChange={(e) => setAtDate(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+
+                    {/* Pickup Time */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Giờ đón
+                      </label>
+                      <input
+                        type="time"
+                        value={atTime}
+                        onChange={(e) => setAtTime(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Second Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                    {/* Passengers */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Số hành khách
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={atPassengers}
+                        onChange={(e) => setAtPassengers(parseInt(e.target.value))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+
+                    {/* Luggage */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Số hành lý
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="20"
+                        value={atLuggage}
+                        onChange={(e) => setAtLuggage(parseInt(e.target.value))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Search Button */}
+                  <div className="flex justify-end mt-4">
+                    <button
+                      onClick={handleAirportTransferSearch}
+                      disabled={!atPickupLocation || !atDate || !atTime}
+                      className="px-10 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+                    >
+                      🔍 Tìm xe
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Other services */}
-              {!['flights', 'hotels', 'buses'].includes(activeTab) && (
+              {!['flights', 'hotels', 'buses', 'car-rental', 'airport-transfer'].includes(activeTab) && (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🚧</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">

@@ -21,6 +21,14 @@ import { BusStationsModule } from './bus-stations/bus-stations.module';
 import { BusSearchModule } from './bus-search/bus-search.module';
 import { BusBookingsModule } from './bus-bookings/bus-bookings.module';
 import { BusReviewsModule } from './bus-reviews/bus-reviews.module';
+import { CarRentalSearchModule } from './car-rental-search/car-rental-search.module';
+import { CarRentalBookingsModule } from './car-rental-bookings/car-rental-bookings.module';
+import { CarRentalCompaniesModule } from './car-rental-companies/car-rental-companies.module';
+import { CarRentalReviewsModule } from './car-rental-reviews/car-rental-reviews.module';
+import { AirportTransferSearchModule } from './airport-transfer-search/airport-transfer-search.module';
+import { AirportTransferBookingsModule } from './airport-transfer-bookings/airport-transfer-bookings.module';
+import { AirportTransferCompaniesModule } from './airport-transfer-companies/airport-transfer-companies.module';
+import { AirportTransferReviewsModule } from './airport-transfer-reviews/airport-transfer-reviews.module';
 import { TestDbController } from './test-db.controller';
 
 @Module({
@@ -47,6 +55,14 @@ import { TestDbController } from './test-db.controller';
     BusSearchModule,
     BusBookingsModule,
     BusReviewsModule,
+    CarRentalSearchModule,
+    CarRentalBookingsModule,
+    CarRentalCompaniesModule,
+    CarRentalReviewsModule,
+    AirportTransferSearchModule,
+    AirportTransferBookingsModule,
+    AirportTransferCompaniesModule,
+    AirportTransferReviewsModule,
   ],
   controllers: [TestDbController],
 })
