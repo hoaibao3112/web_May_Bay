@@ -19,6 +19,8 @@ model User {
   soDienThoai String?
   vaiTro      VaiTro   @default(CUSTOMER)
   googleId    String?  @unique
+  facebookId  String?  @unique
+  avatar      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

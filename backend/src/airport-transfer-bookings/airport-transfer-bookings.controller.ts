@@ -25,6 +25,14 @@ export class AirportTransferBookingsController {
         return this.airportTransferBookingsService.getBookingsByUserId(userId);
     }
 
+    @Patch(':id/status')
+    updateBookingStatus(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: { trangThai: string },
+    ) {
+        return this.airportTransferBookingsService.updateBookingStatus(id, body.trangThai);
+    }
+
     @Patch(':id/cancel')
     cancelBooking(
         @Param('id', ParseIntPipe) id: number,

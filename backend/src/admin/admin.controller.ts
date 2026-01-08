@@ -3,12 +3,16 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { AdminService } from './admin.service';
+import { AnalyticsService } from './analytics.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'OPERATOR')
 export class AdminController {
-    constructor(private readonly adminService: AdminService) { }
+    constructor(
+        private readonly adminService: AdminService,
+        private readonly analyticsService: AnalyticsService,
+    ) { }
 
     @Get('stats')
     async getDashboardStats() {
@@ -28,5 +32,10 @@ export class AdminController {
     @Get('recent-activities')
     async getRecentActivities(@Query('limit') limit: number = 10) {
         return this.adminService.getRecentActivities(limit);
+    }
+
+    @Get('analytics')
+    async getAnalytics() {
+        return this.analyticsService.getAnalytics();
     }
 }

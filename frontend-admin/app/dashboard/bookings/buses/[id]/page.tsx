@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { FiArrowLeft, FiUser, FiMapPin, FiClock, FiDollarSign, FiCheckCircle, FiXCircle, FiEdit } from 'react-icons/fi';
+import { FiArrowLeft, FiUser, FiMapPin, FiClock, FiCheckCircle, FiXCircle, FiEdit } from 'react-icons/fi';
 
-export default function CarBookingDetailPage() {
+export default function BusBookingDetailPage() {
     const params = useParams();
     const router = useRouter();
     const [booking, setBooking] = useState<any>(null);
@@ -23,7 +23,7 @@ export default function CarBookingDetailPage() {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const token = localStorage.getItem('adminToken');
 
-            const response = await fetch(`${API_URL}/car-rental-bookings/${params.id}`, {
+            const response = await fetch(`${API_URL}/bus-bookings/${params.id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -37,13 +37,13 @@ export default function CarBookingDetailPage() {
             setBooking(data);
         } catch (error) {
             console.error('Error fetching booking:', error);
-            alert('Không thể tải thông tin đặt xe');
+            alert('Không thể tải thông tin đặt vé');
         } finally {
             setLoading(false);
         }
     };
 
-    const updateBookingStatus = async (newStatus: string, additionalData?: any) => {
+    const updateBookingStatus = async (newStatus: string, paymentMethod?: string) => {
         if (!confirm(`Bạn có chắc chắn muốn cập nhật trạng thái thành "${newStatus}"?`)) {
             return;
         }
@@ -53,15 +53,15 @@ export default function CarBookingDetailPage() {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const token = localStorage.getItem('adminToken');
 
-            const response = await fetch(`${API_URL}/car-rental-bookings/${params.id}/status`, {
+            const response = await fetch(`${API_URL}/bus-bookings/${params.id}/status`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    trangThai: newStatus,
-                    ...additionalData
+                    trangThaiDat: newStatus,
+                    phuongThucThanhToan: paymentMethod
                 }),
             });
 
@@ -80,7 +80,7 @@ export default function CarBookingDetailPage() {
     };
 
     const cancelBooking = async () => {
-        if (!confirm('Bạn có chắc chắn muốn HỦY đơn thuê xe này? Hành động này không thể hoàn tác.')) {
+        if (!confirm('Bạn có chắc chắn muốn HỦY đơn đặt vé này? Hành động này không thể hoàn tác.')) {
             return;
         }
 
@@ -89,7 +89,7 @@ export default function CarBookingDetailPage() {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const token = localStorage.getItem('adminToken');
 
-            const response = await fetch(`${API_URL}/car-rental-bookings/${params.id}`, {
+            const response = await fetch(`${API_URL}/bus-bookings/${params.id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -100,38 +100,21 @@ export default function CarBookingDetailPage() {
                 throw new Error('Failed to cancel booking');
             }
 
-            alert('Đã hủy đơn thuê xe thành công!');
+            alert('Đã hủy đơn đặt vé thành công!');
             fetchBookingDetail();
         } catch (error) {
             console.error('Error canceling booking:', error);
-            alert('Không thể hủy đơn thuê xe');
+            alert('Không thể hủy đơn đặt vé');
         } finally {
             setUpdating(false);
         }
     };
 
-    const assignDriver = () => {
-        const driverName = prompt('Nhập tên tài xế:');
-        if (!driverName) return;
-
-        const driverPhone = prompt('Nhập số điện thoại tài xế:');
-        if (!driverPhone) return;
-
-        const licensePlate = prompt('Nhập biển số xe:');
-        if (!licensePlate) return;
-
-        updateBookingStatus('DANG_PHUC_VU', {
-            tenTaiXe: driverName,
-            soDienThoaiTaiXe: driverPhone,
-            bienSoXe: licensePlate,
-        });
-    };
-
     const getStatusBadge = (status: string) => {
         const statusConfig: any = {
-            CHO_XAC_NHAN: { label: 'Chờ xác nhận', class: 'bg-yellow-500/10 text-yellow-400' },
+            CHO_THANH_TOAN: { label: 'Chờ thanh toán', class: 'bg-yellow-500/10 text-yellow-400' },
+            DA_THANH_TOAN: { label: 'Đã thanh toán', class: 'bg-green-500/10 text-green-400' },
             DA_XAC_NHAN: { label: 'Đã xác nhận', class: 'bg-blue-500/10 text-blue-400' },
-            DANG_PHUC_VU: { label: 'Đang phục vụ', class: 'bg-purple-500/10 text-purple-400' },
             HOAN_THANH: { label: 'Hoàn thành', class: 'bg-green-500/10 text-green-400' },
             DA_HUY: { label: 'Đã hủy', class: 'bg-red-500/10 text-red-400' },
         };
@@ -161,7 +144,7 @@ export default function CarBookingDetailPage() {
     if (!booking) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
-                <div className="text-slate-400 mb-4">Không tìm thấy thông tin thuê xe</div>
+                <div className="text-slate-400 mb-4">Không tìm thấy thông tin đặt vé</div>
                 <button
                     onClick={() => router.back()}
                     className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
@@ -184,81 +167,72 @@ export default function CarBookingDetailPage() {
                         <FiArrowLeft className="w-6 h-6 text-slate-400" />
                     </button>
                     <div>
-                        <h1 className="text-3xl font-bold text-white">Chi tiết thuê xe</h1>
-                        <p className="text-slate-400 mt-1">Mã đơn: {booking.maDonThue}</p>
+                        <h1 className="text-3xl font-bold text-white">Chi tiết đặt vé xe khách</h1>
+                        <p className="text-slate-400 mt-1">Mã đơn: {booking.maDonDat}</p>
                     </div>
                 </div>
-                <div>{getStatusBadge(booking.trangThai)}</div>
+                <div>{getStatusBadge(booking.trangThaiDat)}</div>
             </div>
 
             {/* Main Info Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column - Rental Info */}
+                {/* Left Column - Booking Info */}
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Car Info */}
+                    {/* Trip Info */}
                     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
                         <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                             <FiMapPin className="w-5 h-5 text-blue-400" />
-                            Thông tin xe
+                            Thông tin chuyến xe
                         </h2>
-                        {booking.xe && (
+                        {booking.chuyenXe && (
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <div className="text-sm text-slate-400 mb-1">Hãng xe</div>
-                                        <div className="text-white font-medium">{booking.xe.nhaCungCap?.tenNhaCungCap || 'N/A'}</div>
+                                        <div className="text-sm text-slate-400 mb-1">Nhà xe</div>
+                                        <div className="text-white font-medium">{booking.chuyenXe.nhaXe?.tenNhaXe || 'N/A'}</div>
                                     </div>
                                     <div>
                                         <div className="text-sm text-slate-400 mb-1">Loại xe</div>
-                                        <div className="text-white font-medium">{booking.xe.tenXe}</div>
+                                        <div className="text-white font-medium">{booking.chuyenXe.loaiXe}</div>
                                     </div>
                                     <div>
-                                        <div className="text-sm text-slate-400 mb-1">Số chỗ</div>
-                                        <div className="text-white font-medium">{booking.xe.soChoNgoi} chỗ</div>
+                                        <div className="text-sm text-slate-400 mb-1">Điểm đi</div>
+                                        <div className="text-white font-medium">{booking.chuyenXe.diemDi}</div>
                                     </div>
                                     <div>
-                                        <div className="text-sm text-slate-400 mb-1">Truyền động</div>
-                                        <div className="text-white font-medium">{booking.xe.loaiTruyenDong}</div>
+                                        <div className="text-sm text-slate-400 mb-1">Điểm đến</div>
+                                        <div className="text-white font-medium">{booking.chuyenXe.diemDen}</div>
                                     </div>
                                     <div>
-                                        <div className="text-sm text-slate-400 mb-1">Nhiên liệu</div>
-                                        <div className="text-white font-medium">{booking.xe.loaiNhienLieu}</div>
+                                        <div className="text-sm text-slate-400 mb-1">Giờ khởi hành</div>
+                                        <div className="text-white font-medium">
+                                            {new Date(booking.chuyenXe.gioKhoiHanh).toLocaleString('vi-VN')}
+                                        </div>
                                     </div>
                                     <div>
-                                        <div className="text-sm text-slate-400 mb-1">Hành lý</div>
-                                        <div className="text-white font-medium">{booking.xe.soHanhLy} túi</div>
+                                        <div className="text-sm text-slate-400 mb-1">Thời gian di chuyển</div>
+                                        <div className="text-white font-medium">{booking.chuyenXe.thoiGianDiChuyen}</div>
                                     </div>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Rental Period */}
+                    {/* Seat Info */}
                     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                            <FiClock className="w-5 h-5 text-blue-400" />
-                            Thời gian thuê
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <div className="text-sm text-slate-400 mb-1">Nhận xe</div>
-                                <div className="text-white font-medium">
-                                    {new Date(booking.thoiGianNhan).toLocaleString('vi-VN')}
-                                </div>
-                                <div className="text-sm text-slate-400 mt-1">📍 {booking.diaDiemNhan}</div>
+                        <h2 className="text-lg font-semibold text-white mb-4">Thông tin ghế</h2>
+                        {booking.chiTietGhe && booking.chiTietGhe.length > 0 ? (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {booking.chiTietGhe.map((ghe: any, idx: number) => (
+                                    <div key={idx} className="bg-slate-800 rounded-lg p-3 text-center">
+                                        <div className="text-white font-medium">{ghe.soGhe}</div>
+                                        <div className="text-xs text-slate-400 mt-1">{formatCurrency(ghe.giaGhe)}</div>
+                                    </div>
+                                ))}
                             </div>
-                            <div>
-                                <div className="text-sm text-slate-400 mb-1">Trả xe</div>
-                                <div className="text-white font-medium">
-                                    {new Date(booking.thoiGianTra).toLocaleString('vi-VN')}
-                                </div>
-                                <div className="text-sm text-slate-400 mt-1">📍 {booking.diaDiemTra}</div>
-                            </div>
-                            <div>
-                                <div className="text-sm text-slate-400 mb-1">Số ngày thuê</div>
-                                <div className="text-white font-medium">{booking.soNgayThue} ngày</div>
-                            </div>
-                        </div>
+                        ) : (
+                            <div className="text-slate-400 text-center py-4">Chưa có thông tin ghế</div>
+                        )}
                     </div>
 
                     {/* Customer Info */}
@@ -283,44 +257,23 @@ export default function CarBookingDetailPage() {
                         </div>
                     </div>
 
-                    {/* Driver Info (if assigned) */}
-                    {(booking.tenTaiXe || booking.soDienThoaiTaiXe || booking.bienSoXe) && (
+                    {/* Pickup/Dropoff */}
+                    {(booking.diemDon || booking.diemTra) && (
                         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                            <h2 className="text-lg font-semibold text-white mb-4">Thông tin phục vụ</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {booking.tenTaiXe && (
+                            <h2 className="text-lg font-semibold text-white mb-4">Điểm đón/trả</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {booking.diemDon && (
                                     <div>
-                                        <div className="text-sm text-slate-400 mb-1">Tài xế</div>
-                                        <div className="text-white">{booking.tenTaiXe}</div>
+                                        <div className="text-sm text-slate-400 mb-1">Điểm đón</div>
+                                        <div className="text-white">{booking.diemDon}</div>
                                     </div>
                                 )}
-                                {booking.soDienThoaiTaiXe && (
+                                {booking.diemTra && (
                                     <div>
-                                        <div className="text-sm text-slate-400 mb-1">SĐT tài xế</div>
-                                        <div className="text-white">{booking.soDienThoaiTaiXe}</div>
+                                        <div className="text-sm text-slate-400 mb-1">Điểm trả</div>
+                                        <div className="text-white">{booking.diemTra}</div>
                                     </div>
                                 )}
-                                {booking.bienSoXe && (
-                                    <div>
-                                        <div className="text-sm text-slate-400 mb-1">Biển số xe</div>
-                                        <div className="text-white">{booking.bienSoXe}</div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Additional Services */}
-                    {booking.dichVuBoSung && booking.dichVuBoSung.length > 0 && (
-                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                            <h2 className="text-lg font-semibold text-white mb-4">Dịch vụ bổ sung</h2>
-                            <div className="space-y-2">
-                                {booking.dichVuBoSung.map((service: string, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-2 text-slate-300">
-                                        <FiCheckCircle className="text-green-400" />
-                                        <span>{service}</span>
-                                    </div>
-                                ))}
                             </div>
                         </div>
                     )}
@@ -333,13 +286,17 @@ export default function CarBookingDetailPage() {
                         <h2 className="text-lg font-semibold text-white mb-4">Tổng quan</h2>
                         <div className="space-y-4">
                             <div className="flex justify-between">
+                                <span className="text-slate-400">Số ghế:</span>
+                                <span className="text-white font-medium">{booking.chiTietGhe?.length || 0} ghế</span>
+                            </div>
+                            <div className="flex justify-between">
                                 <span className="text-slate-400">Tổng tiền:</span>
                                 <span className="text-white font-bold text-lg">{formatCurrency(Number(booking.tongTien))}</span>
                             </div>
-                            {booking.tienCoc && booking.tienCoc > 0 && (
+                            {booking.phuongThucThanhToan && (
                                 <div className="flex justify-between">
-                                    <span className="text-slate-400">Tiền cọc:</span>
-                                    <span className="text-yellow-400">{formatCurrency(Number(booking.tienCoc))}</span>
+                                    <span className="text-slate-400">Thanh toán:</span>
+                                    <span className="text-white">{booking.phuongThucThanhToan}</span>
                                 </div>
                             )}
                             <div className="flex justify-between">
@@ -354,32 +311,32 @@ export default function CarBookingDetailPage() {
                         <h2 className="text-lg font-semibold text-white mb-4">Hành động</h2>
                         <div className="space-y-3">
                             <button
-                                onClick={() => updateBookingStatus('DA_XAC_NHAN')}
-                                disabled={updating || booking.trangThai !== 'CHO_XAC_NHAN'}
-                                className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                onClick={() => updateBookingStatus('DA_THANH_TOAN', 'TIEN_MAT')}
+                                disabled={updating || booking.trangThaiDat === 'DA_THANH_TOAN'}
+                                className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 <FiCheckCircle />
-                                Xác nhận đơn
+                                Xác nhận thanh toán
                             </button>
                             <button
-                                onClick={assignDriver}
-                                disabled={updating || booking.trangThai === 'DA_HUY' || booking.trangThai === 'HOAN_THANH'}
-                                className="w-full px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                onClick={() => updateBookingStatus('DA_XAC_NHAN')}
+                                disabled={updating || booking.trangThaiDat === 'DA_XAC_NHAN' || booking.trangThaiDat === 'HOAN_THANH'}
+                                className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                <FiCheckCircle />
-                                Phân công tài xế
+                                <FiEdit />
+                                Xác nhận đơn hàng
                             </button>
                             <button
                                 onClick={() => updateBookingStatus('HOAN_THANH')}
-                                disabled={updating || booking.trangThai === 'HOAN_THANH'}
-                                className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                disabled={updating || booking.trangThaiDat === 'HOAN_THANH'}
+                                className="w-full px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 <FiCheckCircle />
                                 Hoàn thành
                             </button>
                             <button
                                 onClick={cancelBooking}
-                                disabled={updating || booking.trangThai === 'DA_HUY'}
+                                disabled={updating || booking.trangThaiDat === 'DA_HUY'}
                                 className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 <FiXCircle />

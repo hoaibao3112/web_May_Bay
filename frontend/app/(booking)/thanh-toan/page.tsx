@@ -256,6 +256,36 @@ function ThanhToanContent() {
                   </div>
                 </label>
 
+                {/* MoMo */}
+                <label className={`block border-2 rounded-lg p-4 cursor-pointer transition ${paymentMethod === 'MOMO' ? 'border-pink-500 bg-pink-50' : 'border-gray-200 hover:border-pink-300'
+                  }`}>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="MOMO"
+                      checked={paymentMethod === 'MOMO'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-5 h-5 text-pink-600 focus:ring-pink-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png"
+                          alt="MoMo"
+                          className="h-10 w-10 object-contain rounded-lg"
+                        />
+                        <div>
+                          <p className="font-semibold text-pink-700">Ví MoMo</p>
+                          <p className="text-sm text-gray-600">
+                            Thanh toán nhanh qua ứng dụng MoMo (Sandbox)
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+
                 {/* International Card (Disabled) */}
                 <label className={`block border-2 rounded-lg p-4 cursor-not-allowed opacity-50 border-gray-200`}>
                   <div className="flex items-center gap-4">

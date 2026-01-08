@@ -157,23 +157,6 @@ function KhachSanContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl">✈️</span>
-              <span className="text-xl font-bold text-blue-600">BayNhanh</span>
-            </Link>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/" className="text-gray-700 hover:text-blue-600">Vé máy bay</Link>
-              <Link href="/khachsan" className="text-blue-600 font-semibold border-b-2 border-blue-600">Khách sạn</Link>
-              <UserDropdown />
-            </nav>
-          </div>
-        </div>
-      </header>
-
       {/* Search Bar */}
       <div className="bg-blue-600 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -218,7 +201,7 @@ function KhachSanContent() {
                 >
                   {adults} người lớn, {children} Trẻ em, {rooms} phòng
                 </button>
-                
+
                 {showGuestPicker && (
                   <div className="absolute top-full mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-xl z-50 p-4">
                     <div className="space-y-4">
@@ -431,7 +414,7 @@ function KhachSanContent() {
                         <div>
                           <div className="flex items-start justify-between mb-2">
                             <div>
-                              <Link 
+                              <Link
                                 href={`/khachsan/${hotel.id}?ngayNhanPhong=${checkIn}&ngayTraPhong=${checkOut}&soNguoi=${adults}&soPhong=${rooms}`}
                                 className="text-xl font-semibold text-gray-900 hover:text-blue-600 cursor-pointer"
                               >
@@ -454,7 +437,7 @@ function KhachSanContent() {
                               <p className="text-xs text-gray-500">({reviewCount} đánh giá)</p>
                             </div>
                           </div>
-                          
+
                           <p className="text-sm text-gray-600 mb-2">📍 {hotel.diaChi}</p>
                           <p className="text-sm text-gray-700 line-clamp-2">{hotel.moTa}</p>
                         </div>

@@ -1,4 +1,6 @@
 import { Body, Controller, Post, UseGuards, Get, Request } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -8,7 +10,10 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(
+    private authService: AuthService,
+    private jwtService: JwtService,
+  ) { }
 
   @Post('register')
   async register(@Body() dto: RegisterDto) {
@@ -41,6 +46,32 @@ export class AuthController {
   @Post('change-password')
   async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(req.user.sub, dto);
+  }
+
+  @Get('facebook')
+  @UseGuards(AuthGuard('facebook'))
+  async facebookLogin() {
+    // Initiates Facebook OAuth flow
+  }
+
+  @Get('facebook/callback')
+  @UseGuards(AuthGuard('facebook'))
+  async facebookCallback(@Request() req) {
+    // Generate JWT token
+    const payload = { sub: req.user.id, email: req.user.email, vaiTro: req.user.vaiTro };
+    const accessToken = this.jwtService.sign(payload);
+
+    // Redirect to frontend with token
+    return `
+      <html>
+        <body>
+          <script>
+            window.opener.postMessage({ type: 'FACEBOOK_LOGIN_SUCCESS', token: '${accessToken}', user: ${JSON.stringify(req.user)} }, '*');
+            window.close();
+          </script>
+        </body>
+      </html>
+    `;
   }
 }
 

@@ -217,6 +217,23 @@ export class AirportTransferBookingsService {
         }));
     }
 
+    async updateBookingStatus(id: number, trangThai: string) {
+        // Validate status
+        const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+        if (!validStatuses.includes(trangThai)) {
+            throw new Error('Trạng thái không hợp lệ');
+        }
+
+        // Update booking status
+        await this.prisma.$queryRaw`
+            UPDATE dat_dich_vu_dua_don 
+            SET trangThai = ${trangThai}, updatedAt = NOW()
+            WHERE id = ${id}
+        `;
+
+        return this.getBookingById(id);
+    }
+
     async cancelBooking(id: number, userId: number) {
         // Verify booking belongs to user
         const booking: any = await this.prisma.$queryRaw`

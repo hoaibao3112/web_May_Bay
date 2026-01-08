@@ -9,6 +9,7 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { randomBytes, createHmac } from 'crypto';
 import * as qs from 'qs';
 import * as moment from 'moment';
+import axios from 'axios';
 
 @Injectable()
 export class PaymentsService {
@@ -109,13 +110,23 @@ export class PaymentsService {
       `Thanh toan don dat ve ${booking.maDatVe}`,
     );
 
+    // Tạo MoMo payment URL nếu chọn phương thức MOMO
+    let momoUrl = '';
+    if (dto.phuongThuc === 'MOMO') {
+      momoUrl = await this.createMoMoPaymentUrl(
+        payment.maGiaoDich,
+        tongTien,
+        `Thanh toan don dat ve ${booking.maDatVe}`,
+      );
+    }
+
     return {
       paymentId: payment.id,
       maGiaoDich: payment.maGiaoDich,
       soTien: Number(payment.soTien),
       tienTe: payment.tienTe,
       phuongThuc: payment.phuongThuc,
-      paymentUrl,
+      paymentUrl: dto.phuongThuc === 'MOMO' ? momoUrl : paymentUrl,
     };
   }
 
@@ -126,10 +137,14 @@ export class PaymentsService {
     orderInfo: string,
     orderDescription: string,
   ): Promise<string> {
-    const tmnCode = process.env.VNP_TMNCODE;
-    const secretKey = process.env.VNP_HASHSECRET;
+    const tmnCode = process.env.VNP_TMN_CODE;
+    const secretKey = process.env.VNP_HASH_SECRET;
     const vnpUrl = process.env.VNP_URL;
     const returnUrl = process.env.VNP_RETURN_URL || 'http://localhost:3000/xac-nhan';
+
+    if (!tmnCode || !secretKey || !vnpUrl) {
+      throw new Error('VNPay configuration is missing');
+    }
 
     console.log('🔐 VNPay Config:', {
       tmnCode,
@@ -163,42 +178,111 @@ export class PaymentsService {
     // Sắp xếp params theo thứ tự alphabet
     vnp_Params = this.sortObject(vnp_Params);
 
-    // Tạo sign data KHÔNG encode để tính hash
-    const signData = qs.stringify(vnp_Params, { encode: false });
+    // Tạo sign data theo chuẩn VNPay - chỉ encode dấu cách và một số ký tự đặc biệt
+    // KHÔNG encode : / ? = & (giữ nguyên cho URL)
+    const signData = Object.keys(vnp_Params)
+      .map(key => {
+        let value = String(vnp_Params[key]);
+        // Chỉ encode dấu cách thành +, giữ nguyên các ký tự khác
+        value = value.replace(/ /g, '+');
+        return `${key}=${value}`;
+      })
+      .join('&');
+
     console.log('📝 Sign Data:', signData);
-    
+
     const hmac = createHmac('sha512', secretKey);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
     console.log('✅ Signature:', signed);
-    
+
     vnp_Params['vnp_SecureHash'] = signed;
 
-    // Tạo URL có encode
+    // Tạo URL - encode đầy đủ cho URL thực tế
     const paymentUrl = vnpUrl + '?' + qs.stringify(vnp_Params, { encode: true });
     console.log('🔗 Payment URL created');
 
     return paymentUrl;
   }
 
+  // Tạo MoMo payment URL
+  private async createMoMoPaymentUrl(
+    maGiaoDich: string,
+    amount: number,
+    orderInfo: string,
+  ): Promise<string> {
+    const partnerCode = process.env.MOMO_PARTNER_CODE;
+    const accessKey = process.env.MOMO_ACCESS_KEY;
+    const secretKey = process.env.MOMO_SECRET_KEY;
+    const apiUrl = process.env.MOMO_API_URL;
+    const redirectUrl = process.env.MOMO_REDIRECT_URL;
+    const ipnUrl = process.env.MOMO_IPN_URL;
+
+    const requestId = maGiaoDich;
+    const orderId = maGiaoDich;
+    const requestType = "captureWallet";
+    const extraData = ""; // Có thể gửi dữ liệu thêm ở đây, cần base64 encode
+
+    const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+
+    const signature = createHmac('sha256', secretKey)
+      .update(rawSignature)
+      .digest('hex');
+
+    const requestBody = {
+      partnerCode,
+      accessKey,
+      requestId,
+      amount,
+      orderId,
+      orderInfo,
+      redirectUrl,
+      ipnUrl,
+      extraData,
+      requestType,
+      signature,
+      lang: 'vi'
+    };
+
+    try {
+      const response = await axios.post(apiUrl, requestBody);
+      if (response.data && response.data.payUrl) {
+        return response.data.payUrl;
+      } else {
+        console.error('MoMo Error Response:', response.data);
+        throw new Error(response.data.message || 'Lỗi khi tạo payment URL từ MoMo');
+      }
+    } catch (error) {
+      console.error('MoMo Request Error:', error.response?.data || error.message);
+      throw new Error('Không thể kết nối với cổng thanh toán MoMo');
+    }
+  }
+
   // Xử lý VNPay return
   async handleVNPayReturn(vnpParams: any) {
     console.log('🔙 VNPay Return Params:', vnpParams);
-    
+
     const secureHash = vnpParams['vnp_SecureHash'];
     delete vnpParams['vnp_SecureHash'];
     delete vnpParams['vnp_SecureHashType'];
 
     const sortedParams = this.sortObject(vnpParams);
-    const secretKey = process.env.VNP_HASHSECRET;
-    // Không encode khi verify signature
-    const signData = qs.stringify(sortedParams, { encode: false });
-    
+    const secretKey = process.env.VNP_HASH_SECRET;
+
+    // Tạo sign data giống như khi tạo payment - chỉ encode dấu cách
+    const signData = Object.keys(sortedParams)
+      .map(key => {
+        let value = String(sortedParams[key]);
+        value = value.replace(/ /g, '+');
+        return `${key}=${value}`;
+      })
+      .join('&');
+
     console.log('📝 Return Sign Data:', signData);
     console.log('🔐 Secret Key:', secretKey?.substring(0, 10) + '...');
-    
+
     const hmac = createHmac('sha512', secretKey);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-    
+
     console.log('🔒 Expected Hash:', signed);
     console.log('🔑 Received Hash:', secureHash);
     console.log('✅ Match:', secureHash === signed);
@@ -265,6 +349,91 @@ export class PaymentsService {
         code: '97',
       };
     }
+  }
+
+  // Xử lý MoMo Return (Khi người dùng quay lại web)
+  async handleMoMoReturn(query: any) {
+    console.log('🔙 MoMo Return Params:', query);
+    const { partnerCode, orderId, requestId, amount, orderInfo, orderType, transId, resultCode, message, payType, responseTime, extraData, signature } = query;
+
+    const secretKey = process.env.MOMO_SECRET_KEY;
+    const rawSignature = `accessKey=${process.env.MOMO_ACCESS_KEY}&amount=${amount}&extraData=${extraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
+
+    const expectedSignature = createHmac('sha256', secretKey)
+      .update(rawSignature)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      return { success: false, message: 'Chữ ký không hợp lệ' };
+    }
+
+    const payment = await this.prisma.thanhToan.findUnique({
+      where: { maGiaoDich: orderId },
+      include: { donDatVe: true },
+    });
+
+    if (!payment) {
+      return { success: false, message: 'Không tìm thấy giao dịch' };
+    }
+
+    if (resultCode == 0) { // Thành công
+      return {
+        success: true,
+        message: 'Thanh toán thành công qua MoMo',
+        bookingId: payment.donDatVeId,
+        maDatCho: payment.donDatVe.maDatVe,
+      };
+    } else {
+      return { success: false, message: message || 'Thanh toán thất bại' };
+    }
+  }
+
+  // Xử lý MoMo IPN (Webhook từ MoMo)
+  async handleMoMoIPN(body: any) {
+    console.log('🔔 MoMo IPN received:', body);
+    const { partnerCode, orderId, requestId, amount, orderInfo, orderType, transId, resultCode, message, payType, responseTime, extraData, signature } = body;
+
+    const secretKey = process.env.MOMO_SECRET_KEY;
+    const rawSignature = `accessKey=${process.env.MOMO_ACCESS_KEY}&amount=${amount}&extraData=${extraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
+
+    const expectedSignature = createHmac('sha256', secretKey)
+      .update(rawSignature)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      console.error('❌ MoMo IPN Signature mismatch');
+      return { status: 400, message: 'Signature mismatch' };
+    }
+
+    const payment = await this.prisma.thanhToan.findUnique({
+      where: { maGiaoDich: orderId },
+    });
+
+    if (!payment) {
+      return { status: 404, message: 'Payment not found' };
+    }
+
+    if (resultCode == 0) {
+      await this.prisma.thanhToan.update({
+        where: { id: payment.id },
+        data: {
+          trangThai: 'THANH_CONG',
+          thongTinCong: body,
+        },
+      });
+
+      await this.bookingsService.updateBookingStatus(payment.donDatVeId, 'DA_THANH_TOAN');
+    } else {
+      await this.prisma.thanhToan.update({
+        where: { id: payment.id },
+        data: {
+          trangThai: 'THAT_BAI',
+          thongTinCong: body,
+        },
+      });
+    }
+
+    return { status: 204 }; // MoMo IPN expects 204 No Content for success
   }
 
   // Sort object by key

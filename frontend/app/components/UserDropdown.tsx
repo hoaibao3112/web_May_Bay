@@ -20,14 +20,31 @@ export default function UserDropdown() {
 
   useEffect(() => {
     // Load user from localStorage
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch (error) {
-        console.error('Error parsing user data:', error);
+    const loadUser = () => {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          setUser(JSON.parse(userData));
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      } else {
+        setUser(null);
       }
-    }
+    };
+
+    loadUser();
+
+    // Listen for storage changes (works across tabs)
+    window.addEventListener('storage', loadUser);
+
+    // Listen for custom event (works in same tab)
+    window.addEventListener('userLogin', loadUser);
+
+    return () => {
+      window.removeEventListener('storage', loadUser);
+      window.removeEventListener('userLogin', loadUser);
+    };
   }, []);
 
   useEffect(() => {
@@ -53,14 +70,14 @@ export default function UserDropdown() {
   if (!user) {
     return (
       <div className="flex items-center gap-3">
-        <Link 
-          href="/auth/login" 
+        <Link
+          href="/auth/login"
           className="text-gray-700 hover:text-blue-600 font-medium"
         >
           Đăng nhập
         </Link>
-        <Link 
-          href="/auth/register" 
+        <Link
+          href="/auth/register"
           className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
         >
           Đăng ký
@@ -92,10 +109,10 @@ export default function UserDropdown() {
             <span className="text-yellow-500">⚪</span> {user.diemThuong || 0} Điểm
           </div>
         </div>
-        <svg 
+        <svg
           className={`w-4 h-4 text-gray-600 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none" 
-          stroke="currentColor" 
+          fill="none"
+          stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

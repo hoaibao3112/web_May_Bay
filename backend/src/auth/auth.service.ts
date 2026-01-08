@@ -198,5 +198,56 @@ export class AuthService {
       message: 'Đổi mật khẩu thành công',
     };
   }
+
+  async validateFacebookUser(facebookUser: {
+    facebookId: string;
+    email?: string;
+    hoTen?: string;
+    avatar?: string;
+  }) {
+    try {
+      // Try to find user by facebookId first
+      let user = await this.prisma.user.findFirst({
+        where: { facebookId: facebookUser.facebookId },
+      });
+
+      if (!user && facebookUser.email) {
+        // Try to find by email
+        user = await this.prisma.user.findUnique({
+          where: { email: facebookUser.email },
+        });
+
+        if (user) {
+          // Update existing user with Facebook ID
+          user = await this.prisma.user.update({
+            where: { id: user.id },
+            data: {
+              facebookId: facebookUser.facebookId,
+              avatar: facebookUser.avatar || user.avatar,
+            },
+          });
+        }
+      }
+
+      if (!user) {
+        // Create new user from Facebook
+        user = await this.prisma.user.create({
+          data: {
+            email: facebookUser.email || `facebook_${facebookUser.facebookId}@temp.com`,
+            hoTen: facebookUser.hoTen || 'Facebook User',
+            password: '', // No password for OAuth
+            vaiTro: 'CUSTOMER',
+            facebookId: facebookUser.facebookId,
+            avatar: facebookUser.avatar,
+          },
+        });
+      }
+
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error) {
+      throw new UnauthorizedException('Facebook authentication failed');
+    }
+  }
 }
 
