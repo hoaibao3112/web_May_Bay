@@ -120,13 +120,25 @@ export class PaymentsService {
       );
     }
 
+    // Tạo VietQR payment URL nếu chọn phương thức VIETQR
+    let vietqrUrl = '';
+    if (dto.phuongThuc === 'VIETQR') {
+      vietqrUrl = await this.createVietQRPaymentUrl(
+        payment.maGiaoDich,
+        tongTien,
+        `Thanh toan don dat ve ${booking.maDatVe}`,
+      );
+    }
+
     return {
       paymentId: payment.id,
       maGiaoDich: payment.maGiaoDich,
       soTien: Number(payment.soTien),
       tienTe: payment.tienTe,
       phuongThuc: payment.phuongThuc,
-      paymentUrl: dto.phuongThuc === 'MOMO' ? momoUrl : paymentUrl,
+      paymentUrl: dto.phuongThuc === 'MOMO' ? momoUrl :
+        dto.phuongThuc === 'VIETQR' ? vietqrUrl :
+          paymentUrl,
     };
   }
 
@@ -204,12 +216,29 @@ export class PaymentsService {
     return paymentUrl;
   }
 
-  // Tạo MoMo payment URL
+  // Tạo MoMo payment URL (Mock for Demo)
   private async createMoMoPaymentUrl(
     maGiaoDich: string,
     amount: number,
     orderInfo: string,
   ): Promise<string> {
+    // FOR DEMO/SCHOOL PROJECT: Use mock MoMo payment page instead of real API
+    // This simulates the MoMo payment flow without needing real credentials
+
+    console.log('🎭 Using Mock MoMo Payment for Demo');
+    console.log('Order ID:', maGiaoDich);
+    console.log('Amount:', amount);
+    console.log('Order Info:', orderInfo);
+
+    // Redirect to our mock MoMo payment page
+    const mockMoMoUrl = `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:5501'}/mock-momo?orderId=${maGiaoDich}&amount=${amount}&orderInfo=${encodeURIComponent(orderInfo)}`;
+
+    console.log('✅ Mock MoMo URL created:', mockMoMoUrl);
+
+    return mockMoMoUrl;
+
+    /* REAL MOMO IMPLEMENTATION (Uncomment when you have real credentials):
+    
     const partnerCode = process.env.MOMO_PARTNER_CODE;
     const accessKey = process.env.MOMO_ACCESS_KEY;
     const secretKey = process.env.MOMO_SECRET_KEY;
@@ -220,13 +249,17 @@ export class PaymentsService {
     const requestId = maGiaoDich;
     const orderId = maGiaoDich;
     const requestType = "captureWallet";
-    const extraData = ""; // Có thể gửi dữ liệu thêm ở đây, cần base64 encode
+    const extraData = "";
 
     const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+    
+    console.log('🔐 MoMo Raw Signature:', rawSignature);
 
     const signature = createHmac('sha256', secretKey)
       .update(rawSignature)
       .digest('hex');
+    
+    console.log('✅ MoMo Signature:', signature);
 
     const requestBody = {
       partnerCode,
@@ -255,7 +288,54 @@ export class PaymentsService {
       console.error('MoMo Request Error:', error.response?.data || error.message);
       throw new Error('Không thể kết nối với cổng thanh toán MoMo');
     }
+    */
   }
+
+  // Tạo VietQR payment URL (Mock for Demo)
+  private async createVietQRPaymentUrl(
+    maGiaoDich: string,
+    amount: number,
+    orderInfo: string,
+  ): Promise<string> {
+    // FOR DEMO/SCHOOL PROJECT: Use mock VietQR payment page
+
+    console.log('🏦 Using Mock VietQR Payment for Demo');
+    console.log('Order ID:', maGiaoDich);
+    console.log('Amount:', amount);
+    console.log('Order Info:', orderInfo);
+
+    // Mock bank account info for VietQR demo
+    const bankCode = 'VCB'; // Vietcombank
+    const accountNo = '1234567890';
+    const accountName = 'TRAN HOAI BAO';
+
+    // Redirect to our mock VietQR payment page
+    const mockVietQRUrl = `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:3000'}/mock-vietqr?orderId=${maGiaoDich}&amount=${amount}&orderInfo=${encodeURIComponent(orderInfo)}&bankCode=${bankCode}&accountNo=${accountNo}&accountName=${encodeURIComponent(accountName)}`;
+
+    console.log('✅ Mock VietQR URL created:', mockVietQRUrl);
+
+    return mockVietQRUrl;
+
+    /* REAL VIETQR IMPLEMENTATION (For future reference):
+    
+    VietQR API: https://api.vietqr.io/v2/generate
+    You can use the free tier to generate real QR codes
+    
+    const vietQRData = {
+      accountNo: '1234567890',
+      accountName: 'TRAN HOAI BAO',
+      acqId: '970436', // Vietcombank bin
+      amount: amount,
+      addInfo: orderInfo,
+      format: 'text', // or 'compact'
+      template: 'compact' // or 'compact2', 'qr_only', 'print'
+    };
+
+    const response = await axios.post('https://api.vietqr.io/v2/generate', vietQRData);
+    return response.data.data.qrDataURL; // Returns base64 QR code image
+    */
+  }
+
 
   // Xử lý VNPay return
   async handleVNPayReturn(vnpParams: any) {

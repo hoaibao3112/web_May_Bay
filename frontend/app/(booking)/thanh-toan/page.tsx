@@ -256,7 +256,7 @@ function ThanhToanContent() {
                   </div>
                 </label>
 
-                {/* MoMo */}
+                {/* MoMo - Mock Demo */}
                 <label className={`block border-2 rounded-lg p-4 cursor-pointer transition ${paymentMethod === 'MOMO' ? 'border-pink-500 bg-pink-50' : 'border-gray-200 hover:border-pink-300'
                   }`}>
                   <div className="flex items-center gap-4">
@@ -276,9 +276,41 @@ function ThanhToanContent() {
                           className="h-10 w-10 object-contain rounded-lg"
                         />
                         <div>
-                          <p className="font-semibold text-pink-700">Ví MoMo</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-pink-700">Ví MoMo</p>
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Demo</span>
+                          </div>
                           <p className="text-sm text-gray-600">
-                            Thanh toán nhanh qua ứng dụng MoMo (Sandbox)
+                            Thanh toán qua ví điện tử MoMo
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+
+                {/* VietQR */}
+                <label className={`block border-2 rounded-lg p-4 cursor-pointer transition ${paymentMethod === 'VIETQR' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                  }`}>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="VIETQR"
+                      checked={paymentMethod === 'VIETQR'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className="text-3xl">🏦</div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-blue-700">VietQR</p>
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Miễn phí</span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            Chuyển khoản qua mã QR - Nhanh & an toàn
                           </p>
                         </div>
                       </div>

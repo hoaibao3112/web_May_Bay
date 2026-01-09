@@ -89,4 +89,23 @@ export class PaymentsController {
     const result = await this.paymentsService.handleMoMoIPN(body);
     return res.status(result.status).send(result.message);
   }
+
+  // VietQR return URL
+  @Get('vietqr-return')
+  async vietqrReturn(@Query() query: any, @Res() res: Response) {
+    const { orderId, resultCode, message } = query;
+
+    // For mock VietQR, we use simple query params
+    if (resultCode === '0') {
+      // Success
+      return res.redirect(
+        `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:3000'}/xac-nhan?bookingId=${orderId}&success=true`
+      );
+    } else {
+      // Failed
+      return res.redirect(
+        `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:3000'}/thanh-toan?error=${encodeURIComponent(message || 'Thanh toán thất bại')}`
+      );
+    }
+  }
 }

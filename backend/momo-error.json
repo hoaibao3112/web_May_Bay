@@ -1,0 +1,21 @@
+{
+  "requestBody": {
+    "partnerCode": "MOMOBKUN20180529",
+    "accessKey": "klm05TvNBqgzqN31",
+    "requestId": "TEST1767924867506",
+    "amount": 10000,
+    "orderId": "TEST1767924867506",
+    "orderInfo": "TestMoMoPayment",
+    "redirectUrl": "http://localhost:5000/payments/momo-return",
+    "ipnUrl": "http://localhost:5000/payments/momo-ipn",
+    "extraData": "",
+    "requestType": "captureWallet",
+    "signature": "5debb784312632cadb0e1b80f11294b71bb874bfe47bb9630f0078fd1e532f1a",
+    "lang": "vi"
+  },
+  "response": {
+    "responseTime": 1767924867856,
+    "message": "Chữ ký không hợp lệ. Vui lòng kiểm tra dữ liệu gốc trước khi mã hóa : accessKey=***&amount=10000&extraData=&ipnUrl=http://localhost:5000/payments/momo-ipn&orderId=TEST1767924867506&orderInfo=TestMoMoPayment&partnerCode=MOMOBKUN20180529&redirectUrl=http://localhost:5000/payments/momo-return&requestId=TEST1767924867506&requestType=captureWallet.",
+    "resultCode": 11007
+  }
+}
