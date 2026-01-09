@@ -357,8 +357,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section with Background Image */}
-      <section className="relative h-[600px] overflow-hidden">
+      {/* Hero Section with Background Image - REDESIGNED */}
+      <section className="relative min-h-screen overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
           <Image
@@ -368,35 +368,38 @@ export default function HomePage() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60"></div>
         </div>
 
         {/* Content */}
-        <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="pt-16">
+        <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-32">
+          {/* Title */}
+          <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
               App du lịch hàng đầu, một chạm đi bất cứ đâu
             </h1>
+          </div>
 
-            {/* Service Tabs */}
-            <div className="flex flex-wrap gap-2 mb-8">
-              {serviceTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 ${activeTab === tab.id
-                    ? 'bg-white text-gray-900 shadow-lg'
+          {/* Service Tabs */}
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
+            {serviceTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 ${activeTab === tab.id
+                    ? 'bg-white text-gray-900 shadow-lg scale-105'
                     : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30'
-                    }`}
-                >
-                  <span className="text-xl">{tab.icon}</span>
-                  <span>{tab.name}</span>
-                </button>
-              ))}
-            </div>
+                  }`}
+              >
+                <span className="text-xl">{tab.icon}</span>
+                <span>{tab.name}</span>
+              </button>
+            ))}
+          </div>
 
-            {/* Search Card */}
-            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-5xl">
+          {/* Compact Search Card */}
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-6">
               {/* Flight Search */}
               {activeTab === 'flights' && (
                 <div>
@@ -1042,8 +1045,113 @@ export default function HomePage() {
                 </div>
               )}
 
+              {/* Activities Search */}
+              {activeTab === 'activities' && (
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* City Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        📍 Điểm đến
+                      </label>
+                      <select
+                        value={hotelCity}
+                        onChange={(e) => setHotelCity(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+                      >
+                        <option value="">Tất cả địa điểm</option>
+                        <option value="Hồ Chí Minh">Hồ Chí Minh</option>
+                        <option value="Hà Nội">Hà Nội</option>
+                        <option value="Đà Nẵng">Đà Nẵng</option>
+                        <option value="Nha Trang">Nha Trang</option>
+                        <option value="Phú Quốc">Phú Quốc</option>
+                        <option value="Đà Lạt">Đà Lạt</option>
+                      </select>
+                    </div>
+
+                    {/* Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        📅 Ngày tham gia
+                      </label>
+                      <input
+                        type="date"
+                        value={departDate}
+                        onChange={(e) => setDepartDate(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+
+                    {/* Number of people */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        👥 Số người
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={adults}
+                        onChange={(e) => setAdults(parseInt(e.target.value))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Search Button */}
+                  <div className="flex justify-end mt-6">
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        if (hotelCity) params.append('thanhPho', hotelCity);
+                        if (departDate) params.append('ngay', departDate);
+                        window.location.href = `/hoat-dong?${params.toString()}`;
+                      }}
+                      className="px-10 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg font-semibold hover:from-pink-600 hover:to-rose-600 flex items-center justify-center gap-2 transition-all shadow-lg"
+                    >
+                      🔍 Tìm hoạt động
+                    </button>
+                  </div>
+
+                  {/* Quick Categories */}
+                  <div className="mt-6 pt-6 border-t">
+                    <h3 className="font-semibold text-gray-900 mb-4">Hoặc chọn một danh mục để khám phá:</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <Link
+                        href="/hoat-dong?danhMucId=1"
+                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl hover:shadow-md transition group"
+                      >
+                        <span className="text-3xl">🏛️</span>
+                        <span className="font-medium text-gray-900 group-hover:text-blue-600">Điểm tham quan</span>
+                      </Link>
+                      <Link
+                        href="/hoat-dong?danhMucId=2"
+                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl hover:shadow-md transition group"
+                      >
+                        <span className="text-3xl">🗺️</span>
+                        <span className="font-medium text-gray-900 group-hover:text-green-600">Tour</span>
+                      </Link>
+                      <Link
+                        href="/hoat-dong?danhMucId=3"
+                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl hover:shadow-md transition group"
+                      >
+                        <span className="text-3xl">💆</span>
+                        <span className="font-medium text-gray-900 group-hover:text-purple-600">Spa & Thư giãn</span>
+                      </Link>
+                      <Link
+                        href="/hoat-dong?danhMucId=4"
+                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl hover:shadow-md transition group"
+                      >
+                        <span className="text-3xl">🎯</span>
+                        <span className="font-medium text-gray-900 group-hover:text-orange-600">Thể thao</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Other services */}
-              {!['flights', 'hotels', 'buses', 'car-rental', 'airport-transfer'].includes(activeTab) && (
+              {!['flights', 'hotels', 'buses', 'car-rental', 'airport-transfer', 'activities'].includes(activeTab) && (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🚧</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">

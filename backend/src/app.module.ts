@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -31,12 +32,24 @@ import { AirportTransferCompaniesModule } from './airport-transfer-companies/air
 import { AirportTransferReviewsModule } from './airport-transfer-reviews/airport-transfer-reviews.module';
 import { HotelBookingsModule } from './hotel-bookings/hotel-bookings.module';
 import { AdminModule } from './admin/admin.module';
+import { ActivitiesModule } from './activities/activities.module';
 import { TestDbController } from './test-db.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
+    TypeOrmModule.forRoot({
+      type: 'mysql',
+      host: process.env.DB_HOST || 'localhost',
+      port: 3306,
+      username: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || 'kimloan12345',
+      database: process.env.DB_NAME || 'dat_ve_may_bay',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: false, // Don't auto-sync, we use SQL migrations
+      logging: false,
+    }),
     AuthModule,
     PrismaModule,
     CatalogModule,
@@ -67,6 +80,7 @@ import { TestDbController } from './test-db.controller';
     AirportTransferReviewsModule,
     HotelBookingsModule,
     AdminModule,
+    ActivitiesModule,
   ],
   controllers: [TestDbController],
 })
