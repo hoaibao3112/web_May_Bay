@@ -1,5 +1,4 @@
-import { IsInt, IsString, IsEmail, IsDateString, IsOptional, Min, IsEnum } from 'class-validator';
-import { PhuongThucThanhToan } from '../entities/dat-hoat-dong.entity';
+import { IsInt, IsString, IsEmail, IsDateString, IsOptional, Min } from 'class-validator';
 
 export class CreateActivityBookingDto {
     @IsInt()
@@ -30,6 +29,6 @@ export class CreateActivityBookingDto {
     ghiChu?: string;
 
     @IsOptional()
-    @IsEnum(PhuongThucThanhToan)
-    phuongThucThanhToan?: PhuongThucThanhToan;
+    @IsString()
+    phuongThucThanhToan?: string; // 'MOMO' | 'VIETQR' | 'ZALOPAY'
 }
