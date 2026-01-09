@@ -1,23 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { HoatDong } from './entities/hoat-dong.entity';
 import { DanhMucHoatDong, TrangThaiDanhMuc } from './entities/danh-muc-hoat-dong.entity';
+import { DatHoatDong, TrangThaiThanhToan } from './entities/dat-hoat-dong.entity';
 import { SearchActivitiesDto } from './dto/search-activities.dto';
-import { CreateBookingDto } from './dto/create-booking.dto';
+import { CreateActivityBookingDto } from './dto/create-activity-booking.dto';
 
 @Injectable()
 export class ActivitiesService {
     constructor(
         @InjectRepository(HoatDong)
-        private hoatDongRepo: Repository<HoatDong>,
+        private hoatDongRepository: Repository<HoatDong>,
         @InjectRepository(DanhMucHoatDong)
-        private danhMucRepo: Repository<DanhMucHoatDong>,
+        private danhMucRepository: Repository<DanhMucHoatDong>,
+        @InjectRepository(DatHoatDong)
+        private datHoatDongRepository: Repository<DatHoatDong>,
     ) { }
 
     // Get all categories
     async getDanhMuc() {
-        return this.danhMucRepo.find({
+        return this.danhMucRepository.find({
             where: { trangThai: TrangThaiDanhMuc.HOAT_DONG },
             order: { thuTu: 'ASC' },
         });
@@ -125,28 +128,127 @@ export class ActivitiesService {
         return result;
     }
 
-    // Create booking (simplified - will integrate with payments later)
-    async createBooking(dto: CreateBookingDto, userId?: number) {
-        const activity = await this.getById(dto.hoatDongId);
+    // ==================== BOOKING METHODS ====================
+
+    /**
+     * Create activity booking
+     */
+    async createBooking(dto: CreateActivityBookingDto) {
+        // Verify activity exists
+        const activity = await this.hoatDongRepository.findOne({
+            where: { id: dto.hoatDongId },
+            relations: ['bangGia'],
+        });
+
+        if (!activity) {
+            throw new NotFoundException('Hoạt động không tồn tại');
+        }
 
         // Calculate total price
-        const priceAdult = activity.bangGia.find(g => g.loaiKhach === 'NGUOI_LON');
-        const priceChild = activity.bangGia.find(g => g.loaiKhach === 'TRE_EM');
+        const adultPrice = activity.bangGia?.find(p => p.loaiKhach === 'NGUOI_LON')?.gia || activity.giaTuMoiNguoi;
+        const childPrice = activity.bangGia?.find(p => p.loaiKhach === 'TRE_EM')?.gia || activity.giaTuMoiNguoi * 0.7;
+        const tongTien = (dto.soNguoiLon * adultPrice) + (dto.soTreEm * childPrice);
 
-        const totalAdult = dto.soNguoiLon * (priceAdult?.gia || activity.giaTuMoiNguoi);
-        const totalChild = dto.soTreEm * (priceChild?.gia || activity.giaTuMoiNguoi * 0.7);
-        const tongTien = totalAdult + totalChild;
+        // Generate unique booking code
+        const maDatCho = `ACT${Date.now()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
-        const maDat = `ACT${Date.now()}`;
-
-        // TODO: Save to dat_hoat_dong table
-        // For now, return booking info
-        return {
-            maDat,
-            hoatDong: activity,
-            ...dto,
+        // Create booking
+        const booking = this.datHoatDongRepository.create({
+            maDatCho,
+            hoatDongId: dto.hoatDongId,
+            hoTen: dto.hoTen,
+            email: dto.email,
+            soDienThoai: dto.soDienThoai,
+            ngayThucHien: new Date(dto.ngayThucHien),
+            soNguoiLon: dto.soNguoiLon,
+            soTreEm: dto.soTreEm,
             tongTien,
-            message: 'Đặt hoạt động thành công! Vui lòng thanh toán để hoàn tất.',
+            phuongThucThanhToan: dto.phuongThucThanhToan,
+            ghiChu: dto.ghiChu,
+        });
+
+        await this.datHoatDongRepository.save(booking);
+
+        // Generate payment URL based on method
+        let paymentUrl = '';
+        const params = new URLSearchParams({
+            amount: tongTien.toString(),
+            orderInfo: `Dat tour ${activity.tenHoatDong}`,
+            orderId: maDatCho,
+        });
+
+        if (dto.phuongThucThanhToan === 'MOMO') {
+            paymentUrl = `/mock-momo?${params.toString()}`;
+        } else if (dto.phuongThucThanhToan === 'VIETQR') {
+            params.append('bankCode', 'VCB');
+            params.append('accountNo', '1234567890');
+            params.append('accountName', 'CONG TY DU LICH');
+            paymentUrl = `/mock-vietqr?${params.toString()}`;
+        } else if (dto.phuongThucThanhToan === 'ZALOPAY') {
+            paymentUrl = `/mock-zalopay?${params.toString()}`;
+        }
+
+        return {
+            id: booking.id,
+            maDatCho: booking.maDatCho,
+            tongTien: booking.tongTien,
+            trangThaiThanhToan: booking.trangThaiThanhToan,
+            paymentUrl,
+            hoatDong: {
+                id: activity.id,
+                tenHoatDong: activity.tenHoatDong,
+            },
         };
+    }
+
+    /**
+     * Get bookings by email
+     */
+    async getBookingsByEmail(email: string) {
+        const bookings = await this.datHoatDongRepository.find({
+            where: { email },
+            relations: ['hoatDong', 'hoatDong.hinhAnh'],
+            order: { created_at: 'DESC' },
+        });
+
+        return bookings;
+    }
+
+    /**
+     * Get booking by ID or order code
+     */
+    async getBookingByCode(maDatCho: string) {
+        const booking = await this.datHoatDongRepository.findOne({
+            where: { maDatCho },
+            relations: ['hoatDong', 'hoatDong.hinhAnh', 'hoatDong.danhMuc'],
+        });
+
+        if (!booking) {
+            throw new NotFoundException('Không tìm thấy đơn đặt chỗ');
+        }
+
+        return booking;
+    }
+
+    /**
+     * Update booking payment status
+     */
+    async updateBookingPaymentStatus(maDatCho: string, status: TrangThaiThanhToan) {
+        const booking = await this.getBookingByCode(maDatCho);
+
+        booking.trangThaiThanhToan = status;
+        await this.datHoatDongRepository.save(booking);
+
+        // TODO: Send email confirmation here
+        console.log(`✉️ Email sent to ${booking.email}: Booking ${maDatCho} - Status: ${status}`);
+
+        return booking;
+    }
+
+    /**
+     * Cancel booking
+     */
+    async cancelBooking(maDatCho: string) {
+        return this.updateBookingPaymentStatus(maDatCho, TrangThaiThanhToan.HUY);
     }
 }

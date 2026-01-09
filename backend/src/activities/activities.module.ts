@@ -10,6 +10,7 @@ import { GiaHoatDong } from './entities/gia-hoat-dong.entity';
 import { LichHoatDong } from './entities/lich-hoat-dong.entity';
 import { DiemNoiBatHoatDong } from './entities/diem-noi-bat-hoat-dong.entity';
 import { DanhGiaHoatDong } from './entities/danh-gia-hoat-dong.entity';
+import { DatHoatDong } from './entities/dat-hoat-dong.entity';
 
 @Module({
     imports: [
@@ -22,6 +23,7 @@ import { DanhGiaHoatDong } from './entities/danh-gia-hoat-dong.entity';
             LichHoatDong,
             DiemNoiBatHoatDong,
             DanhGiaHoatDong,
+            DatHoatDong,
         ]),
     ],
     controllers: [ActivitiesController],

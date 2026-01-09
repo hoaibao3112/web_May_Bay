@@ -9,7 +9,7 @@ export default function ActivityBookingPage() {
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [timeLeft, setTimeLeft] = useState(900); // 15 minutes
-    const [paymentMethod, setPaymentMethod] = useState('VNPAY');
+    const [paymentMethod, setPaymentMethod] = useState('MOMO');
     const [error, setError] = useState('');
 
     // Customer info
@@ -70,51 +70,52 @@ export default function ActivityBookingPage() {
         setError('');
 
         try {
-            // 1. Create booking
-            const bookingRes = await fetch('http://localhost:5000/activities/bookings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    hoatDongId: bookingData.hoatDongId,
-                    ngayThucHien: bookingData.ngayThucHien,
-                    soNguoiLon: bookingData.soNguoiLon,
-                    soTreEm: bookingData.soTreEm,
-                    hoTen,
-                    email,
-                    soDienThoai,
-                    ghiChu,
-                }),
-            });
+            // Generate order info
+            const orderId = `ACT${Date.now()}`;
+            const amount = bookingData.tongTien;
+            const orderInfo = `Dat tour ${bookingData.tenHoatDong}`;
 
-            if (!bookingRes.ok) {
-                throw new Error('Không thể tạo đặt chỗ');
-            }
+            // Save booking info for confirmation
+            localStorage.setItem('activityBookingConfirm', JSON.stringify({
+                ...bookingData,
+                hoTen,
+                email,
+                soDienThoai,
+                ghiChu,
+                orderId,
+            }));
 
-            const booking = await bookingRes.json();
-
-            // 2. Create payment
-            const paymentRes = await fetch('http://localhost:5000/payments', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    bookingId: 0, // Activities don't have bookingId yet, use orderId
-                    phuongThuc: paymentMethod,
-                    soTien: bookingData.tongTien,
-                    thongTinDonHang: `Đặt tour: ${bookingData.tenHoatDong}`,
-                }),
-            });
-
-            if (!paymentRes.ok) {
-                throw new Error('Không thể tạo thanh toán');
-            }
-
-            const payment = await paymentRes.json();
-
-            // 3. Redirect to payment gateway
-            if (payment.paymentUrl) {
-                window.location.href = payment.paymentUrl;
-            } else {
-                throw new Error('Không nhận được URL thanh toán');
+            // Redirect based on payment method
+            if (paymentMethod === 'VNPAY') {
+                alert('VNPay đang trong quá trình phát triển. Vui lòng chọn MoMo hoặc VietQR.');
+                setProcessing(false);
+            } else if (paymentMethod === 'MOMO') {
+                // Redirect to Mock MoMo
+                const params = new URLSearchParams({
+                    amount: amount.toString(),
+                    orderInfo,
+                    orderId,
+                });
+                window.location.href = `/mock-momo?${params.toString()}`;
+            } else if (paymentMethod === 'VIETQR') {
+                // Redirect to Mock VietQR
+                const params = new URLSearchParams({
+                    amount: amount.toString(),
+                    orderInfo,
+                    orderId,
+                    bankCode: 'VCB',
+                    accountNo: '1234567890',
+                    accountName: 'CONG TY DU LICH',
+                });
+                window.location.href = `/mock-vietqr?${params.toString()}`;
+            } else if (paymentMethod === 'ZALOPAY') {
+                // Redirect to Mock ZaloPay
+                const params = new URLSearchParams({
+                    amount: amount.toString(),
+                    orderInfo,
+                    orderId,
+                });
+                window.location.href = `/mock-zalopay?${params.toString()}`;
             }
         } catch (error: any) {
             console.error('Error:', error);
@@ -241,25 +242,6 @@ export default function ActivityBookingPage() {
                             )}
 
                             <div className="space-y-3">
-                                {/* VNPay */}
-                                <label className="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition"
-                                    style={{ borderColor: paymentMethod === 'VNPAY' ? '#0088cc' : '#e5e7eb' }}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="payment"
-                                        value="VNPAY"
-                                        checked={paymentMethod === 'VNPAY'}
-                                        onChange={(e) => setPaymentMethod(e.target.value)}
-                                        className="w-5 h-5 text-blue-600"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="font-semibold text-gray-900">VNPay</div>
-                                        <div className="text-sm text-gray-600">Thanh toán qua VNPay - Hỗ trợ nhiều ngân hàng</div>
-                                    </div>
-                                    <img src="/vnpay-logo.png" alt="VNPay" className="h-8" onError={(e) => e.currentTarget.style.display = 'none'} />
-                                </label>
-
                                 {/* MoMo */}
                                 <label className="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition"
                                     style={{ borderColor: paymentMethod === 'MOMO' ? '#a50064' : '#e5e7eb' }}
@@ -299,6 +281,27 @@ export default function ActivityBookingPage() {
                                             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Miễn phí</span>
                                         </div>
                                         <div className="text-sm text-gray-600">Chuyển khoản qua mã QR - Nhanh & an toàn</div>
+                                    </div>
+                                </label>
+
+                                {/* ZaloPay */}
+                                <label className="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                                    style={{ borderColor: paymentMethod === 'ZALOPAY' ? '#0088cc' : '#e5e7eb' }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="payment"
+                                        value="ZALOPAY"
+                                        checked={paymentMethod === 'ZALOPAY'}
+                                        onChange={(e) => setPaymentMethod(e.target.value)}
+                                        className="w-5 h-5 text-blue-600"
+                                    />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-gray-900">ZaloPay</span>
+                                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Demo</span>
+                                        </div>
+                                        <div className="text-sm text-gray-600">Ví điện tử quốc dân - An toàn & tiện lợi</div>
                                     </div>
                                 </label>
                             </div>
