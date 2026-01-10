@@ -9,10 +9,69 @@ export default function MockMoMoPage() {
     const [countdown, setCountdown] = useState(3);
     const [status, setStatus] = useState<'login' | 'pending' | 'success' | 'cancelled'>('login');
     const [pin, setPin] = useState('');
+    const [processing, setProcessing] = useState(false);
 
     const amount = searchParams.get('amount');
     const orderId = searchParams.get('orderId');
     const orderInfo = searchParams.get('orderInfo');
+
+    const handlePayment = async (action: 'success' | 'cancel') => {
+        setProcessing(true);
+
+        if (action === 'success') {
+            try {
+                // Detect booking type
+                const isActivityBooking = orderId?.startsWith('ACT');
+                const isHotelBooking = orderId?.startsWith('HOTEL');
+                const isBusBooking = orderId?.startsWith('BUS');
+
+                if (isActivityBooking) {
+                    // Call backend for activity bookings
+                    await fetch(`http://localhost:5000/activities/bookings/${orderId}/payment-success`, {
+                        method: 'PATCH',
+                    });
+                }
+
+                // Redirect to appropriate confirmation page
+                setTimeout(() => {
+                    if (isActivityBooking) {
+                        router.push(`/hoat-dong/xac-nhan?maDat=${orderId}&status=success`);
+                    } else if (isHotelBooking) {
+                        router.push(`/khachsan/xac-nhan?status=success`);
+                    } else if (isBusBooking) {
+                        const bookingId = searchParams.get('bookingId');
+                        router.push(`/xekhach/xac-nhan?bookingId=${bookingId}&status=success`);
+                    } else {
+                        router.push(`/xac-nhan-thanh-toan?orderId=${orderId}&status=success`);
+                    }
+                }, 1500);
+            } catch (error) {
+                console.error('Error marking payment:', error);
+                // Still redirect even if API fails
+                setTimeout(() => {
+                    router.push(`/xac-nhan-thanh-toan?orderId=${orderId}&status=success`);
+                }, 1500);
+            }
+        } else {
+            // Cancel - go back to booking page
+            setTimeout(() => {
+                const isActivityBooking = orderId?.startsWith('ACT');
+                const isHotelBooking = orderId?.startsWith('HOTEL');
+                const isBusBooking = orderId?.startsWith('BUS');
+
+                if (isActivityBooking) {
+                    router.push('/hoat-dong/dat-tour?status=cancelled');
+                } else if (isHotelBooking) {
+                    router.push('/khachsan/booking?status=cancelled');
+                } else if (isBusBooking) {
+                    const bookingId = searchParams.get('bookingId');
+                    router.push(`/xekhach/thanh-toan?bookingId=${bookingId}&status=cancelled`);
+                } else {
+                    router.push('/?status=cancelled');
+                }
+            }, 1500);
+        }
+    };
 
     useEffect(() => {
         if (status === 'success') {

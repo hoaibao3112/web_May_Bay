@@ -3,10 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateBusBookingDto } from './dto/create-bus-booking.dto';
 import { CreateBusPaymentDto, VerifyBusPaymentDto } from './dto/create-bus-payment.dto';
 import { randomBytes } from 'crypto';
+import { PaymentsService } from '../payments/payments.service';
 
 @Injectable()
 export class BusBookingsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private paymentsService: PaymentsService,
+    ) { }
 
     async createBooking(dto: CreateBusBookingDto, userId: number) {
         // Validate chuyenXeId
@@ -287,6 +291,8 @@ export class BusBookingsService {
                         tuyenXe: {
                             include: {
                                 nhaXe: true,
+                                benXeDi: true,
+                                benXeDen: true,
                             },
                         },
                     },
@@ -306,29 +312,44 @@ export class BusBookingsService {
         // Tạo mã giao dịch
         const maGiaoDich = `BUS${Date.now()}${randomBytes(4).toString('hex').toUpperCase()}`;
 
-        // Tạo payment record (sử dụng ThanhToanXe nếu có trong schema)
-        // Hoặc cập nhật trực tiếp vào booking
+        // Cập nhật phương thức thanh toán vào booking
         await this.prisma.donDatVeXe.update({
             where: { id: booking.id },
             data: {
                 phuongThucThanhToan: dto.phuongThuc,
-                trangThaiDat: 'DA_THANH_TOAN',
             },
         });
 
-        // Cập nhật trạng thái vé
-        await this.prisma.veXe.updateMany({
-            where: { donDatVeXeId: booking.id },
-            data: { trangThai: 'HIEU_LUC' },
-        });
+        // Tạo payment URL dựa vào phương thức
+        let paymentUrl = '';
+        const orderInfo = `Dat ve xe ${booking.chuyenXe.tuyenXe.benXeDi.thanhPho}-${booking.chuyenXe.tuyenXe.benXeDen.thanhPho}`;
+
+        if (dto.phuongThuc === 'MOMO') {
+            // Gọi PaymentsService để tạo real MoMo URL
+            paymentUrl = await this.paymentsService['createMoMoPaymentUrl'](
+                maGiaoDich,
+                Number(booking.tongTien),
+                orderInfo,
+            );
+        } else if (dto.phuongThuc === 'VNPAY') {
+            // Gọi VNPay API
+            paymentUrl = await this.paymentsService['createVNPayPaymentUrl'](
+                maGiaoDich,
+                Number(booking.tongTien),
+                orderInfo,
+                orderInfo,
+            );
+        }
 
         return {
-            success: true,
             maGiaoDich,
+            soTien: Number(booking.tongTien),
+            tienTe: 'VND',
+            phuongThuc: dto.phuongThuc,
+            paymentUrl: paymentUrl || '#',
             booking: {
-                ...booking,
-                trangThaiDat: 'DA_THANH_TOAN',
-                phuongThucThanhToan: dto.phuongThuc,
+                id: booking.id,
+                maDonDat: booking.maDonDat,
             },
         };
     }

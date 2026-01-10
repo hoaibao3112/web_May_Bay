@@ -108,4 +108,27 @@ export class PaymentsController {
       );
     }
   }
+
+  // ZaloPay return URL
+  @Get('zalopay-return')
+  async zalopayReturn(@Query() query: any, @Res() res: Response) {
+    const result = await this.paymentsService.handleZaloPayReturn(query);
+
+    if (result.success) {
+      return res.redirect(
+        `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:3000'}/xac-nhan?bookingId=${result.bookingId}&maDatCho=${result.maDatCho}&success=true`
+      );
+    } else {
+      return res.redirect(
+        `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:3000'}/thanh-toan?error=${encodeURIComponent(result.message)}`
+      );
+    }
+  }
+
+  // ZaloPay IPN (Instant Payment Notification)
+  @Post('zalopay-ipn')
+  async zalopayIPN(@Body() body: any, @Res() res: Response) {
+    const result = await this.paymentsService.handleZaloPayIPN(body);
+    return res.status(200).json(result);
+  }
 }

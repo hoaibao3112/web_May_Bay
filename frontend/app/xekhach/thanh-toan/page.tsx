@@ -95,16 +95,8 @@ export default function BusPaymentPage() {
             return;
         }
 
-        // Validate bookingId
-        if (!bookingId) {
-            alert('Không tìm thấy thông tin đặt vé. Vui lòng đặt lại.');
-            router.push('/xekhach');
-            return;
-        }
-
-        const parsedBookingId = parseInt(bookingId);
-        if (isNaN(parsedBookingId) || parsedBookingId <= 0) {
-            alert('Mã đặt vé không hợp lệ. Vui lòng đặt lại.');
+        if (!bookingId || !booking) {
+            alert('Không tìm thấy thông tin đặt vé');
             router.push('/xekhach');
             return;
         }
@@ -112,44 +104,41 @@ export default function BusPaymentPage() {
         setProcessing(true);
 
         try {
-            const token = localStorage.getItem('accessToken');
-
-            const paymentData = {
-                bookingId: parsedBookingId,
-                phuongThuc: paymentMethod,
+            const token = localStorage.getItem('token');
+            const headers: any = {
+                'Content-Type': 'application/json',
             };
 
-            console.log('Sending payment data:', paymentData);
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
 
-            const res = await fetch('http://localhost:5000/bus-bookings/payment', {
+            // Create payment
+            const paymentRes = await fetch('http://localhost:5000/bus-bookings/payment', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify(paymentData),
+                headers,
+                body: JSON.stringify({
+                    bookingId: parseInt(bookingId),
+                    phuongThuc: paymentMethod,
+                }),
             });
 
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.message || 'Thanh toán thất bại');
+            if (!paymentRes.ok) {
+                const errorData = await paymentRes.json();
+                throw new Error(errorData.message || 'Thanh toán thất bại');
             }
 
-            const data = await res.json();
+            const payment = await paymentRes.json();
 
-            if (paymentMethod === 'VIET_QR' || paymentMethod === 'CHUYEN_KHOAN') {
-                // Redirect to QR payment page or show QR
-                alert('Vui lòng quét mã QR để thanh toán');
-                // TODO: Implement QR display
+            // Redirect to payment URL
+            if (payment.paymentUrl) {
+                window.location.href = payment.paymentUrl;
+            } else {
+                throw new Error('Không nhận được URL thanh toán');
             }
-
-            // Success
-            alert('Thanh toán thành công!');
-            router.push(`/xekhach/xac-nhan?bookingId=${bookingId}`);
         } catch (error: any) {
             console.error('Payment error:', error);
             alert(error.message || 'Có lỗi xảy ra khi thanh toán');
-        } finally {
             setProcessing(false);
         }
     };
@@ -285,112 +274,80 @@ export default function BusPaymentPage() {
 
                 {/* Payment Methods */}
                 <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Bạn muốn thanh toán thế nào?</h2>
+                    <h2 className="text-xl font-bold text-gray-800 mb-4">Phương thức thanh toán</h2>
 
                     <div className="space-y-3">
+                        {/* VNPay */}
+                        <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition ${paymentMethod === 'VNPAY' ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}`}>
+                            <input
+                                type="radio"
+                                name="payment"
+                                value="VNPAY"
+                                checked={paymentMethod === 'VNPAY'}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                className="w-5 h-5 text-blue-600"
+                            />
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                    <p className="font-semibold">VNPay</p>
+                                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Sắp có</span>
+                                </div>
+                                <p className="text-sm text-gray-600">Ví điện tử VNPay - An toàn & nhanh chóng</p>
+                            </div>
+                        </label>
+
+                        {/* MoMo */}
+                        <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition ${paymentMethod === 'MOMO' ? 'border-pink-600 bg-pink-50' : 'border-gray-200'}`}>
+                            <input
+                                type="radio"
+                                name="payment"
+                                value="MOMO"
+                                checked={paymentMethod === 'MOMO'}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                className="w-5 h-5 text-pink-600"
+                            />
+                            <div className="flex-1">
+                                <p className="font-semibold">MoMo</p>
+                                <p className="text-sm text-gray-600">Ví điện tử MoMo - Nhanh chóng & tiện lợi</p>
+                            </div>
+                            <img src="https://salt.tikicdn.com/ts/upload/75/1e/46/7e7c2c98fa0db93676bf9eb94a0e5a3b.png" alt="Momo" className="h-8" />
+                        </label>
+
                         {/* VietQR */}
-                        <label className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:border-blue-500 transition">
+                        <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition ${paymentMethod === 'VIETQR' ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}`}>
                             <input
                                 type="radio"
                                 name="payment"
-                                value="VIET_QR"
-                                checked={paymentMethod === 'VIET_QR'}
+                                value="VIETQR"
+                                checked={paymentMethod === 'VIETQR'}
                                 onChange={(e) => setPaymentMethod(e.target.value)}
                                 className="w-5 h-5 text-blue-600"
                             />
                             <div className="flex-1">
-                                <p className="font-semibold">VietQR</p>
-                                <p className="text-sm text-gray-600">Chuyển tiền qua mã QR của tất cả các ngân hàng</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="font-semibold">VietQR</p>
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Miễn phí</span>
+                                </div>
+                                <p className="text-sm text-gray-600">Chuyển khoản qua mã QR - Nhanh & an toàn</p>
                             </div>
-                            <div className="flex gap-2">
-                                <img src="https://salt.tikicdn.com/ts/upload/92/b2/28/1b93b59b8c7389a9e21c1c447c64b61f.png" alt="VietQR" className="h-6" />
-                            </div>
+                            <img src="https://salt.tikicdn.com/ts/upload/92/b2/28/1b93b59b8c7389a9e21c1c447c64b61f.png" alt="VietQR" className="h-8" />
                         </label>
 
-                        {/* ViettelPay */}
-                        <label className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:border-blue-500 transition">
+                        {/* ZaloPay */}
+                        <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition ${paymentMethod === 'ZALOPAY' ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}`}>
                             <input
                                 type="radio"
                                 name="payment"
-                                value="VIETTEL_PAY"
-                                checked={paymentMethod === 'VIETTEL_PAY'}
+                                value="ZALOPAY"
+                                checked={paymentMethod === 'ZALOPAY'}
                                 onChange={(e) => setPaymentMethod(e.target.value)}
                                 className="w-5 h-5 text-blue-600"
                             />
                             <div className="flex-1">
-                                <p className="font-semibold">Chuyển tiền qua ViettelPay</p>
+                                <p className="font-semibold">ZaloPay</p>
+                                <p className="text-sm text-gray-600">Ví điện tử quốc dân - An toàn & tiện lợi</p>
                             </div>
-                        </label>
-
-                        {/* Digital Wallet */}
-                        <label className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:border-blue-500 transition">
-                            <input
-                                type="radio"
-                                name="payment"
-                                value="DIGITAL_WALLET"
-                                checked={paymentMethod === 'DIGITAL_WALLET'}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
-                                className="w-5 h-5 text-blue-600"
-                            />
-                            <div className="flex-1">
-                                <p className="font-semibold">Digital Wallet</p>
-                                <p className="text-sm text-gray-600">Giảm đến 1.5%!</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <img src="https://salt.tikicdn.com/ts/upload/75/1e/46/7e7c2c98fa0db93676bf9eb94a0e5a3b.png" alt="Momo" className="h-6" />
-                                <img src="https://salt.tikicdn.com/ts/upload/c3/d6/a8/23c5b1c36b1fd06b64010c3ea8cc44c8.png" alt="ZaloPay" className="h-6" />
-                            </div>
-                        </label>
-
-                        {/* Bank Transfer */}
-                        <label className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:border-blue-500 transition">
-                            <input
-                                type="radio"
-                                name="payment"
-                                value="CHUYEN_KHOAN"
-                                checked={paymentMethod === 'CHUYEN_KHOAN'}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
-                                className="w-5 h-5 text-blue-600"
-                            />
-                            <div className="flex-1">
-                                <p className="font-semibold">Ngân hàng di động</p>
-                            </div>
-                        </label>
-
-                        {/* Credit Card */}
-                        <label className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:border-blue-500 transition">
-                            <input
-                                type="radio"
-                                name="payment"
-                                value="THE_TIN_DUNG"
-                                checked={paymentMethod === 'THE_TIN_DUNG'}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
-                                className="w-5 h-5 text-blue-600"
-                            />
-                            <div className="flex-1">
-                                <p className="font-semibold">Thẻ thanh toán</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <img src="https://salt.tikicdn.com/ts/upload/5b/bf/7d/0537c6b7e31213a38ba09734684f30f2.png" alt="Visa" className="h-6" />
-                                <img src="https://salt.tikicdn.com/ts/upload/5f/59/ee/9c3d7a97fe9b6f9f6bcc008b648e6e80.png" alt="Mastercard" className="h-6" />
-                                <img src="https://salt.tikicdn.com/ts/upload/b7/7e/1f/2a2fcfe4c0dbccaa2ac78ba6ae88b3ab.png" alt="JCB" className="h-6" />
-                            </div>
-                        </label>
-
-                        {/* Installment */}
-                        <label className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:border-blue-500 transition">
-                            <input
-                                type="radio"
-                                name="payment"
-                                value="TRA_GOP"
-                                checked={paymentMethod === 'TRA_GOP'}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
-                                className="w-5 h-5 text-blue-600"
-                            />
-                            <div className="flex-1">
-                                <p className="font-semibold">Trả góp thẻ tín dụng</p>
-                                <p className="text-sm text-gray-600">Dành cho đơn từ 3.000k</p>
-                            </div>
+                            <img src="https://salt.tikicdn.com/ts/upload/c3/d6/a8/23c5b1c36b1fd06b64010c3ea8cc44c8.png" alt="ZaloPay" className="h-8" />
                         </label>
                     </div>
                 </div>
@@ -406,8 +363,8 @@ export default function BusPaymentPage() {
                         onClick={handlePayment}
                         disabled={!paymentMethod || processing}
                         className={`w-full py-4 rounded-lg font-semibold text-lg transition ${!paymentMethod || processing
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600'
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600'
                             }`}
                     >
                         {processing ? 'Đang xử lý...' : 'Thanh toán & Hiển thị mã QR'}

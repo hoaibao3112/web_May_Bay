@@ -4,35 +4,22 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-function ConfirmationContent() {
+function HotelConfirmationContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [booking, setBooking] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const maDat = searchParams.get('maDat') || localStorage.getItem('lastBookingCode');
-
-        if (maDat) {
-            fetchBooking(maDat);
+        // Load booking from localStorage
+        const data = localStorage.getItem('hotelBookingConfirm');
+        if (data) {
+            setBooking(JSON.parse(data));
         } else {
-            router.push('/hoat-dong');
+            router.push('/khachsan');
         }
-    }, [searchParams]);
-
-    const fetchBooking = async (maDat: string) => {
-        try {
-            const res = await fetch(`http://localhost:5000/activities/bookings/${maDat}`);
-            if (!res.ok) throw new Error('Booking not found');
-            const data = await res.json();
-            setBooking(data);
-        } catch (error) {
-            console.error('Error:', error);
-            router.push('/hoat-dong');
-        } finally {
-            setLoading(false);
-        }
-    };
+        setLoading(false);
+    }, []);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', {
@@ -44,7 +31,7 @@ function ConfirmationContent() {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-pink-500 border-r-transparent"></div>
+                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
             </div>
         );
     }
@@ -53,9 +40,9 @@ function ConfirmationContent() {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-4">Không tìm thấy đơn đặt chỗ</h1>
-                    <Link href="/hoat-dong" className="text-pink-600 hover:underline">
-                        Quay lại trang hoạt động
+                    <h1 className="text-2xl font-bold mb-4">Không tìm thấy thông tin đặt phòng</h1>
+                    <Link href="/khachsan" className="text-blue-600 hover:underline">
+                        Quay lại trang khách sạn
                     </Link>
                 </div>
             </div>
@@ -73,9 +60,9 @@ function ConfirmationContent() {
                 </div>
 
                 {/* Success Message */}
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Đặt tour thành công!</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Đặt phòng thành công!</h1>
                 <p className="text-gray-600 mb-2">
-                    Cảm ơn <strong>{booking.hoTen}</strong> đã đặt tour
+                    Cảm ơn <strong>{booking.hoTen}</strong> đã đặt phòng
                 </p>
                 <p className="text-sm text-gray-500 mb-8">
                     Xác nhận đã được gửi đến <strong>{booking.email}</strong>
@@ -83,38 +70,47 @@ function ConfirmationContent() {
 
                 {/* Booking Details */}
                 <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left">
-                    <h2 className="font-bold text-lg mb-4 text-center">Chi tiết đặt tour</h2>
+                    <h2 className="font-bold text-lg mb-4 text-center">Chi tiết đặt phòng</h2>
                     <div className="space-y-3">
                         <div className="flex justify-between border-b pb-2">
                             <span className="text-gray-600">Mã đơn:</span>
-                            <span className="font-semibold text-pink-600">{booking.maDat}</span>
+                            <span className="font-semibold text-blue-600">{booking.orderId}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-gray-600">Tour:</span>
-                            <span className="font-semibold">{booking.hoatDong?.tenHoatDong}</span>
+                            <span className="text-gray-600">Khách sạn:</span>
+                            <span className="font-semibold">{booking.tenKhachSan}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-gray-600">Ngày:</span>
+                            <span className="text-gray-600">Loại phòng:</span>
+                            <span className="font-semibold">{booking.tenPhong}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-gray-600">Nhận phòng:</span>
                             <span className="font-semibold">
-                                {new Date(booking.ngayThucHien).toLocaleDateString('vi-VN')}
+                                {new Date(booking.ngayNhanPhong).toLocaleDateString('vi-VN')}
                             </span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-gray-600">Số người:</span>
+                            <span className="text-gray-600">Trả phòng:</span>
                             <span className="font-semibold">
-                                {booking.soNguoiLon} người lớn
-                                {booking.soTreEm > 0 && `, ${booking.soTreEm} trẻ em`}
+                                {new Date(booking.ngayTraPhong).toLocaleDateString('vi-VN')}
                             </span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-gray-600">Trạng thái:</span>
-                            <span className={`font-semibold ${booking.daThanhToan ? 'text-green-600' : 'text-orange-600'}`}>
-                                {booking.daThanhToan ? '✓ Đã thanh toán' : '⏳ Chờ thanh toán'}
-                            </span>
+                            <span className="text-gray-600">Số đêm:</span>
+                            <span className="font-semibold">{booking.soDem} đêm</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-gray-600">Số khách:</span>
+                            <span className="font-semibold">{booking.soNguoi} người - {booking.soPhong} phòng</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-gray-600">Thanh toán qua:</span>
+                            <span className="font-semibold">{booking.phuongThucThanhToan}</span>
                         </div>
                         <div className="flex justify-between pt-3 border-t-2">
                             <span className="text-gray-900 font-bold text-lg">Tổng tiền:</span>
-                            <span className="text-pink-600 font-bold text-xl">
+                            <span className="text-blue-600 font-bold text-xl">
                                 {formatCurrency(booking.tongTien)}
                             </span>
                         </div>
@@ -127,7 +123,7 @@ function ConfirmationContent() {
                     <div className="space-y-1 text-gray-700">
                         <div><strong>Email:</strong> {booking.email}</div>
                         <div><strong>Số điện thoại:</strong> {booking.soDienThoai}</div>
-                        {booking.ghiChu && <div><strong>Ghi chú:</strong> {booking.ghiChu}</div>}
+                        {booking.ghiChu && <div><strong>Yêu cầu đặc biệt:</strong> {booking.ghiChu}</div>}
                     </div>
                 </div>
 
@@ -140,30 +136,30 @@ function ConfirmationContent() {
                         Về trang chủ
                     </Link>
                     <Link
-                        href="/hoat-dong"
-                        className="flex-1 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg font-semibold hover:from-pink-600 hover:to-rose-600 transition"
+                        href="/khachsan"
+                        className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition"
                     >
-                        Khám phá thêm
+                        Tìm khách sạn khác
                     </Link>
                 </div>
 
                 {/* Note */}
                 <p className="text-sm text-gray-500 mt-6">
-                    💡 Vui lòng kiểm tra email để xem chi tiết đặt tour. Nếu có thắc mắc, liên hệ hotline: <strong>1900-xxxx</strong>
+                    💡 Vui lòng kiểm tra email để xem chi tiết đặt phòng. Nếu có thắc mắc, liên hệ hotline: <strong>1900-xxxx</strong>
                 </p>
             </div>
         </div>
     );
 }
 
-export default function ActivityConfirmationPage() {
+export default function HotelConfirmationPage() {
     return (
         <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-pink-500 border-r-transparent"></div>
+                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
             </div>
         }>
-            <ConfirmationContent />
+            <HotelConfirmationContent />
         </Suspense>
     );
 }

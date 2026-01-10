@@ -179,7 +179,7 @@ export default function UserDropdown() {
             </Link>
 
             <Link
-              href="/quan-ly-dat-cho"
+              href="/dashboard/booking-history"
               className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >

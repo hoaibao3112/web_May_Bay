@@ -37,28 +37,28 @@ export default function TimChuyenBayPage() {
     try {
       const apiUrl = 'http://localhost:5000/catalog/san-bay';
       console.log('Fetching airports from:', apiUrl);
-      
+
       const res = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      
+
       console.log('Response status:', res.status);
       console.log('Response headers:', res.headers);
       console.log('Response URL:', res.url);
-      
+
       if (!res.ok) {
         const text = await res.text();
         console.error('Response text:', text.substring(0, 200));
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
       console.log('Airports loaded:', data);
       console.log('Number of airports:', data.length);
-      
+
       if (Array.isArray(data) && data.length > 0) {
         setAirports(data);
       } else {
@@ -107,7 +107,7 @@ export default function TimChuyenBayPage() {
               <span className="text-xl font-bold text-blue-600">BayNhanh</span>
             </div>
             <div className="flex items-center gap-6">
-              <a href="/quan-ly-dat-cho" className="text-gray-600 hover:text-blue-600">Quản lý đặt chỗ</a>
+              <a href="/dashboard/booking-history" className="text-gray-600 hover:text-blue-600">Quản lý đặt chỗ</a>
               <a href="/lien-he" className="text-gray-600 hover:text-blue-600">Liên hệ</a>
               <a href="/auth/login" className="text-blue-600 font-medium">Đăng nhập</a>
               <a href="/auth/register" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
@@ -135,31 +135,28 @@ export default function TimChuyenBayPage() {
           <div className="flex gap-4 mb-6">
             <button
               onClick={() => setSearchForm({ ...searchForm, loaiChuyen: 'MOT_CHIEU' })}
-              className={`px-6 py-2 rounded-lg font-medium ${
-                searchForm.loaiChuyen === 'MOT_CHIEU'
+              className={`px-6 py-2 rounded-lg font-medium ${searchForm.loaiChuyen === 'MOT_CHIEU'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Một chiều
             </button>
             <button
               onClick={() => setSearchForm({ ...searchForm, loaiChuyen: 'KHU_HOI' })}
-              className={`px-6 py-2 rounded-lg font-medium ${
-                searchForm.loaiChuyen === 'KHU_HOI'
+              className={`px-6 py-2 rounded-lg font-medium ${searchForm.loaiChuyen === 'KHU_HOI'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Khứ hồi
             </button>
             <button
               onClick={() => setSearchForm({ ...searchForm, loaiChuyen: 'NHIEU_THANH_PHO' })}
-              className={`px-6 py-2 rounded-lg font-medium ${
-                searchForm.loaiChuyen === 'NHIEU_THANH_PHO'
+              className={`px-6 py-2 rounded-lg font-medium ${searchForm.loaiChuyen === 'NHIEU_THANH_PHO'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Nhiều thành phố
             </button>

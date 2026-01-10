@@ -1,16 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
-export default function ActivityBookingPage() {
+function HotelBookingContent() {
     const router = useRouter();
-    const [bookingData, setBookingData] = useState<any>(null);
+    const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(900); // 15 minutes
-    const [paymentMethod, setPaymentMethod] = useState('MOMO');
     const [error, setError] = useState('');
+    const [timeLeft, setTimeLeft] = useState(900); // 15 minutes
+
+    // Booking data from URL/localStorage
+    const [bookingData, setBookingData] = useState<any>(null);
+    const [paymentMethod, setPaymentMethod] = useState('MOMO');
 
     // Customer info
     const [hoTen, setHoTen] = useState('');
@@ -20,11 +24,11 @@ export default function ActivityBookingPage() {
 
     useEffect(() => {
         // Load booking data from localStorage
-        const data = localStorage.getItem('activityBooking');
+        const data = localStorage.getItem('hotelBooking');
         if (data) {
             setBookingData(JSON.parse(data));
         } else {
-            router.push('/hoat-dong');
+            router.push('/khachsan');
         }
         setLoading(false);
     }, []);
@@ -35,8 +39,8 @@ export default function ActivityBookingPage() {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    alert('Hết thời gian giữ chỗ!');
-                    router.push('/hoat-dong');
+                    alert('Hết thời gian giữ phòng!');
+                    router.push('/khachsan');
                     return 0;
                 }
                 return prev - 1;
@@ -60,7 +64,6 @@ export default function ActivityBookingPage() {
     };
 
     const handlePayment = async () => {
-        // Validate form
         if (!hoTen || !email || !soDienThoai) {
             setError('Vui lòng điền đầy đủ thông tin liên hệ');
             return;
@@ -70,38 +73,38 @@ export default function ActivityBookingPage() {
         setError('');
 
         try {
-            // Call backend API to create booking
-            const response = await fetch('http://localhost:5000/activities/bookings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    hoatDongId: bookingData.hoatDongId,
-                    hoTen,
-                    email,
-                    soDienThoai,
-                    ngayThucHien: bookingData.ngayThucHien,
-                    soNguoiLon: bookingData.soNguoiLon,
-                    soTreEm: bookingData.soTreEm,
-                    ghiChu,
-                    phuongThucThanhToan: paymentMethod,
-                }),
+            // Generate order info
+            const orderId = `HOTEL${Date.now()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+            const amount = bookingData.tongTien;
+            const orderInfo = `Dat phong ${bookingData.tenKhachSan}`;
+
+            // Save booking info for confirmation
+            localStorage.setItem('hotelBookingConfirm', JSON.stringify({
+                ...bookingData,
+                hoTen,
+                email,
+                soDienThoai,
+                ghiChu,
+                orderId,
+                phuongThucThanhToan: paymentMethod,
+            }));
+
+            // Redirect based on payment method
+            const params = new URLSearchParams({
+                amount: amount.toString(),
+                orderInfo,
+                orderId,
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Không thể tạo đặt chỗ');
-            }
-
-            const result = await response.json();
-
-            // Save maDat for confirmation page
-            localStorage.setItem('lastBookingCode', result.maDat);
-
-            // Redirect to payment URL
-            if (result.paymentUrl) {
-                window.location.href = result.paymentUrl;
-            } else {
-                throw new Error('Không nhận được URL thanh toán');
+            if (paymentMethod === 'MOMO') {
+                window.location.href = `/mock-momo?${params.toString()}`;
+            } else if (paymentMethod === 'VIETQR') {
+                params.append('bankCode', 'VCB');
+                params.append('accountNo', '1234567890');
+                params.append('accountName', 'CONG TY DU LICH');
+                window.location.href = `/mock-vietqr?${params.toString()}`;
+            } else if (paymentMethod === 'ZALOPAY') {
+                window.location.href = `/mock-zalopay?${params.toString()}`;
             }
         } catch (error: any) {
             console.error('Error:', error);
@@ -113,7 +116,7 @@ export default function ActivityBookingPage() {
     if (loading || !bookingData) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-pink-500 border-r-transparent"></div>
+                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
             </div>
         );
     }
@@ -124,7 +127,7 @@ export default function ActivityBookingPage() {
             <div className="bg-white border-b">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-2xl font-bold text-gray-900">Đặt tour & Thanh toán</h1>
+                        <h1 className="text-2xl font-bold text-gray-900">Đặt phòng & Thanh toán</h1>
                         <div className="flex items-center gap-3">
                             <span className="text-gray-600">Thời gian còn lại:</span>
                             <div className={`text-2xl font-bold ${timeLeft < 300 ? 'text-red-600' : 'text-green-600'}`}>
@@ -139,19 +142,34 @@ export default function ActivityBookingPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column - Form */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Tour Info */}
+                        {/* Hotel Info */}
                         <div className="bg-white rounded-lg shadow-sm p-6">
-                            <h2 className="text-xl font-bold text-gray-900 mb-4">Thông tin tour</h2>
+                            <h2 className="text-xl font-bold text-gray-900 mb-4">Thông tin đặt phòng</h2>
                             <div className="space-y-3">
                                 <div>
-                                    <div className="font-semibold text-gray-900 text-lg">{bookingData.tenHoatDong}</div>
+                                    <div className="font-semibold text-gray-900 text-lg">{bookingData.tenKhachSan}</div>
                                     <div className="text-gray-600 text-sm mt-1">
-                                        📅 {new Date(bookingData.ngayThucHien).toLocaleDateString('vi-VN')}
+                                        📍 {bookingData.diaChi}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <div className="text-gray-600">Nhận phòng</div>
+                                        <div className="font-semibold">{new Date(bookingData.ngayNhanPhong).toLocaleDateString('vi-VN')}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-gray-600">Trả phòng</div>
+                                        <div className="font-semibold">{new Date(bookingData.ngayTraPhong).toLocaleDateString('vi-VN')}</div>
                                     </div>
                                 </div>
                                 <div className="flex gap-4 text-sm text-gray-600">
-                                    <span>👥 {bookingData.soNguoiLon} người lớn</span>
-                                    {bookingData.soTreEm > 0 && <span>👶 {bookingData.soTreEm} trẻ em</span>}
+                                    <span>👥 {bookingData.soNguoi} khách</span>
+                                    <span>🏠 {bookingData.soPhong} phòng</span>
+                                    <span>🌙 {bookingData.soDem} đêm</span>
+                                </div>
+                                <div className="border-t pt-3">
+                                    <div className="font-semibold text-gray-900">{bookingData.tenPhong}</div>
+                                    <div className="text-sm text-gray-600">{bookingData.loaiPhong}</div>
                                 </div>
                             </div>
                         </div>
@@ -169,7 +187,7 @@ export default function ActivityBookingPage() {
                                         value={hoTen}
                                         onChange={(e) => setHoTen(e.target.value)}
                                         placeholder="Nguyễn Văn A"
-                                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         required
                                     />
                                 </div>
@@ -183,7 +201,7 @@ export default function ActivityBookingPage() {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="example@email.com"
-                                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         required
                                     />
                                 </div>
@@ -197,21 +215,21 @@ export default function ActivityBookingPage() {
                                         value={soDienThoai}
                                         onChange={(e) => setSoDienThoai(e.target.value)}
                                         placeholder="0912345678"
-                                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         required
                                     />
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Ghi chú (tùy chọn)
+                                        Yêu cầu đặc biệt (tùy chọn)
                                     </label>
                                     <textarea
                                         value={ghiChu}
                                         onChange={(e) => setGhiChu(e.target.value)}
                                         rows={3}
-                                        placeholder="Yêu cầu đặc biệt..."
-                                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                        placeholder="VD: Phòng tầng cao, giường đôi..."
+                                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </div>
                             </div>
@@ -301,26 +319,24 @@ export default function ActivityBookingPage() {
 
                             <div className="space-y-3 mb-4 pb-4 border-b">
                                 <div className="flex justify-between text-gray-600">
-                                    <span>{bookingData.soNguoiLon} × Người lớn</span>
-                                    <span>{formatCurrency(bookingData.tongTien / (bookingData.soNguoiLon + bookingData.soTreEm * 0.7) * bookingData.soNguoiLon)}</span>
+                                    <span>{bookingData.giaPhong && formatCurrency(bookingData.giaPhong)} x {bookingData.soDem} đêm</span>
+                                    <span>{formatCurrency(bookingData.giaPhong * bookingData.soDem)}</span>
                                 </div>
-                                {bookingData.soTreEm > 0 && (
-                                    <div className="flex justify-between text-gray-600">
-                                        <span>{bookingData.soTreEm} × Trẻ em</span>
-                                        <span>{formatCurrency(bookingData.tongTien / (bookingData.soNguoiLon + bookingData.soTreEm * 0.7) * bookingData.soTreEm * 0.7)}</span>
-                                    </div>
-                                )}
+                                <div className="flex justify-between text-gray-600">
+                                    <span>Thuế & phí dịch vụ</span>
+                                    <span>{formatCurrency(bookingData.giaPhong * bookingData.soDem * 0.1)}</span>
+                                </div>
                             </div>
 
                             <div className="flex justify-between text-xl font-bold text-gray-900 mb-6">
                                 <span>Tổng cộng</span>
-                                <span className="text-pink-600">{formatCurrency(bookingData.tongTien)}</span>
+                                <span className="text-blue-600">{formatCurrency(bookingData.tongTien)}</span>
                             </div>
 
                             <button
                                 onClick={handlePayment}
                                 disabled={processing || !hoTen || !email || !soDienThoai}
-                                className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg font-bold text-lg hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg"
+                                className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-bold text-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg"
                             >
                                 {processing ? (
                                     <span className="flex items-center justify-center gap-2">
@@ -338,7 +354,7 @@ export default function ActivityBookingPage() {
                                     <ul className="space-y-1 text-xs">
                                         <li>✓ Mã hóa SSL 128-bit</li>
                                         <li>✓ Bảo mật thông tin thanh toán</li>
-                                        <li>✓ Hoàn tiền nếu có sự cố</li>
+                                        <li>✓ Hoàn tiền theo chính sách</li>
                                     </ul>
                                 </div>
                             </div>
@@ -347,5 +363,17 @@ export default function ActivityBookingPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function HotelBookingPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+            </div>
+        }>
+            <HotelBookingContent />
+        </Suspense>
     );
 }

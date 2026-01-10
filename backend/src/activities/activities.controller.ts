@@ -46,21 +46,18 @@ export class ActivitiesController {
         return this.activitiesService.getBookingsByEmail(email);
     }
 
-    @Get('bookings/:maDatCho')
-    getBookingByCode(@Param('maDatCho') maDatCho: string) {
-        return this.activitiesService.getBookingByCode(maDatCho);
+    @Get('bookings/:maDat')
+    getBookingByCode(@Param('maDat') maDat: string) {
+        return this.activitiesService.getBookingByCode(maDat);
     }
 
-    @Patch('bookings/:maDatCho/payment-success')
-    markPaymentSuccess(@Param('maDatCho') maDatCho: string) {
-        return this.activitiesService.updateBookingPaymentStatus(
-            maDatCho,
-            'DA_THANH_TOAN' as any,
-        );
+    @Patch('bookings/:maDat/payment-success')
+    markPaymentSuccess(@Param('maDat') maDat: string) {
+        return this.activitiesService.updateBookingPaymentStatus(maDat, true);
     }
 
-    @Patch('bookings/:maDatCho/cancel')
-    cancelBooking(@Param('maDatCho') maDatCho: string) {
-        return this.activitiesService.cancelBooking(maDatCho);
+    @Patch('bookings/:maDat/cancel')
+    cancelBooking(@Param('maDat') maDat: string) {
+        return this.activitiesService.cancelBooking(maDat);
     }
 }

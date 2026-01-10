@@ -97,7 +97,7 @@ export default function Header() {
               </Link>
 
               {/* Đặt chỗ của tôi */}
-              <Link href="/quan-ly-dat-cho" className="text-sm font-medium text-gray-700 hover:text-blue-600">
+              <Link href="/dashboard/booking-history" className="text-sm font-medium text-gray-700 hover:text-blue-600">
                 📋 Đặt chỗ của tôi
               </Link>
 
@@ -114,66 +114,60 @@ export default function Header() {
           <nav className="flex items-center gap-8 h-14">
             <Link
               href="/khachsan"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/khachsan')
+              className={`text-sm font-medium transition-colors ${isActive('/khachsan')
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-700 hover:text-blue-600'
-              } h-full flex items-center`}
+                } h-full flex items-center`}
             >
               🏨 Khách sạn
             </Link>
 
             <Link
               href="/flights"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/flights')
+              className={`text-sm font-medium transition-colors ${isActive('/flights')
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-700 hover:text-blue-600'
-              } h-full flex items-center`}
+                } h-full flex items-center`}
             >
               ✈️ Vé máy bay
             </Link>
 
             <Link
               href="/xekhach"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/xekhach')
+              className={`text-sm font-medium transition-colors ${isActive('/xekhach')
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-700 hover:text-blue-600'
-              } h-full flex items-center`}
+                } h-full flex items-center`}
             >
               🚌 Vé xe khách
             </Link>
 
             <Link
               href="/dua-don-san-bay"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/dua-don-san-bay')
+              className={`text-sm font-medium transition-colors ${isActive('/dua-don-san-bay')
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-700 hover:text-blue-600'
-              } h-full flex items-center`}
+                } h-full flex items-center`}
             >
               🚖 Đưa đón sân bay
             </Link>
 
             <Link
               href="/cho-thue-xe"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/cho-thue-xe')
+              className={`text-sm font-medium transition-colors ${isActive('/cho-thue-xe')
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-700 hover:text-blue-600'
-              } h-full flex items-center`}
+                } h-full flex items-center`}
             >
               🚗 Cho thuê xe
             </Link>
 
             <Link
               href="/hoat-dong"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/hoat-dong')
+              className={`text-sm font-medium transition-colors ${isActive('/hoat-dong')
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-700 hover:text-blue-600'
-              } h-full flex items-center`}
+                } h-full flex items-center`}
             >
               🎡 Hoạt động & Vui chơi
             </Link>
@@ -182,11 +176,10 @@ export default function Header() {
             <div className="relative h-full flex items-center" ref={moreRef}>
               <button
                 onClick={() => setShowMoreDropdown(!showMoreDropdown)}
-                className={`text-sm font-medium transition-colors flex items-center gap-1 ${
-                  showMoreDropdown
+                className={`text-sm font-medium transition-colors flex items-center gap-1 ${showMoreDropdown
                     ? 'text-blue-600'
                     : 'text-gray-700 hover:text-blue-600'
-                }`}
+                  }`}
               >
                 More
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

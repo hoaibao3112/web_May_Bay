@@ -304,7 +304,7 @@ function XacNhanContent() {
                   🖨️ In vé
                 </button>
                 <button
-                  onClick={() => router.push('/quan-ly-dat-cho')}
+                  onClick={() => router.push('/dashboard/booking-history')}
                   className="bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
                 >
                   📋 Quản lý đặt chỗ

@@ -30,7 +30,7 @@ export default function UserSidebar({ userName, userPoints = 0 }: UserSidebarPro
   const menuItems = [
     { href: '/user/points', icon: '⚪', label: `${userPoints} Điểm` },
     { href: '/user/cards', icon: '💳', label: 'Thẻ của tôi' },
-    { href: '/quan-ly-dat-cho', icon: '📋', label: 'Đặt chỗ của tôi' },
+    { href: '/dashboard/booking-history', icon: '📋', label: 'Đặt chỗ của tôi' },
     { href: '/user/transactions', icon: '📋', label: 'Danh sách giao dịch' },
     { href: '/user/refunds', icon: '💰', label: 'Refunds' },
     { href: '/user/flight-alerts', icon: '🔔', label: 'Thông báo giá vé máy bay' },
@@ -65,11 +65,10 @@ export default function UserSidebar({ userName, userPoints = 0 }: UserSidebarPro
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-3 px-6 py-3 transition-colors ${
-              pathname === item.href
+            className={`flex items-center gap-3 px-6 py-3 transition-colors ${pathname === item.href
                 ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600'
                 : 'text-gray-700 hover:bg-gray-50'
-            }`}
+              }`}
           >
             <span className="text-xl">{item.icon}</span>
             <span className={pathname === item.href ? 'font-medium' : ''}>{item.label}</span>

@@ -101,8 +101,8 @@ export default function HotelDetailPage() {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('vi-VN', { 
-      day: '2-digit', 
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     });
@@ -199,19 +199,19 @@ export default function HotelDetailPage() {
           <div className="grid grid-cols-4 gap-2 h-96">
             {/* Main Image */}
             <div className="col-span-2 row-span-2 relative rounded-lg overflow-hidden cursor-pointer group"
-                 onClick={() => setShowAllImages(true)}>
+              onClick={() => setShowAllImages(true)}>
               <img
                 src={allImages[0] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'}
                 alt={hotel.tenKhachSan}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </div>
-            
+
             {/* Side Images */}
             {allImages.slice(1, 5).map((img, idx) => (
-              <div key={idx} 
-                   className="relative rounded-lg overflow-hidden cursor-pointer group"
-                   onClick={() => setShowAllImages(true)}>
+              <div key={idx}
+                className="relative rounded-lg overflow-hidden cursor-pointer group"
+                onClick={() => setShowAllImages(true)}>
                 <img
                   src={img}
                   alt={`${hotel.tenKhachSan} ${idx + 2}`}
@@ -264,7 +264,7 @@ export default function HotelDetailPage() {
                   <p className="text-sm text-gray-500">({hotel.soDanhGia} đánh giá)</p>
                 </div>
               </div>
-              
+
               <p className="text-gray-700 mb-2">📍 {hotel.diaChi}</p>
               <p className="text-gray-600">{hotel.moTa}</p>
             </div>
@@ -300,7 +300,7 @@ export default function HotelDetailPage() {
             {/* Available Rooms */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-bold mb-4">Những phòng còn trống tại Khách sạn {hotel.tenKhachSan}</h2>
-              
+
               <div className="space-y-4">
                 {hotel.phong.map((room) => (
                   <div key={room.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -342,7 +342,30 @@ export default function HotelDetailPage() {
                           </div>
                           <p className="text-xs text-gray-500">Giá/đêm</p>
                         </div>
-                        <button className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                        <button
+                          onClick={() => {
+                            // Save booking data to localStorage
+                            const bookingData = {
+                              khachSanId: hotel.id,
+                              tenKhachSan: hotel.tenKhachSan,
+                              diaChi: hotel.diaChi,
+                              phongId: room.id,
+                              tenPhong: room.tenPhong,
+                              loaiPhong: room.loaiPhong,
+                              ngayNhanPhong: checkIn,
+                              ngayTraPhong: checkOut,
+                              soNguoi: adults,
+                              soPhong: rooms,
+                              soDem: nights,
+                              giaPhong: Number(room.giaTheoNgay),
+                              tongTien: Number(room.giaTheoNgay) * nights * 1.1, // Include tax
+                            };
+                            localStorage.setItem('hotelBooking', JSON.stringify(bookingData));
+                            // Redirect to booking page
+                            window.location.href = '/khachsan/booking';
+                          }}
+                          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                        >
                           Chọn
                         </button>
                       </div>
@@ -357,14 +380,14 @@ export default function HotelDetailPage() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-lg p-6 sticky top-20">
               <h3 className="text-xl font-bold mb-4">Thông tin đặt phòng</h3>
-              
+
               <div className="space-y-4 mb-6">
                 <div className="border-b pb-3">
                   <div className="text-sm text-gray-600 mb-1">Nhận phòng</div>
                   <div className="font-semibold">{getDayOfWeek(checkIn)}, {formatDate(checkIn)}</div>
                   <div className="text-sm text-gray-500">Từ {hotel.gioCheckin}</div>
                 </div>
-                
+
                 <div className="border-b pb-3">
                   <div className="text-sm text-gray-600 mb-1">Trả phòng</div>
                   <div className="font-semibold">{getDayOfWeek(checkOut)}, {formatDate(checkOut)}</div>
@@ -394,7 +417,7 @@ export default function HotelDetailPage() {
                 </div>
               </div>
 
-              <Link 
+              <Link
                 href={`/khachsan?thanhPho=${hotel.thanhPho}&ngayNhanPhong=${checkIn}&ngayTraPhong=${checkOut}&soNguoi=${adults}&soPhong=${rooms}`}
                 className="block w-full text-center px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
               >

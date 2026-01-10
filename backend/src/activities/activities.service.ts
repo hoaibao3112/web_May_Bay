@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HoatDong } from './entities/hoat-dong.entity';
 import { DanhMucHoatDong, TrangThaiDanhMuc } from './entities/danh-muc-hoat-dong.entity';
-import { DatHoatDong, TrangThaiThanhToan } from './entities/dat-hoat-dong.entity';
+import { DatHoatDong } from './entities/dat-hoat-dong.entity';
 import { SearchActivitiesDto } from './dto/search-activities.dto';
 import { CreateActivityBookingDto } from './dto/create-activity-booking.dto';
 
@@ -30,7 +30,7 @@ export class ActivitiesService {
     async search(dto: SearchActivitiesDto) {
         const { thanhPho, danhMucId, ngay, timKiem, page = 1, limit = 12, sapXep } = dto;
 
-        const queryBuilder = this.hoatDongRepo
+        const queryBuilder = this.hoatDongRepository
             .createQueryBuilder('hd')
             .leftJoinAndSelect('hd.hinhAnh', 'hinh')
             .leftJoinAndSelect('hd.danhMuc', 'dm')
@@ -93,7 +93,7 @@ export class ActivitiesService {
 
     // Get activity details
     async getById(id: number) {
-        const activity = await this.hoatDongRepo.findOne({
+        const activity = await this.hoatDongRepository.findOne({
             where: { id },
             relations: [
                 'hinhAnh',
@@ -115,7 +115,7 @@ export class ActivitiesService {
 
     // Get popular cities for activities
     async getThanhPhoPhoBien() {
-        const result = await this.hoatDongRepo
+        const result = await this.hoatDongRepository
             .createQueryBuilder('hd')
             .select('hd.thanhPho', 'thanhPho')
             .addSelect('COUNT(hd.id)', 'soLuong')
@@ -131,8 +131,8 @@ export class ActivitiesService {
     // ==================== BOOKING METHODS ====================
 
     /**
-     * Create activity booking
-     */
+   * Create activity booking
+   */
     async createBooking(dto: CreateActivityBookingDto) {
         // Verify activity exists
         const activity = await this.hoatDongRepository.findOne({
@@ -150,11 +150,11 @@ export class ActivitiesService {
         const tongTien = (dto.soNguoiLon * adultPrice) + (dto.soTreEm * childPrice);
 
         // Generate unique booking code
-        const maDatCho = `ACT${Date.now()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+        const maDat = `ACT${Date.now()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
         // Create booking
         const booking = this.datHoatDongRepository.create({
-            maDatCho,
+            maDat,
             hoatDongId: dto.hoatDongId,
             hoTen: dto.hoTen,
             email: dto.email,
@@ -165,6 +165,7 @@ export class ActivitiesService {
             tongTien,
             phuongThucThanhToan: dto.phuongThucThanhToan,
             ghiChu: dto.ghiChu,
+            daThanhToan: false,
         });
 
         await this.datHoatDongRepository.save(booking);
@@ -174,7 +175,7 @@ export class ActivitiesService {
         const params = new URLSearchParams({
             amount: tongTien.toString(),
             orderInfo: `Dat tour ${activity.tenHoatDong}`,
-            orderId: maDatCho,
+            orderId: maDat,
         });
 
         if (dto.phuongThucThanhToan === 'MOMO') {
@@ -190,9 +191,10 @@ export class ActivitiesService {
 
         return {
             id: booking.id,
-            maDatCho: booking.maDatCho,
+            maDat: booking.maDat,
             tongTien: booking.tongTien,
-            trangThaiThanhToan: booking.trangThaiThanhToan,
+            trangThai: booking.trangThai,
+            daThanhToan: booking.daThanhToan,
             paymentUrl,
             hoatDong: {
                 id: activity.id,
@@ -215,11 +217,11 @@ export class ActivitiesService {
     }
 
     /**
-     * Get booking by ID or order code
+     * Get booking by order code
      */
-    async getBookingByCode(maDatCho: string) {
+    async getBookingByCode(maDat: string) {
         const booking = await this.datHoatDongRepository.findOne({
-            where: { maDatCho },
+            where: { maDat },
             relations: ['hoatDong', 'hoatDong.hinhAnh', 'hoatDong.danhMuc'],
         });
 
@@ -233,14 +235,17 @@ export class ActivitiesService {
     /**
      * Update booking payment status
      */
-    async updateBookingPaymentStatus(maDatCho: string, status: TrangThaiThanhToan) {
-        const booking = await this.getBookingByCode(maDatCho);
+    async updateBookingPaymentStatus(maDat: string, daThanhToan: boolean) {
+        const booking = await this.getBookingByCode(maDat);
 
-        booking.trangThaiThanhToan = status;
+        booking.daThanhToan = daThanhToan;
+        if (daThanhToan) {
+            booking.trangThai = 'DA_XAC_NHAN' as any;
+        }
         await this.datHoatDongRepository.save(booking);
 
         // TODO: Send email confirmation here
-        console.log(`✉️ Email sent to ${booking.email}: Booking ${maDatCho} - Status: ${status}`);
+        console.log(`✉️ Email sent to ${booking.email}: Booking ${maDat} - Paid: ${daThanhToan}`);
 
         return booking;
     }
@@ -248,7 +253,10 @@ export class ActivitiesService {
     /**
      * Cancel booking
      */
-    async cancelBooking(maDatCho: string) {
-        return this.updateBookingPaymentStatus(maDatCho, TrangThaiThanhToan.HUY);
+    async cancelBooking(maDat: string) {
+        const booking = await this.getBookingByCode(maDat);
+        booking.trangThai = 'HUY' as any;
+        await this.datHoatDongRepository.save(booking);
+        return booking;
     }
 }

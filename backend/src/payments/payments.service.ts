@@ -130,6 +130,16 @@ export class PaymentsService {
       );
     }
 
+    // Tạo ZaloPay payment URL nếu chọn phương thức ZALOPAY
+    let zalopayUrl = '';
+    if (dto.phuongThuc === 'ZALOPAY') {
+      zalopayUrl = await this.createZaloPayPaymentUrl(
+        payment.maGiaoDich,
+        tongTien,
+        `Thanh toan don dat ve ${booking.maDatVe}`,
+      );
+    }
+
     return {
       paymentId: payment.id,
       maGiaoDich: payment.maGiaoDich,
@@ -138,7 +148,8 @@ export class PaymentsService {
       phuongThuc: payment.phuongThuc,
       paymentUrl: dto.phuongThuc === 'MOMO' ? momoUrl :
         dto.phuongThuc === 'VIETQR' ? vietqrUrl :
-          paymentUrl,
+          dto.phuongThuc === 'ZALOPAY' ? zalopayUrl :
+            paymentUrl,
     };
   }
 
@@ -216,79 +227,187 @@ export class PaymentsService {
     return paymentUrl;
   }
 
-  // Tạo MoMo payment URL (Mock for Demo)
+  // Tạo MoMo payment URL - Real Implementation
   private async createMoMoPaymentUrl(
     maGiaoDich: string,
     amount: number,
     orderInfo: string,
   ): Promise<string> {
-    // FOR DEMO/SCHOOL PROJECT: Use mock MoMo payment page instead of real API
-    // This simulates the MoMo payment flow without needing real credentials
+    const partnerCode = process.env.MOMO_PARTNER_CODE || 'MOMO';
+    const accessKey = process.env.MOMO_ACCESS_KEY || 'F8BBA842ECF85';
+    const secretKey = process.env.MOMO_SECRET_KEY || 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
+    const apiUrl = process.env.MOMO_API_URL || 'https://test-payment.momo.vn/v2/gateway/api/create';
+    const redirectUrl = process.env.MOMO_REDIRECT_URL || `${process.env.API_URL || 'http://localhost:5000'}/api/payments/momo-return`;
+    const ipnUrl = process.env.MOMO_IPN_URL || `${process.env.API_URL || 'http://localhost:5000'}/api/payments/momo-ipn`;
 
-    console.log('🎭 Using Mock MoMo Payment for Demo');
-    console.log('Order ID:', maGiaoDich);
-    console.log('Amount:', amount);
-    console.log('Order Info:', orderInfo);
+    if (!partnerCode || !accessKey || !secretKey || !apiUrl) {
+      throw new Error('MoMo configuration is missing');
+    }
 
-    // Redirect to our mock MoMo payment page
-    const mockMoMoUrl = `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:5501'}/mock-momo?orderId=${maGiaoDich}&amount=${amount}&orderInfo=${encodeURIComponent(orderInfo)}`;
-
-    console.log('✅ Mock MoMo URL created:', mockMoMoUrl);
-
-    return mockMoMoUrl;
-
-    /* REAL MOMO IMPLEMENTATION (Uncomment when you have real credentials):
-    
-    const partnerCode = process.env.MOMO_PARTNER_CODE;
-    const accessKey = process.env.MOMO_ACCESS_KEY;
-    const secretKey = process.env.MOMO_SECRET_KEY;
-    const apiUrl = process.env.MOMO_API_URL;
-    const redirectUrl = process.env.MOMO_REDIRECT_URL;
-    const ipnUrl = process.env.MOMO_IPN_URL;
+    console.log('🔐 MoMo Config:', {
+      partnerCode,
+      accessKey,
+      secretKey: secretKey?.substring(0, 10) + '...',
+      apiUrl,
+      redirectUrl,
+      ipnUrl
+    });
 
     const requestId = maGiaoDich;
     const orderId = maGiaoDich;
-    const requestType = "captureWallet";
-    const extraData = "";
+    const requestType = 'payWithMethod'; // Flexible payment method
+    const extraData = '';
+    const autoCapture = true;
+    const lang = 'vi';
 
-    const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
-    
-    console.log('🔐 MoMo Raw Signature:', rawSignature);
+    // Create raw signature according to MoMo spec
+    // IMPORTANT: Order of parameters must match exactly
+    const rawSignature =
+      `accessKey=${accessKey}` +
+      `&amount=${amount}` +
+      `&extraData=${extraData}` +
+      `&ipnUrl=${ipnUrl}` +
+      `&orderId=${orderId}` +
+      `&orderInfo=${orderInfo}` +
+      `&partnerCode=${partnerCode}` +
+      `&redirectUrl=${redirectUrl}` +
+      `&requestId=${requestId}` +
+      `&requestType=${requestType}`;
 
+    console.log('📝 MoMo Raw Signature:', rawSignature);
+
+    // Generate HMAC SHA256 signature
     const signature = createHmac('sha256', secretKey)
       .update(rawSignature)
       .digest('hex');
-    
+
     console.log('✅ MoMo Signature:', signature);
 
+    // Prepare request body
     const requestBody = {
       partnerCode,
-      accessKey,
+      partnerName: 'Test',
+      storeId: 'MomoTestStore',
       requestId,
       amount,
       orderId,
       orderInfo,
       redirectUrl,
       ipnUrl,
-      extraData,
+      lang,
       requestType,
-      signature,
-      lang: 'vi'
+      autoCapture,
+      extraData,
+      signature
     };
 
+    console.log('📤 Sending request to MoMo API...');
+
     try {
-      const response = await axios.post(apiUrl, requestBody);
+      const response = await axios.post(apiUrl, requestBody, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log('📥 MoMo Response:', response.data);
+
       if (response.data && response.data.payUrl) {
+        console.log('✅ MoMo Payment URL created successfully');
         return response.data.payUrl;
+      } else if (response.data && response.data.resultCode !== 0) {
+        console.error('❌ MoMo Error:', response.data);
+        throw new Error(response.data.message || `MoMo error: ${response.data.resultCode}`);
       } else {
-        console.error('MoMo Error Response:', response.data);
-        throw new Error(response.data.message || 'Lỗi khi tạo payment URL từ MoMo');
+        console.error('❌ Unexpected MoMo Response:', response.data);
+        throw new Error('Lỗi khi tạo payment URL từ MoMo');
       }
     } catch (error) {
-      console.error('MoMo Request Error:', error.response?.data || error.message);
-      throw new Error('Không thể kết nối với cổng thanh toán MoMo');
+      if (error.response) {
+        console.error('❌ MoMo API Error Response:', error.response.data);
+        throw new Error(error.response.data?.message || 'Không thể kết nối với cổng thanh toán MoMo');
+      } else {
+        console.error('❌ MoMo Request Error:', error.message);
+        throw new Error('Không thể kết nối với cổng thanh toán MoMo');
+      }
     }
-    */
+  }
+
+  // Tạo ZaloPay payment URL - Real Implementation
+  private async createZaloPayPaymentUrl(
+    maGiaoDich: string,
+    amount: number,
+    orderInfo: string,
+  ): Promise<string> {
+    const appId = process.env.ZALOPAY_APP_ID || '2554';
+    const key1 = process.env.ZALOPAY_KEY1 || 'sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn';
+    const endpoint = process.env.ZALOPAY_ENDPOINT || 'https://sb-openapi.zalopay.vn/v2/create';
+    const redirectUrl = process.env.ZALOPAY_REDIRECT_URL || `${process.env.API_URL || 'http://localhost:5000'}/api/payments/zalopay-return`;
+
+    console.log('🔐 ZaloPay Config:', {
+      appId,
+      key1: key1?.substring(0, 10) + '...',
+      endpoint,
+      redirectUrl
+    });
+
+    const embedData = {
+      redirecturl: redirectUrl,
+    };
+
+    const items = [];
+    const transID = Date.now();
+    const app_trans_id = `${moment().format('YYMMDD')}_${transID}`;
+
+    const order = {
+      app_id: parseInt(appId),
+      app_trans_id,
+      app_user: 'user_' + maGiaoDich,
+      app_time: Date.now(),
+      amount,
+      item: JSON.stringify(items),
+      embed_data: JSON.stringify(embedData),
+      description: orderInfo,
+      bank_code: '',
+    };
+
+    // Create MAC signature according to ZaloPay spec
+    // Format: app_id|app_trans_id|app_user|amount|app_time|embed_data|item
+    const data = `${order.app_id}|${order.app_trans_id}|${order.app_user}|${order.amount}|${order.app_time}|${order.embed_data}|${order.item}`;
+    const mac = createHmac('sha256', key1).update(data).digest('hex');
+
+    console.log('📝 ZaloPay MAC Data:', data);
+    console.log('✅ ZaloPay MAC:', mac);
+
+    const requestBody = { ...order, mac };
+
+    console.log('📤 Sending request to ZaloPay API...');
+
+    try {
+      const response = await axios.post(endpoint, requestBody, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log('📥 ZaloPay Response:', response.data);
+
+      if (response.data && response.data.return_code === 1) {
+        console.log('✅ ZaloPay Payment URL created successfully');
+        return response.data.order_url;
+      } else {
+        console.error('❌ ZaloPay Error:', response.data);
+        throw new Error(response.data.return_message || 'Lỗi khi tạo payment URL từ ZaloPay');
+      }
+    } catch (error) {
+      if (error.response) {
+        console.error('❌ ZaloPay API Error Response:', error.response.data);
+        throw new Error(error.response.data?.return_message || 'Không thể kết nối với cổng thanh toán ZaloPay');
+      } else {
+        console.error('❌ ZaloPay Request Error:', error.message);
+        throw new Error('Không thể kết nối với cổng thanh toán ZaloPay');
+      }
+    }
   }
 
   // Tạo VietQR payment URL (Mock for Demo)
@@ -434,16 +553,52 @@ export class PaymentsService {
   // Xử lý MoMo Return (Khi người dùng quay lại web)
   async handleMoMoReturn(query: any) {
     console.log('🔙 MoMo Return Params:', query);
-    const { partnerCode, orderId, requestId, amount, orderInfo, orderType, transId, resultCode, message, payType, responseTime, extraData, signature } = query;
+    const {
+      partnerCode,
+      orderId,
+      requestId,
+      amount,
+      orderInfo,
+      orderType,
+      transId,
+      resultCode,
+      message,
+      payType,
+      responseTime,
+      extraData,
+      signature
+    } = query;
 
-    const secretKey = process.env.MOMO_SECRET_KEY;
-    const rawSignature = `accessKey=${process.env.MOMO_ACCESS_KEY}&amount=${amount}&extraData=${extraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
+    const secretKey = process.env.MOMO_SECRET_KEY || 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
+    const accessKey = process.env.MOMO_ACCESS_KEY || 'F8BBA842ECF85';
+
+    // Build raw signature according to MoMo spec for return URL
+    const rawSignature =
+      `accessKey=${accessKey}` +
+      `&amount=${amount}` +
+      `&extraData=${extraData}` +
+      `&message=${message}` +
+      `&orderId=${orderId}` +
+      `&orderInfo=${orderInfo}` +
+      `&orderType=${orderType}` +
+      `&partnerCode=${partnerCode}` +
+      `&requestId=${requestId}` +
+      `&responseTime=${responseTime}` +
+      `&resultCode=${resultCode}` +
+      `&transId=${transId}`;
+
+    console.log('📝 Return Raw Signature:', rawSignature);
 
     const expectedSignature = createHmac('sha256', secretKey)
       .update(rawSignature)
       .digest('hex');
 
+    console.log('🔐 Expected Signature:', expectedSignature);
+    console.log('🔑 Received Signature:', signature);
+    console.log('✅ Match:', signature === expectedSignature);
+
     if (signature !== expectedSignature) {
+      console.error('❌ MoMo signature mismatch');
       return { success: false, message: 'Chữ ký không hợp lệ' };
     }
 
@@ -453,10 +608,27 @@ export class PaymentsService {
     });
 
     if (!payment) {
+      console.error('❌ Payment not found:', orderId);
       return { success: false, message: 'Không tìm thấy giao dịch' };
     }
 
-    if (resultCode == 0) { // Thành công
+    if (resultCode == 0) {
+      // Thanh toán thành công
+      console.log('✅ Payment successful, updating database...');
+
+      await this.prisma.thanhToan.update({
+        where: { id: payment.id },
+        data: {
+          trangThai: 'THANH_CONG',
+          thongTinCong: query,
+        },
+      });
+
+      await this.bookingsService.updateBookingStatus(
+        payment.donDatVeId,
+        'DA_THANH_TOAN',
+      );
+
       return {
         success: true,
         message: 'Thanh toán thành công qua MoMo',
@@ -464,21 +636,70 @@ export class PaymentsService {
         maDatCho: payment.donDatVe.maDatVe,
       };
     } else {
-      return { success: false, message: message || 'Thanh toán thất bại' };
+      // Thanh toán thất bại
+      console.log('❌ Payment failed with code:', resultCode);
+
+      await this.prisma.thanhToan.update({
+        where: { id: payment.id },
+        data: {
+          trangThai: 'THAT_BAI',
+          thongTinCong: query,
+        },
+      });
+
+      return {
+        success: false,
+        message: message || 'Thanh toán thất bại',
+        code: resultCode
+      };
     }
   }
 
   // Xử lý MoMo IPN (Webhook từ MoMo)
   async handleMoMoIPN(body: any) {
     console.log('🔔 MoMo IPN received:', body);
-    const { partnerCode, orderId, requestId, amount, orderInfo, orderType, transId, resultCode, message, payType, responseTime, extraData, signature } = body;
+    const {
+      partnerCode,
+      orderId,
+      requestId,
+      amount,
+      orderInfo,
+      orderType,
+      transId,
+      resultCode,
+      message,
+      payType,
+      responseTime,
+      extraData,
+      signature
+    } = body;
 
-    const secretKey = process.env.MOMO_SECRET_KEY;
-    const rawSignature = `accessKey=${process.env.MOMO_ACCESS_KEY}&amount=${amount}&extraData=${extraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
+    const secretKey = process.env.MOMO_SECRET_KEY || 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
+    const accessKey = process.env.MOMO_ACCESS_KEY || 'F8BBA842ECF85';
+
+    // Build raw signature according to MoMo spec for IPN
+    const rawSignature =
+      `accessKey=${accessKey}` +
+      `&amount=${amount}` +
+      `&extraData=${extraData}` +
+      `&message=${message}` +
+      `&orderId=${orderId}` +
+      `&orderInfo=${orderInfo}` +
+      `&orderType=${orderType}` +
+      `&partnerCode=${partnerCode}` +
+      `&requestId=${requestId}` +
+      `&responseTime=${responseTime}` +
+      `&resultCode=${resultCode}` +
+      `&transId=${transId}`;
+
+    console.log('📝 IPN Raw Signature:', rawSignature);
 
     const expectedSignature = createHmac('sha256', secretKey)
       .update(rawSignature)
       .digest('hex');
+
+    console.log('🔐 Expected Signature:', expectedSignature);
+    console.log('🔑 Received Signature:', signature);
 
     if (signature !== expectedSignature) {
       console.error('❌ MoMo IPN Signature mismatch');
@@ -490,10 +711,13 @@ export class PaymentsService {
     });
 
     if (!payment) {
+      console.error('❌ Payment not found:', orderId);
       return { status: 404, message: 'Payment not found' };
     }
 
     if (resultCode == 0) {
+      console.log('✅ IPN: Payment successful, updating database...');
+
       await this.prisma.thanhToan.update({
         where: { id: payment.id },
         data: {
@@ -504,6 +728,8 @@ export class PaymentsService {
 
       await this.bookingsService.updateBookingStatus(payment.donDatVeId, 'DA_THANH_TOAN');
     } else {
+      console.log('❌ IPN: Payment failed with code:', resultCode);
+
       await this.prisma.thanhToan.update({
         where: { id: payment.id },
         data: {
@@ -513,7 +739,154 @@ export class PaymentsService {
       });
     }
 
-    return { status: 204 }; // MoMo IPN expects 204 No Content for success
+    console.log('✅ IPN processed successfully');
+    return { status: 204, message: 'Success' }; // MoMo IPN expects 204 No Content for success
+  }
+
+  // Xử lý ZaloPay Return (Khi người dùng quay lại web)
+  async handleZaloPayReturn(query: any) {
+    console.log('🔙 ZaloPay Return Params:', query);
+
+    const { appid, apptransid, status, amount, checksum } = query;
+    const key2 = process.env.ZALOPAY_KEY2 || 'trMrHtvjo6myautxDUiAcYsVtaeQ8nhf';
+
+    // Verify checksum with KEY2
+    const checksumData = `${appid}|${apptransid}|${status}`;
+    const expectedChecksum = createHmac('sha256', key2)
+      .update(checksumData)
+      .digest('hex');
+
+    console.log('📝 ZaloPay Checksum Data:', checksumData);
+    console.log('🔐 Expected Checksum:', expectedChecksum);
+    console.log('🔑 Received Checksum:', checksum);
+
+    if (checksum !== expectedChecksum) {
+      console.error('❌ ZaloPay checksum mismatch');
+      return { success: false, message: 'Chữ ký không hợp lệ' };
+    }
+
+    // Extract transaction ID from apptransid (format: YYMMDD_transID)
+    const maGiaoDich = apptransid;
+
+    const payment = await this.prisma.thanhToan.findUnique({
+      where: { maGiaoDich },
+      include: { donDatVe: true },
+    });
+
+    if (!payment) {
+      console.error('❌ Payment not found:', maGiaoDich);
+      return { success: false, message: 'Không tìm thấy giao dịch' };
+    }
+
+    if (status == 1) {
+      // Thanh toán thành công
+      console.log('✅ ZaloPay payment successful, updating database...');
+
+      await this.prisma.thanhToan.update({
+        where: { id: payment.id },
+        data: {
+          trangThai: 'THANH_CONG',
+          thongTinCong: query,
+        },
+      });
+
+      await this.bookingsService.updateBookingStatus(
+        payment.donDatVeId,
+        'DA_THANH_TOAN',
+      );
+
+      return {
+        success: true,
+        message: 'Thanh toán thành công qua ZaloPay',
+        bookingId: payment.donDatVeId,
+        maDatCho: payment.donDatVe.maDatVe,
+      };
+    } else {
+      // Thanh toán thất bại
+      console.log('❌ ZaloPay payment failed with status:', status);
+
+      await this.prisma.thanhToan.update({
+        where: { id: payment.id },
+        data: {
+          trangThai: 'THAT_BAI',
+          thongTinCong: query,
+        },
+      });
+
+      return {
+        success: false,
+        message: 'Thanh toán thất bại',
+        code: status
+      };
+    }
+  }
+
+  // Xử lý ZaloPay IPN (Webhook từ ZaloPay)
+  async handleZaloPayIPN(body: any) {
+    console.log('🔔 ZaloPay IPN received:', body);
+
+    const { data: dataStr, mac: receivedMac } = body;
+    const key2 = process.env.ZALOPAY_KEY2 || 'trMrHtvjo6myautxDUiAcYsVtaeQ8nhf';
+
+    // Verify MAC with KEY2
+    const expectedMac = createHmac('sha256', key2)
+      .update(dataStr)
+      .digest('hex');
+
+    console.log('🔐 Expected MAC:', expectedMac);
+    console.log('🔑 Received MAC:', receivedMac);
+
+    if (receivedMac !== expectedMac) {
+      console.error('❌ ZaloPay IPN MAC mismatch');
+      return { return_code: -1, return_message: 'mac not equal' };
+    }
+
+    try {
+      const data = JSON.parse(dataStr);
+      const { app_trans_id, zp_trans_id, amount, status } = data;
+
+      const payment = await this.prisma.thanhToan.findUnique({
+        where: { maGiaoDich: app_trans_id },
+      });
+
+      if (!payment) {
+        console.error('❌ Payment not found:', app_trans_id);
+        return { return_code: 2, return_message: 'Payment not found' };
+      }
+
+      if (status == 1) {
+        console.log('✅ IPN: ZaloPay payment successful, updating database...');
+
+        await this.prisma.thanhToan.update({
+          where: { id: payment.id },
+          data: {
+            trangThai: 'THANH_CONG',
+            thongTinCong: data,
+          },
+        });
+
+        await this.bookingsService.updateBookingStatus(
+          payment.donDatVeId,
+          'DA_THANH_TOAN',
+        );
+      } else {
+        console.log('❌ IPN: ZaloPay payment failed');
+
+        await this.prisma.thanhToan.update({
+          where: { id: payment.id },
+          data: {
+            trangThai: 'THAT_BAI',
+            thongTinCong: data,
+          },
+        });
+      }
+
+      console.log('✅ IPN processed successfully');
+      return { return_code: 1, return_message: 'success' };
+    } catch (error) {
+      console.error('❌ Error processing ZaloPay IPN:', error);
+      return { return_code: 0, return_message: error.message };
+    }
   }
 
   // Sort object by key

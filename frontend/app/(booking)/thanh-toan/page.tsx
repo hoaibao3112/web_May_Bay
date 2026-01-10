@@ -276,10 +276,7 @@ function ThanhToanContent() {
                           className="h-10 w-10 object-contain rounded-lg"
                         />
                         <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-pink-700">Ví MoMo</p>
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Demo</span>
-                          </div>
+                          <p className="font-semibold text-pink-700">Ví MoMo</p>
                           <p className="text-sm text-gray-600">
                             Thanh toán qua ví điện tử MoMo
                           </p>
@@ -311,6 +308,36 @@ function ThanhToanContent() {
                           </div>
                           <p className="text-sm text-gray-600">
                             Chuyển khoản qua mã QR - Nhanh & an toàn
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+
+                {/* ZaloPay */}
+                <label className={`block border-2 rounded-lg p-4 cursor-pointer transition ${paymentMethod === 'ZALOPAY' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                  }`}>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="ZALOPAY"
+                      checked={paymentMethod === 'ZALOPAY'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src="https://salt.tikicdn.com/ts/upload/c3/d6/a8/23c5b1c36b1fd06b64010c3ea8cc44c8.png"
+                          alt="ZaloPay"
+                          className="h-10 w-10 object-contain rounded-lg"
+                        />
+                        <div>
+                          <p className="font-semibold text-blue-700">ZaloPay</p>
+                          <p className="text-sm text-gray-600">
+                            Ví điện tử quốc dân - An toàn & tiện lợi
                           </p>
                         </div>
                       </div>
