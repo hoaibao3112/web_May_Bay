@@ -1,231 +1,198 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreatePromotionDto } from './dto/create-promotion.dto';
+import { UpdatePromotionDto } from './dto/update-promotion.dto';
+import { ValidatePromotionDto } from './dto/validate-promotion.dto';
 
 @Injectable()
 export class PromotionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  // Áp dụng mã khuyến mãi
-  async applyPromotion(code: string, bookingId: number) {
-    // Kiểm tra booking
-    const booking = await this.prisma.donDatVe.findUnique({
-      where: { id: bookingId },
+  // ==================== ADMIN CRUD ====================
+
+  async create(dto: CreatePromotionDto) {
+    const existing = await this.prisma.khuyenMai.findUnique({
+      where: { maKhuyenMai: dto.maKhuyenMai },
     });
 
-    if (!booking) {
-      throw new NotFoundException('Không tìm thấy đơn đặt vé');
+    if (existing) {
+      throw new BadRequestException('Mã khuyến mãi đã tồn tại');
     }
 
-    if (booking.trangThai !== 'CHO_THANH_TOAN') {
-      throw new BadRequestException('Không thể áp dụng khuyến mãi cho đơn này');
-    }
-
-    // Kiểm tra mã khuyến mãi
-    const promotion = await this.prisma.khuyenMai.findFirst({
-      where: {
-        maKhuyenMai: code,
-        isActive: true,
-        ngayBatDau: { lte: new Date() },
-        ngayKetThuc: { gte: new Date() },
-      },
-    });
-
-    if (!promotion) {
-      throw new BadRequestException('Mã khuyến mãi không hợp lệ hoặc đã hết hạn');
-    }
-
-    // Kiểm tra số lượng đã dùng
-    if (promotion.soLuotDaSuDung >= promotion.soLuotSuDung) {
-      throw new BadRequestException('Mã khuyến mãi đã hết lượt sử dụng');
-    }
-
-    // Kiểm tra giá trị đơn hàng tối thiểu
-    if (Number(booking.tongTien) < Number(promotion.giaTriDonToiThieu)) {
-      throw new BadRequestException(
-        `Đơn hàng phải có giá trị tối thiểu ${promotion.giaTriDonToiThieu.toLocaleString()}đ`,
-      );
-    }
-
-    // Tính giảm giá
-    let discountAmount = 0;
-    if (promotion.loaiGiam === 'PERCENT') {
-      discountAmount = (Number(booking.tongTien) * Number(promotion.giaTriGiam)) / 100;
-      if (promotion.giamToiDa) {
-        discountAmount = Math.min(discountAmount, Number(promotion.giamToiDa));
-      }
-    } else {
-      discountAmount = Number(promotion.giaTriGiam);
-    }
-
-    const newTotal = Number(booking.tongTien) - discountAmount;
-
-    // Cập nhật booking
-    await this.prisma.donDatVe.update({
-      where: { id: bookingId },
+    return this.prisma.khuyenMai.create({
       data: {
-        maKhuyenMai: code,
-        giamGia: discountAmount,
-        tongTien: newTotal,
+        ...dto,
+        giaTriGiam: Number(dto.giaTriGiam),
+        giamToiDa: dto.giamToiDa ? Number(dto.giamToiDa) : null,
+        giaTriDonToiThieu: Number(dto.giaTriDonToiThieu),
+        ngayBatDau: new Date(dto.ngayBatDau),
+        ngayKetThuc: new Date(dto.ngayKetThuc),
+        isActive: dto.isActive ?? true,
       },
     });
-
-    // Tăng số lượt sử dụng
-    await this.prisma.khuyenMai.update({
-      where: { id: promotion.id },
-      data: {
-        soLuotDaSuDung: { increment: 1 },
-      },
-    });
-
-    return {
-      message: 'Áp dụng mã khuyến mãi thành công',
-      maKhuyenMai: code,
-      tenKhuyenMai: promotion.tenKhuyenMai,
-      giaGoc: booking.tongTien,
-      giamGia: discountAmount,
-      tongTienMoi: newTotal,
-    };
   }
 
-  // Kiểm tra mã khuyến mãi
-  async validatePromotion(code: string) {
-    const promotion = await this.prisma.khuyenMai.findFirst({
-      where: {
-        maKhuyenMai: code,
-      },
+  async findAll(filters?: { isActive?: boolean; search?: string }) {
+    const where: any = {};
+
+    if (filters?.isActive !== undefined) {
+      where.isActive = filters.isActive;
+    }
+
+    if (filters?.search) {
+      where.OR = [
+        { maKhuyenMai: { contains: filters.search } },
+        { tenKhuyenMai: { contains: filters.search } },
+      ];
+    }
+
+    return this.prisma.khuyenMai.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findOne(id: number) {
+    const promotion = await this.prisma.khuyenMai.findUnique({
+      where: { id },
     });
 
     if (!promotion) {
-      return {
-        valid: false,
-        reason: 'Mã khuyến mãi không tồn tại',
-      };
+      throw new NotFoundException('Không tìm thấy khuyến mãi');
+    }
+
+    return promotion;
+  }
+
+  async update(id: number, dto: UpdatePromotionDto) {
+    await this.findOne(id);
+
+    return this.prisma.khuyenMai.update({
+      where: { id },
+      data: {
+        ...dto,
+        giaTriGiam: dto.giaTriGiam ? Number(dto.giaTriGiam) : undefined,
+        giamToiDa: dto.giamToiDa ? Number(dto.giamToiDa) : undefined,
+        giaTriDonToiThieu: dto.giaTriDonToiThieu ? Number(dto.giaTriDonToiThieu) : undefined,
+        ngayBatDau: dto.ngayBatDau ? new Date(dto.ngayBatDau) : undefined,
+        ngayKetThuc: dto.ngayKetThuc ? new Date(dto.ngayKetThuc) : undefined,
+      },
+    });
+  }
+
+  async remove(id: number) {
+    await this.findOne(id);
+    return this.prisma.khuyenMai.delete({ where: { id } });
+  }
+
+  // ==================== CUSTOMER VALIDATION ====================
+
+  async validate(dto: ValidatePromotionDto) {
+    const promo = await this.prisma.khuyenMai.findUnique({
+      where: { maKhuyenMai: dto.maKhuyenMai.toUpperCase() },
+    });
+
+    if (!promo) {
+      throw new BadRequestException('Mã khuyến mãi không tồn tại');
+    }
+
+    if (!promo.isActive) {
+      throw new BadRequestException('Mã khuyến mãi không còn hiệu lực');
     }
 
     const now = new Date();
-
-    if (!promotion.isActive) {
-      return {
-        valid: false,
-        reason: 'Mã khuyến mãi không còn hoạt động',
-      };
+    if (now < promo.ngayBatDau || now > promo.ngayKetThuc) {
+      throw new BadRequestException('Mã khuyến mãi đã hết hạn');
     }
 
-    if (now < new Date(promotion.ngayBatDau)) {
-      return {
-        valid: false,
-        reason: 'Mã khuyến mãi chưa bắt đầu',
-      };
+    if (promo.soLuotDaSuDung >= promo.soLuotSuDung) {
+      throw new BadRequestException('Mã khuyến mãi đã hết lượt sử dụng');
     }
 
-    if (now > new Date(promotion.ngayKetThuc)) {
-      return {
-        valid: false,
-        reason: 'Mã khuyến mãi đã hết hạn',
-      };
+    if (dto.tongTien < Number(promo.giaTriDonToiThieu)) {
+      const formatted = new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+      }).format(Number(promo.giaTriDonToiThieu));
+      throw new BadRequestException(`Giá trị đơn hàng tối thiểu ${formatted}`);
     }
 
-    if (promotion.soLuotDaSuDung >= promotion.soLuotSuDung) {
-      return {
-        valid: false,
-        reason: 'Mã khuyến mãi đã hết lượt sử dụng',
-      };
-    }
+    const discount = this.calculateDiscount(promo, dto.tongTien);
 
     return {
       valid: true,
-      promotion: {
-        ma: promotion.maKhuyenMai,
-        ten: promotion.tenKhuyenMai,
-        moTa: promotion.moTa,
-        loaiGiam: promotion.loaiGiam,
-        giaTriGiam: promotion.giaTriGiam,
-        giamToiDa: promotion.giamToiDa,
-        giaTriDonToiThieu: promotion.giaTriDonToiThieu,
-        ngayHetHan: promotion.ngayKetThuc,
-      },
+      maKhuyenMai: promo.maKhuyenMai,
+      tenKhuyenMai: promo.tenKhuyenMai,
+      discount,
+      finalAmount: dto.tongTien - discount,
     };
   }
 
-  // Lấy danh sách khuyến mãi đang hoạt động
-  async getActivePromotions() {
-    const promotions = await this.prisma.khuyenMai.findMany({
+  private calculateDiscount(promo: any, tongTien: number): number {
+    let discount = 0;
+
+    if (promo.loaiGiam === 'PERCENT') {
+      discount = (tongTien * Number(promo.giaTriGiam)) / 100;
+      if (promo.giamToiDa && discount > Number(promo.giamToiDa)) {
+        discount = Number(promo.giamToiDa);
+      }
+    } else if (promo.loaiGiam === 'FIXED') {
+      discount = Number(promo.giaTriGiam);
+      if (discount > tongTien) {
+        discount = tongTien;
+      }
+    }
+
+    return Math.round(discount);
+  }
+
+  async incrementUsage(maKhuyenMai: string) {
+    const promo = await this.prisma.khuyenMai.findUnique({
+      where: { maKhuyenMai: maKhuyenMai.toUpperCase() },
+    });
+
+    if (!promo) return;
+
+    await this.prisma.khuyenMai.update({
+      where: { id: promo.id },
+      data: { soLuotDaSuDung: promo.soLuotDaSuDung + 1 },
+    });
+
+    console.log(`✅ Promotion ${maKhuyenMai} usage: ${promo.soLuotDaSuDung + 1}/${promo.soLuotSuDung}`);
+  }
+
+  async getActive() {
+    const now = new Date();
+
+    return this.prisma.khuyenMai.findMany({
       where: {
         isActive: true,
-        ngayBatDau: { lte: new Date() },
-        ngayKetThuc: { gte: new Date() },
+        ngayBatDau: { lte: now },
+        ngayKetThuc: { gte: now },
       },
-      orderBy: {
-        createdAt: 'desc',
+      select: {
+        maKhuyenMai: true,
+        tenKhuyenMai: true,
+        moTa: true,
+        loaiGiam: true,
+        giaTriGiam: true,
+        giamToiDa: true,
+        giaTriDonToiThieu: true,
+        ngayKetThuc: true,
       },
+      orderBy: { createdAt: 'desc' },
     });
-
-    return promotions.map((p) => ({
-      ma: p.maKhuyenMai,
-      ten: p.tenKhuyenMai,
-      moTa: p.moTa,
-      loaiGiam: p.loaiGiam,
-      giaTriGiam: p.giaTriGiam,
-      giamToiDa: p.giamToiDa,
-      giaTriDonToiThieu: p.giaTriDonToiThieu,
-      conLai: p.soLuotSuDung - p.soLuotDaSuDung,
-      ngayHetHan: p.ngayKetThuc,
-    }));
   }
 
-  // Lấy khuyến mãi cho user cụ thể
-  async getPromotionsForUser(userId: number) {
-    // Có thể filter theo điều kiện đặc biệt như: user mới, VIP, etc.
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException('Không tìm thấy người dùng');
-    }
-
-    // Lấy tất cả khuyến mãi đang hoạt động
-    const allPromotions = await this.getActivePromotions();
-
-    // TODO: Filter theo điều kiện user (ví dụ: chỉ cho user mới, VIP, etc.)
-
-    return allPromotions;
-  }
-
-  // Hủy áp dụng mã khuyến mãi
-  async removePromotion(bookingId: number) {
-    const booking = await this.prisma.donDatVe.findUnique({
-      where: { id: bookingId },
-    });
-
-    if (!booking || !booking.maKhuyenMai) {
-      throw new BadRequestException('Đơn đặt vé chưa áp dụng mã khuyến mãi');
-    }
-
-    const originalAmount = Number(booking.tongTien) + Number(booking.giamGia || 0);
-
-    await this.prisma.donDatVe.update({
-      where: { id: bookingId },
-      data: {
-        maKhuyenMai: null,
-        giamGia: 0,
-        tongTien: originalAmount,
-      },
-    });
-
-    // Giảm số lượt đã sử dụng
-    await this.prisma.khuyenMai.updateMany({
-      where: {
-        maKhuyenMai: booking.maKhuyenMai,
-      },
-      data: {
-        soLuotDaSuDung: { decrement: 1 },
-      },
-    });
+  async getStats(id: number) {
+    const promo = await this.findOne(id);
+    const usagePercentage = (promo.soLuotDaSuDung / promo.soLuotSuDung) * 100;
+    const remainingUses = promo.soLuotSuDung - promo.soLuotDaSuDung;
 
     return {
-      message: 'Đã hủy mã khuyến mãi',
-      tongTienMoi: originalAmount,
+      ...promo,
+      usagePercentage: Math.round(usagePercentage),
+      remainingUses,
     };
   }
 }

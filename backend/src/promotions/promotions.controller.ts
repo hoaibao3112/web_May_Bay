@@ -1,37 +1,67 @@
-import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
 import { PromotionsService } from './promotions.service';
+import { CreatePromotionDto } from './dto/create-promotion.dto';
+import { UpdatePromotionDto } from './dto/update-promotion.dto';
+import { ValidatePromotionDto } from './dto/validate-promotion.dto';
 
 @Controller('promotions')
 export class PromotionsController {
-  constructor(private promotionsService: PromotionsService) {}
+  constructor(private readonly promotionsService: PromotionsService) { }
 
-  // Áp dụng mã khuyến mãi
-  @Post('apply')
-  async applyPromotion(@Body() body: { code: string; bookingId: number }) {
-    return this.promotionsService.applyPromotion(body.code, body.bookingId);
+  // ==================== ADMIN ENDPOINTS ====================
+
+  @Post()
+  create(@Body() dto: CreatePromotionDto) {
+    return this.promotionsService.create(dto);
   }
 
-  // Kiểm tra mã khuyến mãi hợp lệ
-  @Get('validate/:code')
-  async validatePromotion(@Param('code') code: string) {
-    return this.promotionsService.validatePromotion(code);
+  @Get()
+  findAll(
+    @Query('isActive') isActive?: string,
+    @Query('search') search?: string,
+  ) {
+    const filters: any = {};
+    if (isActive !== undefined) {
+      filters.isActive = isActive === 'true';
+    }
+    if (search) {
+      filters.search = search;
+    }
+    return this.promotionsService.findAll(filters);
   }
 
-  // Lấy danh sách khuyến mãi đang hoạt động
-  @Get('active')
-  async getActivePromotions() {
-    return this.promotionsService.getActivePromotions();
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.promotionsService.findOne(id);
   }
 
-  // Lấy khuyến mãi theo user (nếu có điều kiện đặc biệt)
-  @Get('for-user/:userId')
-  async getPromotionsForUser(@Param('userId') userId: string) {
-    return this.promotionsService.getPromotionsForUser(+userId);
+  @Put(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePromotionDto,
+  ) {
+    return this.promotionsService.update(id, dto);
   }
 
-  // Hủy áp dụng mã khuyến mãi
-  @Post('remove')
-  async removePromotion(@Body() body: { bookingId: number }) {
-    return this.promotionsService.removePromotion(body.bookingId);
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.promotionsService.remove(id);
+  }
+
+  @Get(':id/stats')
+  getStats(@Param('id', ParseIntPipe) id: number) {
+    return this.promotionsService.getStats(id);
+  }
+
+  // ==================== CUSTOMER ENDPOINTS ====================
+
+  @Post('validate')
+  validate(@Body() dto: ValidatePromotionDto) {
+    return this.promotionsService.validate(dto);
+  }
+
+  @Get('active/list')
+  getActive() {
+    return this.promotionsService.getActive();
   }
 }
