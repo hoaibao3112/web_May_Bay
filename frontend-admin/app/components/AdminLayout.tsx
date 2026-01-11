@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
     FiHome, FiUsers, FiPackage, FiDollarSign, FiSettings,
     FiCalendar, FiStar, FiTag, FiCreditCard, FiTruck,
-    FiMapPin, FiShield, FiLogOut, FiMenu, FiX
+    FiMapPin, FiShield, FiLogOut, FiMenu, FiX, FiCheck
 } from 'react-icons/fi';
 import { useState } from 'react';
 
@@ -47,6 +47,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             title: 'Quản lý đặt chỗ',
             items: [
                 { name: 'Tất cả đặt chỗ', href: '/dashboard/bookings', icon: FiPackage },
+                { name: 'Check-in QR', href: '/dashboard/check-in', icon: FiCheck },
                 { name: 'Lịch bay', href: '/dashboard/flights-schedule', icon: FiMapPin },
                 { name: 'Vé máy bay', href: '/dashboard/bookings/flights', icon: FiMapPin },
                 { name: 'Vé xe khách', href: '/dashboard/bookings/buses', icon: FiTruck },
