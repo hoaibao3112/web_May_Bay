@@ -153,6 +153,74 @@ export class PaymentsService {
     };
   }
 
+  // ==================== CREATE ACTIVITY PAYMENT ====================
+  /**
+   * Tạo thanh toán cho hoạt động vui chơi
+   * Similar to createPayment but for activity bookings
+   */
+  async createActivityPayment(dto: {
+    datHoatDongId: number;
+    maDat: string;
+    soTien: number;
+    phuongThuc: string;
+  }) {
+    console.log('🎯 Creating activity payment:', dto);
+
+    // Tạo mã giao dịch
+    const maGiaoDich = `ACT${Date.now()}${randomBytes(4).toString('hex').toUpperCase()}`;
+
+    // Tạo payment record trong database
+    const payment = await this.prisma.thanhToan.create({
+      data: {
+        datHoatDongId: dto.datHoatDongId,
+        donDatVeId: null, // NULL for activity bookings
+        nguoiDungId: null, // Optional user ID
+        maGiaoDich,
+        soTien: dto.soTien,
+        tienTe: 'VND',
+        phuongThuc: dto.phuongThuc,
+        trangThai: 'KHOI_TAO',
+      },
+    });
+
+    console.log('✅ Payment record created:', payment.id, payment.maGiaoDich);
+
+    // Generate payment URL based on method
+    let paymentUrl = '';
+    try {
+      if (dto.phuongThuc === 'MOMO') {
+        paymentUrl = await this.createMoMoPaymentUrl(
+          payment.maGiaoDich,
+          dto.soTien,
+          `Dat tour ${dto.maDat}`,
+        );
+      } else if (dto.phuongThuc === 'ZALOPAY') {
+        paymentUrl = await this.createZaloPayPaymentUrl(
+          payment.maGiaoDich,
+          dto.soTien,
+          `Dat tour ${dto.maDat}`,
+        );
+      } else if (dto.phuongThuc === 'VIETQR') {
+        paymentUrl = await this.createVietQRPaymentUrl(
+          payment.maGiaoDich,
+          dto.soTien,
+          `Dat tour ${dto.maDat}`,
+        );
+      }
+
+      console.log('✅ Payment URL generated:', paymentUrl.substring(0, 100) + '...');
+    } catch (error) {
+      console.error('❌ Error generating payment URL:', error);
+      throw error;
+    }
+
+    return {
+      payment,
+      paymentUrl,
+      maGiaoDich: payment.maGiaoDich,
+    };
+  }
+
   // Tạo VNPay payment URL
   private async createVNPayPaymentUrl(
     maGiaoDich: string,

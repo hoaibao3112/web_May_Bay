@@ -60,4 +60,36 @@ export class ActivitiesController {
     cancelBooking(@Param('maDat') maDat: string) {
         return this.activitiesService.cancelBooking(maDat);
     }
+
+    // ==================== PAYMENT CALLBACK ENDPOINTS ====================
+
+    /**
+     * Handle MoMo payment success - Update booking status
+     * Called after MoMo payment is successful
+     */
+    @Patch('bookings/:maDat/momo-success')
+    async handleMoMoSuccess(@Param('maDat') maDat: string) {
+        console.log('✅ MoMo Payment Success for activity booking:', maDat);
+        return this.activitiesService.updateBookingPaymentStatus(maDat, true);
+    }
+
+    /**
+     * Handle ZaloPay payment success - Update booking status
+     * Called after ZaloPay payment is successful
+     */
+    @Patch('bookings/:maDat/zalopay-success')
+    async handleZaloPaySuccess(@Param('maDat') maDat: string) {
+        console.log('✅ ZaloPay Payment Success for activity booking:', maDat);
+        return this.activitiesService.updateBookingPaymentStatus(maDat, true);
+    }
+
+    /**
+     * Handle VietQR payment success - Update booking status
+     * Called after VietQR payment is confirmed
+     */
+    @Patch('bookings/:maDat/vietqr-success')
+    async handleVietQRSuccess(@Param('maDat') maDat: string) {
+        console.log('✅ VietQR Payment Success for activity booking:', maDat);
+        return this.activitiesService.updateBookingPaymentStatus(maDat, true);
+    }
 }

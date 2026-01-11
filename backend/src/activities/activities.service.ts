@@ -6,6 +6,8 @@ import { DanhMucHoatDong, TrangThaiDanhMuc } from './entities/danh-muc-hoat-dong
 import { DatHoatDong } from './entities/dat-hoat-dong.entity';
 import { SearchActivitiesDto } from './dto/search-activities.dto';
 import { CreateActivityBookingDto } from './dto/create-activity-booking.dto';
+import { PaymentsService } from '../payments/payments.service';
+import { randomBytes, createHmac } from 'crypto';
 
 @Injectable()
 export class ActivitiesService {
@@ -16,6 +18,7 @@ export class ActivitiesService {
         private danhMucRepository: Repository<DanhMucHoatDong>,
         @InjectRepository(DatHoatDong)
         private datHoatDongRepository: Repository<DatHoatDong>,
+        private paymentsService: PaymentsService, // Inject PaymentsService
     ) { }
 
     // Get all categories
@@ -170,23 +173,29 @@ export class ActivitiesService {
 
         await this.datHoatDongRepository.save(booking);
 
-        // Generate payment URL based on method
+        // ==================== USE PAYMENTSSERVICE FOR COMPLETE PAYMENT FLOW ====================
+        // Call PaymentsService to create payment record AND generate payment URL
         let paymentUrl = '';
-        const params = new URLSearchParams({
-            amount: tongTien.toString(),
-            orderInfo: `Dat tour ${activity.tenHoatDong}`,
-            orderId: maDat,
-        });
+        let maGiaoDich = '';
 
-        if (dto.phuongThucThanhToan === 'MOMO') {
-            paymentUrl = `/mock-momo?${params.toString()}`;
-        } else if (dto.phuongThucThanhToan === 'VIETQR') {
-            params.append('bankCode', 'VCB');
-            params.append('accountNo', '1234567890');
-            params.append('accountName', 'CONG TY DU LICH');
-            paymentUrl = `/mock-vietqr?${params.toString()}`;
-        } else if (dto.phuongThucThanhToan === 'ZALOPAY') {
-            paymentUrl = `/mock-zalopay?${params.toString()}`;
+        try {
+            const paymentResult = await this.paymentsService.createActivityPayment({
+                datHoatDongId: booking.id,
+                maDat,
+                soTien: tongTien,
+                phuongThuc: dto.phuongThucThanhToan,
+            });
+
+            paymentUrl = paymentResult.paymentUrl;
+            maGiaoDich = paymentResult.maGiaoDich;
+
+            console.log('✅ Activity payment created successfully');
+            console.log('   Payment ID:', paymentResult.payment.id);
+            console.log('   Transaction Code:', maGiaoDich);
+        } catch (error) {
+            console.error('❌ Error creating activity payment:', error);
+            // If payment creation fails, still return booking info but without payment URL
+            // User can try again later
         }
 
         return {
@@ -196,6 +205,7 @@ export class ActivitiesService {
             trangThai: booking.trangThai,
             daThanhToan: booking.daThanhToan,
             paymentUrl,
+            maGiaoDich,
             hoatDong: {
                 id: activity.id,
                 tenHoatDong: activity.tenHoatDong,

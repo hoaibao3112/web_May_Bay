@@ -458,19 +458,20 @@ model ThongTinLienHe {
 // ============================
 
 model ThanhToan {
-  id           Int                @id @default(autoincrement())
-  donDatVeId   Int
-  donDatVe     DonDatVe           @relation(fields: [donDatVeId], references: [id])
-  nguoiDungId  Int?
-  nguoiDung    User?              @relation(fields: [nguoiDungId], references: [id])
-  maGiaoDich   String             @unique
-  soTien       Decimal            @db.Decimal(15, 2)
-  tienTe       String             @default("VND") @db.VarChar(3)
-  phuongThuc   String // THE, ATM, VI, QR
-  trangThai    TrangThaiThanhToan @default(KHOI_TAO)
-  thongTinCong Json? // callback data
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @default(now()) @updatedAt
+  id            Int                @id @default(autoincrement())
+  donDatVeId    Int?               // Make optional for activity bookings
+  donDatVe      DonDatVe?          @relation(fields: [donDatVeId], references: [id])
+  datHoatDongId Int?               // For activity bookings
+  nguoiDungId   Int?
+  nguoiDung     User?              @relation(fields: [nguoiDungId], references: [id])
+  maGiaoDich    String             @unique
+  soTien        Decimal            @db.Decimal(15, 2)
+  tienTe        String             @default("VND") @db.VarChar(3)
+  phuongThuc    String             // THE, ATM, VI, QR
+  trangThai     TrangThaiThanhToan @default(KHOI_TAO)
+  thongTinCong  Json?              // callback data
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @default(now()) @updatedAt
 
   @@map("thanh_toan")
 }
