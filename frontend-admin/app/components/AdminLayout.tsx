@@ -47,6 +47,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             title: 'Quản lý đặt chỗ',
             items: [
                 { name: 'Tất cả đặt chỗ', href: '/dashboard/bookings', icon: FiPackage },
+                { name: 'Lịch bay', href: '/dashboard/flights-schedule', icon: FiMapPin },
                 { name: 'Vé máy bay', href: '/dashboard/bookings/flights', icon: FiMapPin },
                 { name: 'Vé xe khách', href: '/dashboard/bookings/buses', icon: FiTruck },
                 { name: 'Thuê xe', href: '/dashboard/bookings/cars', icon: FiTruck },
@@ -103,11 +104,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="min-h-screen bg-slate-950">
             {/* Sidebar */}
             <aside
-                className={`fixed top-0 left-0 z-40 w-72 h-screen bg-slate-900 border-r border-slate-800 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+                className={`fixed top-0 left-0 z-40 w-72 h-screen bg-slate-900 border-r border-slate-800 transition-transform duration-300 flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
                     }`}
             >
                 {/* Logo */}
-                <div className="flex items-center justify-between h-16 px-6 border-b border-slate-800">
+                <div className="flex items-center justify-between h-16 px-6 border-b border-slate-800 flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
                             <span className="text-xl">✈️</span>
@@ -126,7 +127,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 overflow-y-auto p-4 space-y-6">
+                <nav className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900">
                     {navigation.map((section, idx) => (
                         <div key={idx}>
                             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">
@@ -142,7 +143,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </nav>
 
                 {/* User Profile */}
-                <div className="p-4 border-t border-slate-800">
+                <div className="p-4 border-t border-slate-800 flex-shrink-0">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
                             {user?.hoTen?.charAt(0) || 'A'}

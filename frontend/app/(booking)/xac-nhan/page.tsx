@@ -48,6 +48,8 @@ function XacNhanContent() {
   const searchParams = useSearchParams();
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [loadingQr, setLoadingQr] = useState(false);
 
   const maDatCho = searchParams.get('maDatCho');
 
@@ -74,6 +76,29 @@ function XacNhanContent() {
       style: 'currency',
       currency: 'VND',
     }).format(amount);
+  };
+
+  const fetchQrCode = async (bookingId: number) => {
+    setLoadingQr(true);
+    try {
+      const res = await fetch(`http://localhost:5000/qr-code/booking/${bookingId}`);
+      const data = await res.json();
+      if (data.success) {
+        setQrCode(data.qrCode);
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải QR code:', error);
+    } finally {
+      setLoadingQr(false);
+    }
+  };
+
+  const downloadQrCode = () => {
+    if (!qrCode) return;
+    const link = document.createElement('a');
+    link.href = qrCode;
+    link.download = `boarding-pass-${booking?.maDatCho}.png`;
+    link.click();
   };
 
   if (loading) {
@@ -277,6 +302,67 @@ function XacNhanContent() {
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* QR Code Boarding Pass */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-6 mb-6">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <span className="text-2xl">📱</span>
+                  Thẻ lên máy bay điện tử (QR Code)
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Quét mã QR này tại quầy check-in hoặc cổng lên máy bay để làm thủ tục nhanh chóng
+                </p>
+
+                {!qrCode && !loadingQr && (
+                  <button
+                    onClick={() => fetchQrCode(booking.id)}
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  >
+                    <span className="text-xl">🎫</span>
+                    Tạo thẻ lên máy bay QR
+                  </button>
+                )}
+
+                {loadingQr && (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="inline-block animate-spin text-4xl mb-2">⏳</div>
+                      <p className="text-gray-600">Đang tạo QR code...</p>
+                    </div>
+                  </div>
+                )}
+
+                {qrCode && (
+                  <div className="bg-white rounded-lg p-6 text-center">
+                    <div className="inline-block bg-white p-4 rounded-lg shadow-lg">
+                      <img
+                        src={qrCode}
+                        alt="QR Code Boarding Pass"
+                        className="w-64 h-64 mx-auto"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600 mt-4 mb-3">
+                      Mã đặt chỗ: <span className="font-mono font-bold text-blue-600">{booking.maDatCho}</span>
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <button
+                        onClick={downloadQrCode}
+                        className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-2"
+                      >
+                        <span>💾</span>
+                        Tải xuống QR
+                      </button>
+                      <button
+                        onClick={() => window.print()}
+                        className="bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-700 transition flex items-center gap-2"
+                      >
+                        <span>🖨️</span>
+                        In QR code
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Important Notes */}

@@ -387,8 +387,8 @@ export default function HomePage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 ${activeTab === tab.id
-                    ? 'bg-white text-gray-900 shadow-lg scale-105'
-                    : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30'
+                  ? 'bg-white text-gray-900 shadow-lg scale-105'
+                  : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30'
                   }`}
               >
                 <span className="text-xl">{tab.icon}</span>
@@ -1163,6 +1163,95 @@ export default function HomePage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Promotions Section - NEW */}
+      <section className="py-16 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">🎁 Khuyến mãi đặc biệt</h2>
+              <p className="text-gray-600">Tiết kiệm ngay với mã giảm giá hấp dẫn</p>
+            </div>
+            <Link
+              href="/khuyenmai"
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+            >
+              Xem tất cả →
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Promo Card 1 */}
+            <div className="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 p-6 text-white">
+                <div className="text-sm font-medium text-white/80 mb-1">💰 Giảm cố định</div>
+                <div className="text-3xl font-bold mb-2">Tối đa 500K</div>
+                <div className="text-white/90 text-sm">Cho đơn hàng từ 2 triệu</div>
+              </div>
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Ưu đãi tháng 1</h3>
+                <p className="text-gray-600 text-sm mb-4">Giảm giá đặc biệt dành cho khách hàng mới</p>
+                <Link
+                  href="/khuyenmai"
+                  className="inline-flex items-center gap-2 text-pink-600 font-semibold hover:text-pink-700"
+                >
+                  Chi tiết →
+                </Link>
+              </div>
+            </div>
+
+            {/* Promo Card 2 */}
+            <div className="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 p-6 text-white">
+                <div className="text-sm font-medium text-white/80 mb-1">📊 Giảm phần trăm</div>
+                <div className="text-3xl font-bold mb-2">30% OFF</div>
+                <div className="text-white/90 text-sm">Tối đa 1 triệu đồng</div>
+              </div>
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Du lịch tiết kiệm</h3>
+                <p className="text-gray-600 text-sm mb-4">Áp dụng cho vé máy bay và khách sạn</p>
+                <Link
+                  href="/khuyenmai"
+                  className="inline-flex items-center gap-2 text-blue-600 font-semibold hover:text-blue-700"
+                >
+                  Chi tiết →
+                </Link>
+              </div>
+            </div>
+
+            {/* Promo Card 3 */}
+            <div className="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-6 text-white">
+                <div className="text-sm font-medium text-white/80 mb-1">🎯 Combo đặc biệt</div>
+                <div className="text-3xl font-bold mb-2">Giảm 25%</div>
+                <div className="text-white/90 text-sm">Bay + Khách sạn</div>
+              </div>
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Combo tiết kiệm</h3>
+                <p className="text-gray-600 text-sm mb-4">Đặt combo vé và phòng nhận ưu đãi lớn</p>
+                <Link
+                  href="/khuyenmai"
+                  className="inline-flex items-center gap-2 text-emerald-600 font-semibold hover:text-emerald-700"
+                >
+                  Chi tiết →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA Banner */}
+          <div className="mt-8 bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 rounded-2xl p-8 text-white text-center shadow-2xl">
+            <h3 className="text-2xl font-bold mb-2">Đừng bỏ lỡ ưu đãi độc quyền!</h3>
+            <p className="text-white/90 mb-4">Khám phá hàng trăm mã giảm giá hấp dẫn</p>
+            <Link
+              href="/khuyenmai"
+              className="inline-block px-8 py-3 bg-white text-purple-600 rounded-full font-bold hover:bg-gray-100 transition-all shadow-lg hover:scale-105"
+            >
+              Xem tất cả khuyến mãi 🎉
+            </Link>
           </div>
         </div>
       </section>

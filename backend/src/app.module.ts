@@ -33,6 +33,7 @@ import { AirportTransferReviewsModule } from './airport-transfer-reviews/airport
 import { HotelBookingsModule } from './hotel-bookings/hotel-bookings.module';
 import { AdminModule } from './admin/admin.module';
 import { ActivitiesModule } from './activities/activities.module';
+import { QrCodeModule } from './qr-code/qr-code.module';
 import { TestDbController } from './test-db.controller';
 
 @Module({
@@ -81,6 +82,7 @@ import { TestDbController } from './test-db.controller';
     HotelBookingsModule,
     AdminModule,
     ActivitiesModule,
+    QrCodeModule,
   ],
   controllers: [TestDbController],
 })

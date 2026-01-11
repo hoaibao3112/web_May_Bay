@@ -39,11 +39,17 @@ export class AnalyticsService {
         const busBookings = await this.prisma.donDatVeXe.count();
         const carBookings = await this.prisma.donThueXe.count();
 
-        // Transfer bookings using raw SQL
-        const transferResult: any[] = await this.prisma.$queryRaw`
-      SELECT COUNT(*) as count FROM dat_dich_vu_dua_don
-    `;
-        const transferBookings = Number(transferResult[0]?.count || 0);
+        // Transfer bookings using raw SQL (handle if table doesn't exist)
+        let transferBookings = 0;
+        try {
+            const transferResult: any[] = await this.prisma.$queryRaw`
+          SELECT COUNT(*) as count FROM dat_dich_vu_dua_don
+        `;
+            transferBookings = Number(transferResult[0]?.count || 0);
+        } catch (error) {
+            // Table doesn't exist yet, use 0
+            transferBookings = 0;
+        }
 
         const totalBookings = flightBookings + busBookings + carBookings + transferBookings;
 
@@ -52,10 +58,15 @@ export class AnalyticsService {
         const busRevenue = await this.prisma.donDatVeXe.aggregate({ _sum: { tongTien: true } });
         const carRevenue = await this.prisma.donThueXe.aggregate({ _sum: { tongTien: true } });
 
-        const transferRevResult: any[] = await this.prisma.$queryRaw`
-      SELECT SUM(tongTien) as total FROM dat_dich_vu_dua_don
-    `;
-        const transferRev = Number(transferRevResult[0]?.total || 0);
+        let transferRev = 0;
+        try {
+            const transferRevResult: any[] = await this.prisma.$queryRaw`
+          SELECT SUM(tongTien) as total FROM dat_dich_vu_dua_don
+        `;
+            transferRev = Number(transferRevResult[0]?.total || 0);
+        } catch (error) {
+            transferRev = 0;
+        }
 
         const totalRevenue =
             Number(flightRevenue._sum.tongTien || 0) +
@@ -78,10 +89,15 @@ export class AnalyticsService {
         const busRevenue = await this.prisma.donDatVeXe.aggregate({ _sum: { tongTien: true } });
         const carRevenue = await this.prisma.donThueXe.aggregate({ _sum: { tongTien: true } });
 
-        const transferResult: any[] = await this.prisma.$queryRaw`
-      SELECT SUM(tongTien) as total FROM dat_dich_vu_dua_don
-    `;
-        const transferRev = Number(transferResult[0]?.total || 0);
+        let transferRev = 0;
+        try {
+            const transferResult: any[] = await this.prisma.$queryRaw`
+          SELECT SUM(tongTien) as total FROM dat_dich_vu_dua_don
+        `;
+            transferRev = Number(transferResult[0]?.total || 0);
+        } catch (error) {
+            transferRev = 0;
+        }
 
         return [
             { service: 'Vé máy bay', revenue: Number(flightRevenue._sum.tongTien || 0) },
@@ -96,10 +112,15 @@ export class AnalyticsService {
         const busBookings = await this.prisma.donDatVeXe.count();
         const carBookings = await this.prisma.donThueXe.count();
 
-        const transferResult: any[] = await this.prisma.$queryRaw`
-      SELECT COUNT(*) as count FROM dat_dich_vu_dua_don
-    `;
-        const transferBookings = Number(transferResult[0]?.count || 0);
+        let transferBookings = 0;
+        try {
+            const transferResult: any[] = await this.prisma.$queryRaw`
+          SELECT COUNT(*) as count FROM dat_dich_vu_dua_don
+        `;
+            transferBookings = Number(transferResult[0]?.count || 0);
+        } catch (error) {
+            transferBookings = 0;
+        }
 
         return [
             { service: 'Vé máy bay', count: flightBookings },
@@ -138,13 +159,18 @@ export class AnalyticsService {
       ORDER BY date ASC
     `;
 
-        const transfers = await this.prisma.$queryRaw`
-      SELECT DATE(createdAt) as date, SUM(tongTien) as revenue
-      FROM dat_dich_vu_dua_don
-      WHERE createdAt >= ${thirtyDaysAgo}
-      GROUP BY DATE(createdAt)
-      ORDER BY date ASC
-    `;
+        let transfers: any[] = [];
+        try {
+            transfers = await this.prisma.$queryRaw`
+          SELECT DATE(createdAt) as date, SUM(tongTien) as revenue
+          FROM dat_dich_vu_dua_don
+          WHERE createdAt >= ${thirtyDaysAgo}
+          GROUP BY DATE(createdAt)
+          ORDER BY date ASC
+        `;
+        } catch (error) {
+            transfers = [];
+        }
 
         // Merge and format
         const revenueMap = new Map();
@@ -172,21 +198,39 @@ export class AnalyticsService {
     }
 
     private async getRecentActivity() {
-        const recentBookings = await this.prisma.$queryRaw`
-      SELECT 'Flight' as type, CAST(maDatVe AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
-      FROM don_dat_ve
-      UNION ALL
-      SELECT 'Bus' as type, CAST(maDonDat AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
-      FROM don_dat_ve_xe
-      UNION ALL
-      SELECT 'Car' as type, CAST(maDonThue AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
-      FROM don_thue_xe
-      UNION ALL
-      SELECT 'Transfer' as type, CAST(id AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
-      FROM dat_dich_vu_dua_don
-      ORDER BY createdAt DESC
-      LIMIT 10
-    `;
+        // Try with transfers, fall back without if table doesn't exist
+        let recentBookings: any[];
+        try {
+            recentBookings = await this.prisma.$queryRaw`
+          SELECT 'Flight' as type, CAST(maDatVe AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
+          FROM don_dat_ve
+          UNION ALL
+          SELECT 'Bus' as type, CAST(maDonDat AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
+          FROM don_dat_ve_xe
+          UNION ALL
+          SELECT 'Car' as type, CAST(maDonThue AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
+          FROM don_thue_xe
+          UNION ALL
+          SELECT 'Transfer' as type, CAST(id AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
+          FROM dat_dich_vu_dua_don
+          ORDER BY createdAt DESC
+          LIMIT 10
+        `;
+        } catch (error) {
+            // Table doesn't exist, query without it
+            recentBookings = await this.prisma.$queryRaw`
+          SELECT 'Flight' as type, CAST(maDatVe AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
+          FROM don_dat_ve
+          UNION ALL
+          SELECT 'Bus' as type, CAST(maDonDat AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
+          FROM don_dat_ve_xe
+          UNION ALL
+          SELECT 'Car' as type, CAST(maDonThue AS CHAR) COLLATE utf8mb4_unicode_ci as code, tongTien as amount, createdAt
+          FROM don_thue_xe
+          ORDER BY createdAt DESC
+          LIMIT 10
+        `;
+        }
 
         return recentBookings;
     }
