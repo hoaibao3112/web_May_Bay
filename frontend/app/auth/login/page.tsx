@@ -113,7 +113,7 @@ export default function LoginPage() {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-6">
               <span className="text-3xl">✈️</span>
-              <span className="text-2xl font-bold text-blue-600">BayNhanh</span>
+              <span className="text-2xl font-bold text-orange-600">BayNhanh</span>
             </div>
             <h1 className="text-3xl font-bold mb-2">Chào mừng trở lại!</h1>
             <p className="text-gray-600">
@@ -131,7 +131,7 @@ export default function LoginPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="nhap@email.com"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 required
               />
             </div>
@@ -148,7 +148,7 @@ export default function LoginPage() {
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
-              <a href="#" className="text-sm text-blue-600 hover:underline mt-1 inline-block">
+              <a href="#" className="text-sm text-orange-600 hover:underline mt-1 inline-block">
                 Quên mật khẩu?
               </a>
             </div>
@@ -156,7 +156,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition"
+              className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 disabled:bg-gray-400 transition"
             >
               {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
@@ -202,11 +202,11 @@ export default function LoginPage() {
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-600">
                 Bằng cách tiếp tục, bạn đồng ý với{' '}
-                <a href="#" className="text-blue-600 hover:underline">Điều khoản</a>
+                <a href="#" className="text-orange-600 hover:underline">Điều khoản</a>
                 {' '}và{' '}
-                <a href="#" className="text-blue-600 hover:underline">Điều kiện</a>
+                <a href="#" className="text-orange-600 hover:underline">Điều kiện</a>
                 {' '}này và bạn đã được thông báo về{' '}
-                <a href="#" className="text-blue-600 hover:underline">Chính sách bảo vệ dữ liệu</a>
+                <a href="#" className="text-orange-600 hover:underline">Chính sách bảo vệ dữ liệu</a>
                 {' '}của chúng tôi.
               </p>
             </div>
@@ -214,7 +214,7 @@ export default function LoginPage() {
 
           <p className="mt-8 text-center text-gray-600">
             Chưa có tài khoản?{' '}
-            <a href="/auth/register" className="text-blue-600 font-medium hover:underline">
+            <a href="/auth/register" className="text-orange-600 font-medium hover:underline">
               Đăng ký ngay
             </a>
           </p>
@@ -222,26 +222,36 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Image/Info */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 to-blue-800 text-white p-12 flex-col justify-center">
-        <h2 className="text-4xl font-bold mb-6">
-          Bắt đầu hành trình của bạn ngay hôm nay.
-        </h2>
-        <p className="text-xl mb-8">
-          Tham gia cùng hàng triệu khách hàng. Đặt vé máy bay, quản lý chuyến đi và nhận ưu đãi đặc biệt.
-        </p>
-        <div className="space-y-4">
-          <div className="flex items-start gap-3">
-            <span className="text-3xl">5M+</span>
-            <div>
-              <p className="font-bold text-lg">Khách hàng tin dùng</p>
-              <p className="text-blue-100">Hàng triệu lượt đặt vé mỗi năm</p>
+      <div
+        className="hidden lg:flex flex-1 text-white p-12 flex-col justify-center relative overflow-hidden"
+        style={{
+          backgroundImage: 'url(/images/Login/hinh-anh-may-bay-12.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="relative z-10">
+          <h2 className="text-4xl font-bold mb-6">
+            Bắt đầu hành trình của bạn ngay hôm nay.
+          </h2>
+          <p className="text-xl mb-8">
+            Tham gia cùng hàng triệu khách hàng. Đặt vé máy bay, quản lý chuyến đi và nhận ưu đãi đặc biệt.
+          </p>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <span className="text-3xl">5M+</span>
+              <div>
+                <p className="font-bold text-lg">Khách hàng tin dùng</p>
+                <p className="text-white/90">Hàng triệu lượt đặt vé mỗi năm</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <span className="text-3xl">150+</span>
-            <div>
-              <p className="font-bold text-lg">Điểm đến</p>
-              <p className="text-blue-100">Kết nối bạn đến mọi nơi</p>
+            <div className="flex items-start gap-3">
+              <span className="text-3xl">150+</span>
+              <div>
+                <p className="font-bold text-lg">Điểm đến</p>
+                <p className="text-white/90">Kết nối bạn đến mọi nơi</p>
+              </div>
             </div>
           </div>
         </div>

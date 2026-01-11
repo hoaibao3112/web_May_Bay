@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { PaymentsModule } from '../payments/payments.module';
 import { ActivitiesController } from './activities.controller';
 import { ActivitiesService } from './activities.service';
 import { HoatDong } from './entities/hoat-dong.entity';
@@ -25,6 +26,7 @@ import { DatHoatDong } from './entities/dat-hoat-dong.entity';
             DanhGiaHoatDong,
             DatHoatDong,
         ]),
+        PaymentsModule, // Add PaymentsModule for payment gateway integration
     ],
     controllers: [ActivitiesController],
     providers: [ActivitiesService],

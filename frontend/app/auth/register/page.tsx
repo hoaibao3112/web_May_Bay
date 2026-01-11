@@ -91,32 +91,42 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Image/Info */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 to-blue-800 text-white p-12 flex-col justify-center">
-        <div className="mb-8">
-          <span className="text-6xl mb-4 block">✈️</span>
-          <h2 className="text-4xl font-bold mb-4">
-            Chuyến bay của bạn, sự chọn lựa của chúng tôi
-          </h2>
-          <p className="text-xl">
-            Đăng ký để trải nghiệm đặt vé dễ dàng và nhận được những ưu đãi tốt nhất
-          </p>
-        </div>
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">✓</span>
-            <p className="text-lg">Giá vé tốt nhất được đảm bảo</p>
+      <div
+        className="hidden lg:flex flex-1 text-white p-12 flex-col justify-center relative overflow-hidden"
+        style={{
+          backgroundImage: 'url(/images/Login/anhlogin.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="relative z-10">
+          <div className="mb-8">
+            <span className="text-6xl mb-4 block">✈️</span>
+            <h2 className="text-4xl font-bold mb-4">
+              Chuyến bay của bạn, sự chọn lựa của chúng tôi
+            </h2>
+            <p className="text-xl">
+              Đăng ký để trải nghiệm đặt vé dễ dàng và nhận được những ưu đãi tốt nhất
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">✓</span>
-            <p className="text-lg">Đổi/hủy vé linh hoạt</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">✓</span>
-            <p className="text-lg">Hỗ trợ 24/7</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">✓</span>
-            <p className="text-lg">Tích lũy điểm thưởng</p>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">✓</span>
+              <p className="text-lg">Giá vé tốt nhất được đảm bảo</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">✓</span>
+              <p className="text-lg">Đổi/hủy vé linh hoạt</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">✓</span>
+              <p className="text-lg">Hỗ trợ 24/7</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">✓</span>
+              <p className="text-lg">Tích lũy điểm thưởng</p>
+            </div>
           </div>
         </div>
       </div>
@@ -127,7 +137,7 @@ export default function RegisterPage() {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-6 lg:hidden">
               <span className="text-3xl">✈️</span>
-              <span className="text-2xl font-bold text-blue-600">BayNhanh</span>
+              <span className="text-2xl font-bold text-orange-600">BayNhanh</span>
             </div>
             <h1 className="text-3xl font-bold mb-2">Tạo tài khoản mới</h1>
             <p className="text-gray-600">
@@ -145,7 +155,7 @@ export default function RegisterPage() {
                 value={formData.hoTen}
                 onChange={(e) => setFormData({ ...formData, hoTen: e.target.value })}
                 placeholder="Nguyễn Văn A"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 required
               />
             </div>
@@ -160,7 +170,7 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="email@example.com"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   required
                 />
               </div>
@@ -174,7 +184,7 @@ export default function RegisterPage() {
                   value={formData.soDienThoai}
                   onChange={(e) => setFormData({ ...formData, soDienThoai: e.target.value })}
                   placeholder="0901234567"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   required
                 />
               </div>
@@ -189,7 +199,7 @@ export default function RegisterPage() {
                 value={formData.matKhau}
                 onChange={(e) => setFormData({ ...formData, matKhau: e.target.value })}
                 placeholder="••••••••"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 required
                 minLength={6}
               />
@@ -214,21 +224,21 @@ export default function RegisterPage() {
               <input
                 type="checkbox"
                 id="terms"
-                className="mt-1 w-4 h-4 text-blue-600"
+                className="mt-1 w-4 h-4 text-orange-600"
                 required
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
                 Tôi đồng ý với{' '}
-                <a href="#" className="text-blue-600 hover:underline">Điều khoản dịch vụ</a>
+                <a href="#" className="text-orange-600 hover:underline">Điều khoản dịch vụ</a>
                 {' '}và{' '}
-                <a href="#" className="text-blue-600 hover:underline">Chính sách bảo mật</a>
+                <a href="#" className="text-orange-600 hover:underline">Chính sách bảo mật</a>
               </label>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition"
+              className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 disabled:bg-gray-400 transition"
             >
               {loading ? 'Đang đăng ký...' : 'Đăng ký'}
             </button>
@@ -255,13 +265,13 @@ export default function RegisterPage() {
                   shape="rectangular"
                 />
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => alert('Chức năng đăng ký Facebook đang được phát triển')}
                 className="border-2 border-gray-200 rounded-xl py-3.5 hover:bg-gray-50 hover:border-gray-300 transition flex items-center justify-center gap-3 shadow-sm"
               >
                 <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
                 <span className="font-medium text-gray-700">Facebook</span>
               </button>
@@ -274,11 +284,11 @@ export default function RegisterPage() {
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-600">
                 Bằng cách tiếp tục, bạn đồng ý với{' '}
-                <a href="#" className="text-blue-600 hover:underline">Điều khoản</a>
+                <a href="#" className="text-orange-600 hover:underline">Điều khoản</a>
                 {' '}và{' '}
-                <a href="#" className="text-blue-600 hover:underline">Điều kiện</a>
+                <a href="#" className="text-orange-600 hover:underline">Điều kiện</a>
                 {' '}này và bạn đã được thông báo về{' '}
-                <a href="#" className="text-blue-600 hover:underline">Chính sách bảo vệ dữ liệu</a>
+                <a href="#" className="text-orange-600 hover:underline">Chính sách bảo vệ dữ liệu</a>
                 {' '}của chúng tôi.
               </p>
             </div>
@@ -286,7 +296,7 @@ export default function RegisterPage() {
 
           <p className="mt-8 text-center text-gray-600">
             Đã có tài khoản?{' '}
-            <a href="/auth/login" className="text-blue-600 font-medium hover:underline">
+            <a href="/auth/login" className="text-orange-600 font-medium hover:underline">
               Đăng nhập ngay
             </a>
           </p>
