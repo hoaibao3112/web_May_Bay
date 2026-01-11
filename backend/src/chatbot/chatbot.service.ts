@@ -13,9 +13,16 @@ export class ChatbotService {
     private conversationHistories: Map<string, ChatMessage[]> = new Map();
 
     constructor() {
-        // Initialize Gemini AI
-        this.genAI = new GoogleGenerativeAI('AIzaSyC_5UD16JhcHeFBmx5z6Hh1mCi9PJcHkRc');
+        // Initialize Gemini AI with API key from environment
+        const apiKey = process.env.GEMINI_API_KEY || '';
+        if (!apiKey) {
+            console.error('⚠️ GEMINI_API_KEY not found in environment variables!');
+        } else {
+            console.log('🔑 API Key loaded:', apiKey.substring(0, 15) + '...');
+        }
+        this.genAI = new GoogleGenerativeAI(apiKey);
         this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+        console.log('✅ Gemini AI initialized');
     }
 
     private getSystemPrompt(): string {
@@ -98,9 +105,48 @@ Hãy trả lời một cách thân thiện và hữu ích!`;
 
             return text;
         } catch (error) {
-            console.error('Chatbot error:', error);
-            return 'Xin lỗi, tôi đang gặp một chút vấn đề. Bạn có thể thử lại sau hoặc liên hệ hotline 1900-xxxx để được hỗ trợ ngay! 🙏';
+            console.error('❌ Gemini API Error:', error.message);
+            // Return intelligent fallback responses
+            return this.getFallbackResponse(userMessage);
         }
+    }
+
+    private getFallbackResponse(message: string): string {
+        const msg = message.toLowerCase();
+
+        // Greetings
+        if (msg.includes('xin chào') || msg.includes('hello') || msg.includes('hi')) {
+            return 'Xin chào! 👋 Tôi là trợ lý ảo của BayNhanh. Hiện tại hệ thống AI đang được cập nhật, nhưng tôi vẫn có thể hỗ trợ bạn! Bạn muốn biết thông tin gì về chuyến bay?';
+        }
+
+        // Flight prices
+        if ((msg.includes('giá') || msg.includes('vé')) && (msg.includes('nào') || msg.includes('sài gòn') || msg.includes('hà nội') || msg.includes('đà nẵng'))) {
+            if (msg.includes('hà nội') && msg.includes('sài gòn')) {
+                return '✈️ Giá vé Hà Nội - TP.HCM:\n\n💰 VietJet: 800K - 1.2M VNĐ\n✈️ Vietnam Airlines: 1.5M - 2.5M VNĐ  \n🎋 Bamboo Airways: 1M - 1.8M VNĐ\n\nGiá vé thay đổi theo ngày giờ bay. Bạn muốn đặt vé ngay không? 😊';
+            }
+            if (msg.includes('đà nẵng')) {
+                return '🏖️ Giá vé đến Đà Nẵng:\n\n📍 Từ HN: 600K - 1.8M VNĐ\n📍 Từ SGN: 500K - 1.5M VNĐ\n\nĐà Nẵng là điểm đến tuyệt vời với biển đẹp và ẩm thực hấp dẫn! Bạn dự định đi khi nào? 🌊';
+            }
+            return '💰 Giá vé máy bay phụ thuộc vào:\n- Điểm đi và điểm đến\n- Ngày giờ bay\n- Hãng hàng không\n\nVui lòng cho tôi biết bạn muốn bay từ đâu đến đâu để tôi tư vấn cụ thể hơn! ✈️';
+        }
+
+        // Destination suggestions
+        if (msg.includes('gợi ý') || msg.includes('đi đâu') || msg.includes('điểm đến')) {
+            return '🏖️ Gợi ý điểm đến HOT:\n\n**Trong nước:**\n🌊 Phú Quốc - Thiên đường biển đảo\n🏰 Đà Nẵng - Thành phố đáng sống  \n🌸 Đà Lạt - Thành phố ngàn hoa\n\n**Quốc tế:**\n🇹🇭 Bangkok - Mua sắm và ẩm thực\n🇸🇬 Singapore - Hiện đại và sạch đẹp\n\nBạn thích kiểu du lịch nào: biển, núi hay đô thị? 🗺️';
+        }
+
+        // Booking guide
+        if (msg.includes('đặt vé') || msg.includes('booking') || msg.includes('hướng dẫn')) {
+            return '📝 Hướng dẫn đặt vé trên BayNhanh:\n\n1️⃣ Chọn điểm đi - điểm đến\n2️⃣ Chọn ngày bay\n3️⃣ Chọn số hành khách\n4️⃣ Tìm kiếm chuyến bay  \n5️⃣ Chọn chuyến bay phù hợp\n6️⃣ Điền thông tin hành khách\n7️⃣ Thanh toán\n\nRất đơn giản! Bạn cần hỗ trợ thêm không? 😊';
+        }
+
+        // Phú Quốc
+        if (msg.includes('phú quốc')) {
+            return '🏝️ Phú Quốc - đảo ngọc tuyệt đẹp!\n\n💰 Giá vé từ SGN: 700K - 2M VNĐ\n🌤️ Thời gian tốt nhất: Tháng 11 - tháng 4\n🏖️ Điểm tham quan: Vinpearl, Hòn Thơm, Chợ đêm\n\nBạn muốn đặt vé đi Phú Quốc không? ✈️';
+        }
+
+        // Default response
+        return '🤖 Tôi là trợ lý ảo của BayNhanh!\n\nTôi có thể giúp bạn:\n✈️ Tư vấn chuyến bay\n💰 So sánh giá vé\n🏖️ Gợi ý điểm đến\n📝 Hướng dẫn đặt vé\n\nHiện hệ thống AI đang cập nhật, một số tính năng có thể bị giới hạn. Vui lòng cho tôi biết bạn cần hỗ trợ gì! 😊';
     }
 
     clearConversation(sessionId: string): void {
