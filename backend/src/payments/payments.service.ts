@@ -222,7 +222,7 @@ export class PaymentsService {
   }
 
   // Tạo VNPay payment URL
-  private async createVNPayPaymentUrl(
+  async createVNPayPaymentUrl(
     maGiaoDich: string,
     amount: number,
     orderInfo: string,
@@ -296,7 +296,7 @@ export class PaymentsService {
   }
 
   // Tạo MoMo payment URL - Real Implementation
-  private async createMoMoPaymentUrl(
+  async createMoMoPaymentUrl(
     maGiaoDich: string,
     amount: number,
     orderInfo: string,
@@ -402,7 +402,7 @@ export class PaymentsService {
   }
 
   // Tạo ZaloPay payment URL - Real Implementation
-  private async createZaloPayPaymentUrl(
+  async createZaloPayPaymentUrl(
     maGiaoDich: string,
     amount: number,
     orderInfo: string,

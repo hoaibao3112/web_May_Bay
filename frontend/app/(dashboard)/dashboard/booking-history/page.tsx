@@ -21,9 +21,9 @@ export default function BookingHistoryPage() {
     const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        // Check multiple possible keys for user data
-        const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
-        const userInfo = localStorage.getItem('userInfo') || localStorage.getItem('user');
+        // Check multiple possible keys for user data (prioritize the actual keys used by login)
+        const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        const userInfo = localStorage.getItem('user') || localStorage.getItem('userInfo');
 
         if (!token || !userInfo) {
             router.push('/auth/login');
@@ -37,31 +37,57 @@ export default function BookingHistoryPage() {
     const fetchAllBookings = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
-            const userInfo = JSON.parse(localStorage.getItem('userInfo') || localStorage.getItem('user') || '{}');
-            const email = userInfo.email;
+            const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+            const userInfoStr = localStorage.getItem('user') || localStorage.getItem('userInfo');
+
+            if (!token || !userInfoStr) {
+                console.error('❌ Missing authentication data');
+                router.push('/auth/login');
+                return;
+            }
+
+            const userInfo = JSON.parse(userInfoStr);
+            const email = userInfo?.email;
+
+            if (!email) {
+                console.error('❌ User email not found in userInfo');
+                router.push('/auth/login');
+                return;
+            }
 
             console.log('🔍 Fetching bookings for email:', email);
             console.log('🔑 Token:', token?.substring(0, 20) + '...');
 
             // Fetch all booking types
-            const [activityRes, busRes] = await Promise.all([
+            const [activityRes, busRes, flightRes, hotelRes] = await Promise.all([
                 fetch(`http://localhost:5000/activities/bookings/my-orders?email=${email}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
                 fetch('http://localhost:5000/bus-bookings/my-bookings', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
+                fetch('http://localhost:5000/bookings/user/my-bookings', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch('http://localhost:5000/hotel-bookings/user/1', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
             ]);
 
             console.log('📊 Activity response status:', activityRes.status);
             console.log('🚌 Bus response status:', busRes.status);
+            console.log('✈️ Flight response status:', flightRes.status);
+            console.log('🏨 Hotel response status:', hotelRes.status);
 
             const activities = activityRes.ok ? await activityRes.json() : [];
             const buses = busRes.ok ? await busRes.json() : [];
+            const flights = flightRes.ok ? await flightRes.json() : [];
+            const hotels = hotelRes.ok ? await hotelRes.json() : [];
 
             console.log('✅ Activities fetched:', activities);
             console.log('✅ Buses fetched:', buses);
+            console.log('✅ Flights fetched:', flights);
+            console.log('✅ Hotels fetched:', hotels);
 
             // Transform to unified format
             const allBookings: Booking[] = [
@@ -80,6 +106,22 @@ export default function BookingHistoryPage() {
                     date: b.chuyenXe?.gioDi,
                     total: b.tongTien,
                     details: b,
+                })),
+                ...flights.map((f: any) => ({
+                    id: f.id,
+                    type: 'flight' as const,
+                    status: f.trangThai,
+                    date: f.changBay?.gioKhoiHanh,
+                    total: f.tongTien,
+                    details: f,
+                })),
+                ...hotels.map((h: any) => ({
+                    id: h.id,
+                    type: 'hotel' as const,
+                    status: h.trangThai,
+                    date: h.ngayNhanPhong,
+                    total: h.tongTien,
+                    details: h,
                 })),
             ];
 
@@ -114,8 +156,10 @@ export default function BookingHistoryPage() {
         switch (status) {
             case 'DA_XAC_NHAN':
             case 'HOAN_THANH':
+            case 'DA_THANH_TOAN':
                 return 'bg-green-100 text-green-800';
             case 'CHO_XAC_NHAN':
+            case 'GIU_CHO':
                 return 'bg-yellow-100 text-yellow-800';
             case 'HUY':
                 return 'bg-red-100 text-red-800';
@@ -130,6 +174,8 @@ export default function BookingHistoryPage() {
             'DA_XAC_NHAN': 'Đã xác nhận',
             'HOAN_THANH': 'Hoàn thành',
             'HUY': 'Đã hủy',
+            'GIU_CHO': 'Giữ chỗ',
+            'DA_THANH_TOAN': 'Đã thanh toán',
         };
         return statusMap[status] || status;
     };
@@ -325,6 +371,14 @@ export default function BookingHistoryPage() {
                                                 </div>
                                             </div>
                                         )}
+                                        {booking.type === 'flight' && (
+                                            <div>
+                                                <div className="text-sm text-gray-600">Chuyến bay</div>
+                                                <div className="font-semibold">
+                                                    {booking.details.changBay?.sanBayDi?.tenSanBay} → {booking.details.changBay?.sanBayDen?.tenSanBay}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Actions */}
@@ -332,7 +386,7 @@ export default function BookingHistoryPage() {
                                         <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
                                             Xem chi tiết
                                         </button>
-                                        {booking.status === 'CHO_XAC_NHAN' && (
+                                        {(booking.status === 'CHO_XAC_NHAN' || booking.status === 'GIU_CHO') && (
                                             <button className="px-4 py-2 border border-red-600 text-red-600 rounded-lg font-semibold hover:bg-red-50 transition">
                                                 Hủy đơn
                                             </button>

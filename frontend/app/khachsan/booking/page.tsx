@@ -14,7 +14,7 @@ function HotelBookingContent() {
 
     // Booking data from URL/localStorage
     const [bookingData, setBookingData] = useState<any>(null);
-    const [paymentMethod, setPaymentMethod] = useState('MOMO');
+    const [paymentMethod, setPaymentMethod] = useState('VNPAY');
 
     // Customer info
     const [hoTen, setHoTen] = useState('');
@@ -73,39 +73,64 @@ function HotelBookingContent() {
         setError('');
 
         try {
-            // Generate order info
-            const orderId = `HOTEL${Date.now()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-            const amount = bookingData.tongTien;
-            const orderInfo = `Dat phong ${bookingData.tenKhachSan}`;
+            // Get user token if logged in
+            const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+            const headers: any = {
+                'Content-Type': 'application/json',
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
 
-            // Save booking info for confirmation
-            localStorage.setItem('hotelBookingConfirm', JSON.stringify({
-                ...bookingData,
-                hoTen,
+            // Step 1: Create booking in database
+            const bookingPayload = {
+                khachSanId: bookingData.khachSanId,
+                phongId: bookingData.phongId,
+                ngayNhanPhong: bookingData.ngayNhanPhong,
+                ngayTraPhong: bookingData.ngayTraPhong,
+                soLuongPhong: bookingData.soPhong,
+                soNguoiLon: bookingData.soNguoi,
+                soTreEm: 0,
+                tenKhachHang: hoTen,
                 email,
                 soDienThoai,
-                ghiChu,
-                orderId,
-                phuongThucThanhToan: paymentMethod,
-            }));
+                yeuCauDacBiet: ghiChu,
+            };
 
-            // Redirect based on payment method
-            const params = new URLSearchParams({
-                amount: amount.toString(),
-                orderInfo,
-                orderId,
+            console.log('📤 Sending booking payload:', bookingPayload);
+            console.log('📦 Raw bookingData:', bookingData);
+
+            const bookingRes = await fetch('http://localhost:5000/hotel-bookings', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(bookingPayload),
             });
 
-            if (paymentMethod === 'MOMO') {
-                window.location.href = `/mock-momo?${params.toString()}`;
-            } else if (paymentMethod === 'VIETQR') {
-                params.append('bankCode', 'VCB');
-                params.append('accountNo', '1234567890');
-                params.append('accountName', 'CONG TY DU LICH');
-                window.location.href = `/mock-vietqr?${params.toString()}`;
-            } else if (paymentMethod === 'ZALOPAY') {
-                window.location.href = `/mock-zalopay?${params.toString()}`;
+            if (!bookingRes.ok) {
+                throw new Error('Không thể tạo đơn đặt phòng');
             }
+
+            const booking = await bookingRes.json();
+            console.log('✅ Booking created:', booking);
+
+            // Step 2: Create payment
+            const paymentRes = await fetch(`http://localhost:5000/hotel-bookings/${booking.id}/payment`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    phuongThuc: paymentMethod,
+                }),
+            });
+
+            if (!paymentRes.ok) {
+                throw new Error('Không thể tạo thanh toán');
+            }
+
+            const paymentData = await paymentRes.json();
+            console.log('✅ Payment created:', paymentData);
+
+            // Step 3: Redirect to payment gateway
+            window.location.href = paymentData.paymentUrl;
         } catch (error: any) {
             console.error('Error:', error);
             setError(error.message || 'Có lỗi xảy ra, vui lòng thử lại');
@@ -246,45 +271,23 @@ function HotelBookingContent() {
                             )}
 
                             <div className="space-y-3">
-                                {/* MoMo */}
+                                {/* VNPay */}
                                 <label className="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition"
-                                    style={{ borderColor: paymentMethod === 'MOMO' ? '#a50064' : '#e5e7eb' }}
+                                    style={{ borderColor: paymentMethod === 'VNPAY' ? '#0066cc' : '#e5e7eb' }}
                                 >
                                     <input
                                         type="radio"
                                         name="payment"
-                                        value="MOMO"
-                                        checked={paymentMethod === 'MOMO'}
-                                        onChange={(e) => setPaymentMethod(e.target.value)}
-                                        className="w-5 h-5 text-pink-600"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-gray-900">MoMo</span>
-                                            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Demo</span>
-                                        </div>
-                                        <div className="text-sm text-gray-600">Ví điện tử MoMo - Nhanh chóng & tiện lợi</div>
-                                    </div>
-                                </label>
-
-                                {/* VietQR */}
-                                <label className="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition"
-                                    style={{ borderColor: paymentMethod === 'VIETQR' ? '#0088cc' : '#e5e7eb' }}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="payment"
-                                        value="VIETQR"
-                                        checked={paymentMethod === 'VIETQR'}
+                                        value="VNPAY"
+                                        checked={paymentMethod === 'VNPAY'}
                                         onChange={(e) => setPaymentMethod(e.target.value)}
                                         className="w-5 h-5 text-blue-600"
                                     />
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-gray-900">VietQR</span>
-                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Miễn phí</span>
+                                            <span className="font-semibold text-gray-900">VNPay</span>
                                         </div>
-                                        <div className="text-sm text-gray-600">Chuyển khoản qua mã QR - Nhanh & an toàn</div>
+                                        <div className="text-sm text-gray-600">Cổng thanh toán VNPay - An toàn & nhanh chóng</div>
                                     </div>
                                 </label>
 
@@ -303,9 +306,28 @@ function HotelBookingContent() {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-gray-900">ZaloPay</span>
-                                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Demo</span>
                                         </div>
                                         <div className="text-sm text-gray-600">Ví điện tử quốc dân - An toàn & tiện lợi</div>
+                                    </div>
+                                </label>
+
+                                {/* MoMo */}
+                                <label className="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                                    style={{ borderColor: paymentMethod === 'MOMO' ? '#a50064' : '#e5e7eb' }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="payment"
+                                        value="MOMO"
+                                        checked={paymentMethod === 'MOMO'}
+                                        onChange={(e) => setPaymentMethod(e.target.value)}
+                                        className="w-5 h-5 text-pink-600"
+                                    />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-gray-900">MoMo</span>
+                                        </div>
+                                        <div className="text-sm text-gray-600">Ví điện tử MoMo - Nhanh chóng & tiện lợi</div>
                                     </div>
                                 </label>
                             </div>

@@ -21,14 +21,19 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 export class BookingsController {
   private readonly logger = new Logger(BookingsController.name);
 
-  constructor(private bookingsService: BookingsService) {}
+  constructor(private bookingsService: BookingsService) { }
 
-  // Tạo booking mới
+  // Tạo booking mới (có thể đăng nhập hoặc không)
   @Post()
   async createBooking(@Body() dto: CreateBookingDto, @Request() req?) {
     try {
-      this.logger.log('Received booking request:', JSON.stringify(dto));
+      this.logger.log('Received booking request:');
+      this.logger.log(JSON.stringify(dto));
+
+      // Thử lấy userId nếu user đã đăng nhập
       const userId = req?.user?.id;
+      this.logger.log('User ID:', userId || 'Guest booking');
+
       return await this.bookingsService.createBooking(dto, userId);
     } catch (error) {
       this.logger.error('Error creating booking:', error.message, error.stack);

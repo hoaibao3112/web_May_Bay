@@ -7,98 +7,140 @@ export class HotelBookingsService {
     constructor(private prisma: PrismaService) { }
 
     async createBooking(createDto: CreateHotelBookingDto, userId: number) {
+        console.log('📥 Received booking DTO:', JSON.stringify(createDto, null, 2));
+        console.log('👤 User ID:', userId);
+
         const {
             khachSanId, phongId, ngayNhanPhong, ngayTraPhong,
             soLuongPhong, soNguoiLon, soTreEm,
             tenKhachHang, email, soDienThoai, yeuCauDacBiet
         } = createDto;
 
+        console.log('🔍 Extracted values:', {
+            khachSanId,
+            phongId,
+            ngayNhanPhong,
+            ngayTraPhong,
+        });
+
         // Calculate number of nights
         const checkIn = new Date(ngayNhanPhong);
         const checkOut = new Date(ngayTraPhong);
         const soNgay = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Get room price (placeholder - should query from database)
-        // For now, using a base price
-        const giaPhong = 1000000; // 1M VND per night per room
+        // Get room price from database
+        const phong = await this.prisma.phongKhachSan.findUnique({
+            where: { id: phongId },
+            include: { khachSan: true },
+        });
+
+        if (!phong) {
+            throw new Error('Phòng không tồn tại');
+        }
+
+        const giaPhong = Number(phong.giaTheoNgay);
         const tongTien = giaPhong * soNgay * soLuongPhong;
 
         // Generate booking code
         const maDatPhong = `HTL${Date.now()}${userId}`;
 
-        // Create booking (using raw query as placeholder)
-        // Note: Actual implementation depends on your database schema
-        const booking = {
-            maDatPhong,
-            khachSanId,
-            phongId,
-            userId,
-            ngayNhanPhong: checkIn,
-            ngayTraPhong: checkOut,
-            soLuongPhong,
-            soNguoiLon,
-            soTreEm,
-            soNgay,
-            tongTien,
-            tenKhachHang,
-            email,
-            soDienThoai,
-            yeuCauDacBiet,
-            trangThai: 'CHO_XAC_NHAN',
-            trangThaiThanhToan: 'CHUA_THANH_TOAN',
-        };
+        // Create booking in database
+        const booking = await this.prisma.datPhong.create({
+            data: {
+                maDatPhong,
+                userId,
+                khachSanId,
+                phongId,
+                ngayNhanPhong: checkIn,
+                ngayTraPhong: checkOut,
+                soPhong: soLuongPhong,
+                soNguoiLon,
+                soTreEm,
+                tongTien,
+                trangThai: 'CHO_XAC_NHAN',
+                ghiChu: yeuCauDacBiet,
+            },
+            include: {
+                khachSan: true,
+                phong: true,
+            },
+        });
 
         return booking;
     }
 
     async getBookingById(id: number) {
-        // Placeholder implementation
-        return {
-            id,
-            maDatPhong: `HTL${id}`,
-            khachSan: {
-                ten: 'Hotel Sample',
-                diaChi: '123 Sample St',
-                thanhPho: 'TP.HCM',
+        const booking = await this.prisma.datPhong.findUnique({
+            where: { id },
+            include: {
+                khachSan: {
+                    include: {
+                        gallery: true,
+                    },
+                },
+                phong: true,
+                user: {
+                    select: {
+                        id: true,
+                        email: true,
+                        hoTen: true,
+                        soDienThoai: true,
+                    },
+                },
+                thanhToanDP: true,
             },
-            phong: {
-                loaiPhong: 'Deluxe',
-                soGiuong: 2,
-            },
-            ngayNhanPhong: new Date(),
-            ngayTraPhong: new Date(),
-            soLuongPhong: 1,
-            soNguoiLon: 2,
-            soTreEm: 0,
-            soNgay: 2,
-            tongTien: 2000000,
-            tenKhachHang: 'Sample Customer',
-            email: 'customer@example.com',
-            soDienThoai: '0901234567',
-            trangThai: 'CHO_XAC_NHAN',
-            trangThaiThanhToan: 'CHUA_THANH_TOAN',
-            createdAt: new Date(),
-        };
+        });
+
+        if (!booking) {
+            throw new Error('Không tìm thấy đơn đặt phòng');
+        }
+
+        return booking;
     }
 
     async getUserBookings(userId: number) {
-        // Placeholder - return empty array
-        return [];
+        return this.prisma.datPhong.findMany({
+            where: { userId },
+            include: {
+                khachSan: true,
+                phong: true,
+                thanhToanDP: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
     }
 
     async updateBookingStatus(id: number, trangThai: string) {
-        const validStatuses = ['CHO_XAC_NHAN', 'DA_XAC_NHAN', 'DANG_PHUC_VU', 'HOAN_THANH', 'DA_HUY'];
+        const validStatuses = ['CHO_XAC_NHAN', 'DA_XAC_NHAN', 'DANG_LUU_TRU', 'DA_CHECKOUT', 'DA_HUY', 'KHONG_DEN'];
         if (!validStatuses.includes(trangThai)) {
             throw new Error('Trạng thái không hợp lệ');
         }
 
-        // Placeholder - just return updated booking
-        const booking = await this.getBookingById(id);
-        return { ...booking, trangThai };
+        return this.prisma.datPhong.update({
+            where: { id },
+            data: { trangThai: trangThai as any },
+            include: {
+                khachSan: true,
+                phong: true,
+            },
+        });
     }
 
     async cancelBooking(id: number, userId: number) {
-        // Placeholder implementation
-        return { message: 'Đã hủy đặt phòng thành công', id };
+        // Verify booking belongs to user
+        const booking = await this.prisma.datPhong.findFirst({
+            where: { id, userId },
+        });
+
+        if (!booking) {
+            throw new Error('Không tìm thấy đơn đặt phòng hoặc bạn không có quyền hủy');
+        }
+
+        return this.prisma.datPhong.update({
+            where: { id },
+            data: { trangThai: 'DA_HUY' },
+        });
     }
 }

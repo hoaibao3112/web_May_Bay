@@ -523,10 +523,30 @@ export class BookingsService {
     return pnr;
   }
 
-  // Lấy danh sách booking của user
+  // Lấy danh sách booking của user (bao gồm cả booking guest có email trùng)
   async getUserBookings(userId: number) {
+    // Lấy thông tin user để lấy email
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Người dùng không tồn tại');
+    }
+
+    // Lấy bookings theo userId HOẶC theo email trong thông tin liên hệ
     return this.prisma.donDatVe.findMany({
-      where: { nguoiDungId: userId },
+      where: {
+        OR: [
+          { nguoiDungId: userId },
+          {
+            thongTinLienHe: {
+              email: user.email,
+            },
+          },
+        ],
+      },
       include: {
         changBay: {
           include: {
@@ -540,6 +560,7 @@ export class BookingsService {
         hangVe: true,
         hanhKhach: true,
         ve: true,
+        thongTinLienHe: true,
       },
       orderBy: {
         createdAt: 'desc',
