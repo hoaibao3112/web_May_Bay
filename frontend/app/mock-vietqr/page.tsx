@@ -43,7 +43,7 @@ export default function MockVietQRPage() {
                 setRedirectCountdown(prev => {
                     if (prev <= 1) {
                         clearInterval(timer);
-                        window.location.href = `http://localhost:5000/payments/vietqr-return?orderId=${orderId}&resultCode=0&message=Successful`;
+                        window.location.href = `http://localhost:5000/api/payments/vietqr-return?orderId=${orderId}&resultCode=0&message=Successful`;
                         return 0;
                     }
                     return prev - 1;
@@ -55,7 +55,7 @@ export default function MockVietQRPage() {
                 setRedirectCountdown(prev => {
                     if (prev <= 1) {
                         clearInterval(timer);
-                        window.location.href = `http://localhost:5000/payments/vietqr-return?orderId=${orderId}&resultCode=1&message=Cancelled`;
+                        window.location.href = `http://localhost:5000/api/payments/vietqr-return?orderId=${orderId}&resultCode=1&message=Cancelled`;
                         return 0;
                     }
                     return prev - 1;

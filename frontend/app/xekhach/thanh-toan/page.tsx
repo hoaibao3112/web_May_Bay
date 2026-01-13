@@ -76,7 +76,7 @@ export default function BusPaymentPage() {
 
     const fetchBookingDetail = async () => {
         try {
-            const res = await fetch(`http://localhost:5000/bus-bookings/${bookingId}`);
+            const res = await fetch(`http://localhost:5000/api/bus-bookings/${bookingId}`);
             if (!res.ok) throw new Error('Không thể tải thông tin đặt vé');
 
             const data = await res.json();
@@ -114,7 +114,7 @@ export default function BusPaymentPage() {
             }
 
             // Create payment
-            const paymentRes = await fetch('http://localhost:5000/bus-bookings/payment', {
+            const paymentRes = await fetch('http://localhost:5000/api/bus-bookings/payment', {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({

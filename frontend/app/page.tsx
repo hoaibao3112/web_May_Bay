@@ -73,25 +73,25 @@ export default function HomePage() {
 
   useEffect(() => {
     // Load airports
-    fetch('http://localhost:5000/catalog/san-bay')
+    fetch('http://localhost:5000/api/catalog/san-bay')
       .then(res => res.json())
       .then(data => setAirports(data))
       .catch(err => console.error('Error loading airports:', err));
 
     // Load airlines
-    fetch('http://localhost:5000/catalog/hang-hang-khong')
+    fetch('http://localhost:5000/api/catalog/hang-hang-khong')
       .then(res => res.json())
       .then(data => setAirlines(data))
       .catch(err => console.error('Error loading airlines:', err));
 
     // Load popular routes
-    fetch('http://localhost:5000/statistics/popular-routes?limit=4')
+    fetch('http://localhost:5000/api/statistics/popular-routes?limit=4')
       .then(res => res.json())
-      .then(data => setPopularRoutes(data))
+      .then(data => setPopularRoutes(Array.isArray(data) ? data : []))
       .catch(err => console.error('Error loading popular routes:', err));
 
     // Load cities for hotels
-    fetch('http://localhost:5000/catalog/thanh-pho-vn')
+    fetch('http://localhost:5000/api/catalog/thanh-pho-vn')
       .then(res => res.json())
       .then(data => {
         console.log('Cities loaded:', data);
@@ -238,7 +238,7 @@ export default function HomePage() {
 
     if (value.length > 1) {
       try {
-        const response = await fetch(`http://localhost:5000/bus-search/suggestions?q=${encodeURIComponent(value)}`);
+        const response = await fetch(`http://localhost:5000/api/bus-search/suggestions?q=${encodeURIComponent(value)}`);
         if (response.ok) {
           const data = await response.json();
           setBusStationSuggestions(data);
@@ -318,7 +318,7 @@ export default function HomePage() {
   ];
 
   // Destinations data from API
-  const destinations = popularRoutes.map((route: any) => ({
+  const destinations = (Array.isArray(popularRoutes) ? popularRoutes : []).map((route: any) => ({
     name: route.thanhPhoDen || route.sanBayDen,
     image: '🏝️',
     description: `${route.soLuongDat || 0} chuyến bay`,

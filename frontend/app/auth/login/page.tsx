@@ -17,7 +17,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/auth/login', {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -44,7 +44,7 @@ export default function LoginPage() {
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/auth/google', {
+      const res = await fetch('http://localhost:5000/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken: credentialResponse.credential }),
@@ -79,7 +79,7 @@ export default function LoginPage() {
     const top = (window.screen.height / 2) - (height / 2);
 
     const popup = window.open(
-      'http://localhost:5000/auth/facebook',
+      'http://localhost:5000/api/auth/facebook',
       'facebook-login',
       `width=${width},height=${height},left=${left},top=${top}`
     );

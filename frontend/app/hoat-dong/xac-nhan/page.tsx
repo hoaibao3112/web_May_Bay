@@ -22,7 +22,7 @@ function ConfirmationContent() {
 
     const fetchBooking = async (maDat: string) => {
         try {
-            const res = await fetch(`http://localhost:5000/activities/bookings/${maDat}`);
+            const res = await fetch(`http://localhost:5000/api/activities/bookings/${maDat}`);
             if (!res.ok) throw new Error('Booking not found');
             const data = await res.json();
             setBooking(data);

@@ -100,7 +100,7 @@ function HotelBookingContent() {
             console.log('📤 Sending booking payload:', bookingPayload);
             console.log('📦 Raw bookingData:', bookingData);
 
-            const bookingRes = await fetch('http://localhost:5000/hotel-bookings', {
+            const bookingRes = await fetch('http://localhost:5000/api/hotel-bookings', {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(bookingPayload),
@@ -114,7 +114,7 @@ function HotelBookingContent() {
             console.log('✅ Booking created:', booking);
 
             // Step 2: Create payment
-            const paymentRes = await fetch(`http://localhost:5000/hotel-bookings/${booking.id}/payment`, {
+            const paymentRes = await fetch(`http://localhost:5000/api/hotel-bookings/${booking.id}/payment`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({

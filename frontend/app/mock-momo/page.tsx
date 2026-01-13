@@ -27,7 +27,7 @@ export default function MockMoMoPage() {
 
                 if (isActivityBooking) {
                     // Call backend for activity bookings
-                    await fetch(`http://localhost:5000/activities/bookings/${orderId}/payment-success`, {
+                    await fetch(`http://localhost:5000/api/activities/bookings/${orderId}/payment-success`, {
                         method: 'PATCH',
                     });
                 }
@@ -80,7 +80,7 @@ export default function MockMoMoPage() {
                     if (prev <= 1) {
                         clearInterval(timer);
                         // Redirect to success page
-                        window.location.href = `http://localhost:5000/payments/momo-return?orderId=${orderId}&resultCode=0&message=Successful`;
+                        window.location.href = `http://localhost:5000/api/payments/momo-return?orderId=${orderId}&resultCode=0&message=Successful`;
                         return 0;
                     }
                     return prev - 1;
@@ -93,7 +93,7 @@ export default function MockMoMoPage() {
                     if (prev <= 1) {
                         clearInterval(timer);
                         // Redirect to failure page
-                        window.location.href = `http://localhost:5000/payments/momo-return?orderId=${orderId}&resultCode=1006&message=Transaction cancelled by user`;
+                        window.location.href = `http://localhost:5000/api/payments/momo-return?orderId=${orderId}&resultCode=1006&message=Transaction cancelled by user`;
                         return 0;
                     }
                     return prev - 1;

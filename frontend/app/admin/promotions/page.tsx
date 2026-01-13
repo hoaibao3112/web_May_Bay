@@ -32,7 +32,7 @@ export default function AdminPromotionsPage() {
 
     const fetchPromotions = async () => {
         try {
-            let url = 'http://localhost:5000/promotions';
+            let url = 'http://localhost:5000/api/promotions';
             const params = new URLSearchParams();
 
             if (filter === 'active') params.append('isActive', 'true');
@@ -55,7 +55,7 @@ export default function AdminPromotionsPage() {
         if (!confirm('Bạn có chắc muốn xóa mã khuyến mãi này?')) return;
 
         try {
-            await fetch(`http://localhost:5000/promotions/${id}`, {
+            await fetch(`http://localhost:5000/api/promotions/${id}`, {
                 method: 'DELETE',
             });
             fetchPromotions();

@@ -46,7 +46,7 @@ export default function ActivityDetailPage() {
 
     const fetchActivityDetail = async () => {
         try {
-            const res = await fetch(`http://localhost:5000/activities/${params.id}`);
+            const res = await fetch(`http://localhost:5000/api/activities/${params.id}`);
             if (!res.ok) throw new Error('Activity not found');
             const data = await res.json();
             setActivity(data);

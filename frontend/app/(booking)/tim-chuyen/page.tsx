@@ -35,7 +35,7 @@ export default function TimChuyenBayPage() {
   const fetchAirports = async () => {
     setLoadingAirports(true);
     try {
-      const apiUrl = 'http://localhost:5000/catalog/san-bay';
+      const apiUrl = 'http://localhost:5000/api/catalog/san-bay';
       console.log('Fetching airports from:', apiUrl);
 
       const res = await fetch(apiUrl, {

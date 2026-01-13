@@ -107,7 +107,7 @@ function KetQuaContent() {
 
   const loadAirports = async () => {
     try {
-      const res = await fetch('http://localhost:5000/catalog/san-bay');
+      const res = await fetch('http://localhost:5000/api/catalog/san-bay');
       const data = await res.json();
       setAirports(data);
     } catch (error) {
@@ -153,7 +153,7 @@ function KetQuaContent() {
 
       console.log('Request body:', requestBody);
 
-      const res = await fetch('http://localhost:5000/search', {
+      const res = await fetch('http://localhost:5000/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),

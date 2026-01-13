@@ -58,7 +58,7 @@ function ThongTinHanhKhachContent() {
 
   const fetchFlightInfo = async (changBayId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/search/chuyen-bay/${changBayId}`);
+      const res = await fetch(`http://localhost:5000/api/search/chuyen-bay/${changBayId}`);
       if (res.ok) {
         const data = await res.json();
         setFlightInfo({
@@ -132,7 +132,7 @@ function ThongTinHanhKhachContent() {
 
       console.log('Sending booking data:', bookingData);
 
-      const res = await fetch('http://localhost:5000/bookings', {
+      const res = await fetch('http://localhost:5000/api/bookings', {
         method: 'POST',
         headers,
         body: JSON.stringify(bookingData),

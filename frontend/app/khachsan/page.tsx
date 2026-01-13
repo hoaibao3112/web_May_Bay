@@ -97,7 +97,7 @@ function KhachSanContent() {
         soPhong: rooms.toString(),
       });
 
-      const res = await fetch(`http://localhost:5000/hotels/search?${params}`);
+      const res = await fetch(`http://localhost:5000/api/hotels/search?${params}`);
       if (!res.ok) {
         console.error('API returned status:', res.status);
         setHotels([]);

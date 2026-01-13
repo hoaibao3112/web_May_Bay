@@ -45,7 +45,7 @@ export default function AirportTransferConfirmationPage() {
 
     const fetchBookingDetail = async () => {
         try {
-            const res = await fetch(`http://localhost:5000/airport-transfer-bookings/${bookingId}`);
+            const res = await fetch(`http://localhost:5000/api/airport-transfer-bookings/${bookingId}`);
             if (res.ok) {
                 const data = await res.json();
                 setBooking(data);

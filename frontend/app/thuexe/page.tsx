@@ -77,7 +77,7 @@ export default function CarRentalSearchResults() {
                 soHanhLy: luggage,
             });
 
-            const response = await fetch(`http://localhost:5000/car-rental-search?${params.toString()}`);
+            const response = await fetch(`http://localhost:5000/api/car-rental-search?${params.toString()}`);
 
             if (response.ok) {
                 const data = await response.json();

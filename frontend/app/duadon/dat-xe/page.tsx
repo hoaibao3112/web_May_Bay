@@ -69,7 +69,7 @@ export default function AirportTransferBookingPage() {
     const fetchServiceDetails = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:5000/airport-transfer-search/${serviceId}`);
+            const response = await fetch(`http://localhost:5000/api/airport-transfer-search/${serviceId}`);
             if (response.ok) {
                 const data = await response.json();
                 setService(data);
@@ -119,7 +119,7 @@ export default function AirportTransferBookingPage() {
             console.log('🔍 BOOKING DATA:', bookingData);
             console.log('🔍 dichVuId (parsed):', bookingData.dichVuId);
 
-            const res = await fetch('http://localhost:5000/airport-transfer-bookings', {
+            const res = await fetch('http://localhost:5000/api/airport-transfer-bookings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

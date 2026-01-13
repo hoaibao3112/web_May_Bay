@@ -56,7 +56,7 @@ export default function AirportTransferPaymentPage() {
 
     const fetchBookingDetail = async () => {
         try {
-            const res = await fetch(`http://localhost:5000/airport-transfer-bookings/${bookingId}`);
+            const res = await fetch(`http://localhost:5000/api/airport-transfer-bookings/${bookingId}`);
             if (res.ok) {
                 const data = await res.json();
                 setBooking(data);
@@ -72,7 +72,7 @@ export default function AirportTransferPaymentPage() {
         if (!paymentMethod) return;
         setProcessing(true);
         try {
-            const res = await fetch('http://localhost:5000/airport-transfer-bookings/payment', {
+            const res = await fetch('http://localhost:5000/api/airport-transfer-bookings/payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

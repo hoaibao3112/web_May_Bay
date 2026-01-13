@@ -1151,3 +1151,28 @@ model DanhGiaNhaCungCap {
   @@index([nhaCungCapId])
   @@map("danh_gia_nha_cung_cap")
 }
+
+// ============================
+// QR CODE VERIFICATION TOKENS
+// ============================
+
+model QrVerificationToken {
+  id          Int                 @id @default(autoincrement())
+  token       String              @unique @db.VarChar(64)
+  bookingType QrCodeBookingType
+  bookingId   Int
+  createdAt   DateTime            @default(now())
+  expiresAt   DateTime?
+  isUsed      Boolean             @default(false)
+
+  @@index([token])
+  @@map("qr_verification_tokens")
+}
+
+enum QrCodeBookingType {
+  FLIGHT
+  HOTEL
+  BUS
+  CAR
+  TRANSFER
+}

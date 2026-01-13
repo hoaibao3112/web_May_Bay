@@ -61,7 +61,7 @@ export default function BusSearchResults() {
     const searchBusTrips = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/bus-search', {
+            const response = await fetch('http://localhost:5000/api/bus-search', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

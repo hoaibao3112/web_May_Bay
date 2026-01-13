@@ -46,7 +46,7 @@ export default function AirportAutocomplete({
 
         setIsLoading(true);
         try {
-            const res = await fetch(`http://localhost:5000/airport-transfer-search/suggestions?q=${encodeURIComponent(query)}`);
+            const res = await fetch(`http://localhost:5000/api/airport-transfer-search/suggestions?q=${encodeURIComponent(query)}`);
             if (res.ok) {
                 const data = await res.json();
                 setSuggestions(data);

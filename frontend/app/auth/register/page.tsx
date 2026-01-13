@@ -31,7 +31,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/auth/register', {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,7 +60,7 @@ export default function RegisterPage() {
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/auth/google', {
+      const res = await fetch('http://localhost:5000/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken: credentialResponse.credential }),

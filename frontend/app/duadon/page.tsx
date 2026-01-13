@@ -64,7 +64,7 @@ export default function AirportTransferSearchResults() {
                 soHanhKhach: passengers,
             });
 
-            const response = await fetch(`http://localhost:5000/airport-transfer-search?${params.toString()}`);
+            const response = await fetch(`http://localhost:5000/api/airport-transfer-search?${params.toString()}`);
 
             if (response.ok) {
                 const data = await response.json();
@@ -79,7 +79,7 @@ export default function AirportTransferSearchResults() {
 
     const guessAirportId = async (query: string) => {
         try {
-            const res = await fetch(`http://localhost:5000/airport-transfer-search/suggestions?q=${encodeURIComponent(query)}`);
+            const res = await fetch(`http://localhost:5000/api/airport-transfer-search/suggestions?q=${encodeURIComponent(query)}`);
             if (res.ok) {
                 const suggestions = await res.json();
                 if (suggestions.length > 0) return suggestions[0].id;

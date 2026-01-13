@@ -124,7 +124,7 @@ export default function ProfilePage() {
   const handleRequestOTP = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:5000/auth/request-password-otp', {
+      const response = await fetch('http://localhost:5000/api/auth/request-password-otp', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -171,7 +171,7 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:5000/auth/change-password', {
+      const response = await fetch('http://localhost:5000/api/auth/change-password', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

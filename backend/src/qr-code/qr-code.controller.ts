@@ -30,7 +30,17 @@ export class QrCodeController {
     }
 
     /**
-     * Verify QR code data
+     * Verify QR code token and return booking details
+     * GET /api/qr-code/verify/:token
+     */
+    @Get('verify/:token')
+    async verifyToken(@Param('token') token: string) {
+        const result = await this.qrCodeService.verifyToken(token);
+        return result;
+    }
+
+    /**
+     * Verify QR code data (legacy - for JSON-based QR codes)
      * POST /api/qr-code/verify
      */
     @Post('verify')

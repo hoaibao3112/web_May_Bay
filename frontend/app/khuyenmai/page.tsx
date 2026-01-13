@@ -38,7 +38,7 @@ export default function PromotionsPage() {
 
     const fetchPromotions = async () => {
         try {
-            const response = await fetch('http://localhost:5000/promotions/active/list');
+            const response = await fetch('http://localhost:5000/api/promotions/active/list');
             const data = await response.json();
             setPromotions(data);
             setLoading(false);

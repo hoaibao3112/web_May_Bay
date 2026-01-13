@@ -87,7 +87,7 @@ export default function BusBookingPage() {
         setLoading(true);
         try {
             // Fetch trip details from API
-            const response = await fetch(`http://localhost:5000/bus-search/${tripId}`);
+            const response = await fetch(`http://localhost:5000/api/bus-search/${tripId}`);
             if (response.ok) {
                 const data = await response.json();
                 setTrip(data);
@@ -167,7 +167,7 @@ export default function BusBookingPage() {
 
             console.log('Sending booking data:', bookingData);
 
-            const res = await fetch('http://localhost:5000/bus-bookings', {
+            const res = await fetch('http://localhost:5000/api/bus-bookings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -64,16 +64,16 @@ export default function BookingHistoryPage() {
 
             // Fetch all booking types
             const [activityRes, busRes, flightRes, hotelRes] = await Promise.all([
-                fetch(`http://localhost:5000/activities/bookings/my-orders?email=${email}`, {
+                fetch(`http://localhost:5000/api/activities/bookings/my-orders?email=${email}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
-                fetch('http://localhost:5000/bus-bookings/my-bookings', {
+                fetch('http://localhost:5000/api/bus-bookings/my-bookings', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
-                fetch('http://localhost:5000/bookings/user/my-bookings', {
+                fetch('http://localhost:5000/api/bookings/user/my-bookings', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
-                fetch('http://localhost:5000/hotel-bookings/user/1', {
+                fetch('http://localhost:5000/api/hotel-bookings/user/1', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
             ]);
@@ -149,16 +149,16 @@ export default function BookingHistoryPage() {
 
             switch (booking.type) {
                 case 'flight':
-                    endpoint = `http://localhost:5000/bookings/${booking.id}/details`;
+                    endpoint = `http://localhost:5000/api/bookings/${booking.id}/details`;
                     break;
                 case 'hotel':
-                    endpoint = `http://localhost:5000/hotel-bookings/${booking.id}/details`;
+                    endpoint = `http://localhost:5000/api/hotel-bookings/${booking.id}/details`;
                     break;
                 case 'bus':
-                    endpoint = `http://localhost:5000/bus-bookings/${booking.id}/details`;
+                    endpoint = `http://localhost:5000/api/bus-bookings/${booking.id}/details`;
                     break;
                 case 'activity':
-                    endpoint = `http://localhost:5000/activities/bookings/${booking.id}/details`;
+                    endpoint = `http://localhost:5000/api/activities/bookings/${booking.id}/details`;
                     break;
                 default:
                     console.error('Unknown booking type:', booking.type);

@@ -6,58 +6,67 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import * as QRCode from 'qrcode';
 import { QrCodeDataInterface } from './dto/qr-code.dto';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class QrCodeService {
     constructor(private prisma: PrismaService) { }
 
+    private readonly FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+
     /**
-     * Generate QR code for a booking
+     * Generate secure random token
+     */
+    private generateSecureToken(): string {
+        return randomBytes(32).toString('hex'); // 64 characters
+    }
+
+    /**
+     * Store verification token in database
+     */
+    private async storeVerificationToken(
+        token: string,
+        bookingType: string,
+        bookingId: number,
+        expiresInDays: number = 365 // 1 year default
+    ) {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+        await this.prisma.qrVerificationToken.create({
+            data: {
+                token,
+                bookingType: bookingType as any,
+                bookingId,
+                expiresAt,
+            },
+        });
+    }
+
+    /**
+     * Generate QR code for a flight booking
      */
     async generateQrCode(bookingId: number): Promise<string> {
-        // Fetch booking details
+        // Verify booking exists
         const booking = await this.prisma.donDatVe.findUnique({
             where: { id: bookingId },
-            include: {
-                changBay: {
-                    include: {
-                        chuyenBay: true,
-                        sanBayDi: true,
-                        sanBayDen: true,
-                    },
-                },
-                hanhKhach: {
-                    select: {
-                        id: true,
-                        ho: true,
-                        ten: true,
-                        loai: true,
-                    },
-                },
-            },
         });
 
         if (!booking) {
             throw new NotFoundException('Không tìm thấy đơn đặt vé');
         }
 
-        // Create QR data structure
-        const qrData: QrCodeDataInterface = {
-            bookingId: booking.id,
-            maDatVe: booking.maDatVe,
-            hanhKhach: booking.hanhKhach,
-            changBay: {
-                soHieuChuyenBay: booking.changBay.chuyenBay.soHieuChuyenBay,
-                sanBayDi: booking.changBay.sanBayDi.tenSanBay,
-                sanBayDen: booking.changBay.sanBayDen.tenSanBay,
-                gioDi: booking.changBay.gioDi.toISOString(),
-                gioDen: booking.changBay.gioDen.toISOString(),
-            },
-            generatedAt: new Date().toISOString(),
-        };
+        // Generate secure token
+        const token = this.generateSecureToken();
 
-        // Generate QR code as data URL (base64)
-        const qrCodeDataUrl = await QRCode.toDataURL(JSON.stringify(qrData), {
+        // Store token
+        await this.storeVerificationToken(token, 'FLIGHT', bookingId);
+
+        // Create verification URL
+        const verifyUrl = `${this.FRONTEND_URL}/verify/${token}`;
+
+        // Generate QR code with URL
+        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, {
             errorCorrectionLevel: 'H',
             width: 300,
             margin: 2,
@@ -67,7 +76,149 @@ export class QrCodeService {
     }
 
     /**
-     * Verify QR code data and return booking details
+     * Verify token and fetch booking details based on type
+     */
+    async verifyToken(token: string) {
+        // Find the token in database
+        const tokenRecord = await this.prisma.qrVerificationToken.findUnique({
+            where: { token },
+        });
+
+        if (!tokenRecord) {
+            throw new NotFoundException('Mã QR không hợp lệ hoặc đã hết hạn');
+        }
+
+        // Check if expired
+        if (tokenRecord.expiresAt && tokenRecord.expiresAt < new Date()) {
+            throw new BadRequestException('Mã QR đã hết hạn');
+        }
+
+        // Fetch booking details based on type
+        let bookingDetails: any;
+        const { bookingType, bookingId } = tokenRecord;
+
+        switch (bookingType) {
+            case 'FLIGHT':
+                bookingDetails = await this.prisma.donDatVe.findUnique({
+                    where: { id: bookingId },
+                    include: {
+                        changBay: {
+                            include: {
+                                chuyenBay: {
+                                    include: { hang: true },
+                                },
+                                sanBayDi: true,
+                                sanBayDen: true,
+                            },
+                        },
+                        hanhKhach: true,
+                        thongTinLienHe: true,
+                    },
+                });
+                break;
+
+            case 'HOTEL':
+                bookingDetails = await this.prisma.datPhong.findUnique({
+                    where: { id: bookingId },
+                    include: {
+                        khachSan: true,
+                        phong: true,
+                        user: {
+                            select: {
+                                id: true,
+                                hoTen: true,
+                                email: true,
+                                soDienThoai: true,
+                            },
+                        },
+                    },
+                });
+                break;
+
+            case 'BUS':
+                bookingDetails = await this.prisma.donDatVeXe.findUnique({
+                    where: { id: bookingId },
+                    include: {
+                        chuyenXe: {
+                            include: {
+                                tuyenXe: {
+                                    include: {
+                                        benXeDi: true,
+                                        benXeDen: true,
+                                        nhaXe: true,
+                                    },
+                                },
+                                xe: true,
+                            },
+                        },
+                        nguoiDung: {
+                            select: {
+                                id: true,
+                                hoTen: true,
+                                email: true,
+                                soDienThoai: true,
+                            },
+                        },
+                        veXe: true,
+                    },
+                });
+                break;
+
+            // TODO: Implement when car rental model is added to schema
+            // case 'CAR':
+            //     bookingDetails = await this.prisma.donThueXe.findUnique({
+            //         where: { id: bookingId },
+            //         include: {
+            //             xe: {
+            //                 include: {
+            //                     nhaCungCap: true,
+            //                 },
+            //             },
+            //             nguoiDung: {
+            //                 select: {
+            //                     id: true,
+            //                     hoTen: true,
+            //                     email: true,
+            //                     soDienThoai: true,
+            //                 },
+            //             },
+            //         },
+            //     });
+            //     break;
+
+            // TODO: Implement when airport transfer model is added to schema
+            // case 'TRANSFER':
+            //     bookingDetails = await this.prisma.donDatDuaDon.findUnique({
+            //         where: { id: bookingId },
+            //         include: {
+            //             dichVu: {
+            //                 include: {
+            //                     sanBay: true,
+            //                     nhaCungCap: true,
+            //                 },
+            //             },
+            //         },
+            //     });
+            //     break;
+
+            default:
+                throw new BadRequestException('Loại booking không hợp lệ');
+        }
+
+        if (!bookingDetails) {
+            throw new NotFoundException('Không tìm thấy thông tin đặt chỗ');
+        }
+
+        return {
+            success: true,
+            bookingType,
+            booking: bookingDetails,
+            verifiedAt: new Date().toISOString(),
+        };
+    }
+
+    /**
+     * Verify QR code data and return booking details (legacy for JSON-based QR)
      */
     async verifyQrCode(qrData: string) {
         try {
@@ -235,62 +386,26 @@ export class QrCodeService {
      * Generate QR code for a hotel booking
      */
     async generateHotelQrCode(bookingId: number): Promise<string> {
+        // Verify booking exists
         const booking = await this.prisma.datPhong.findUnique({
             where: { id: bookingId },
-            include: {
-                khachSan: {
-                    select: {
-                        id: true,
-                        tenKhachSan: true,
-                        diaChi: true,
-                    },
-                },
-                phong: {
-                    select: {
-                        id: true,
-                        tenPhong: true,
-                        loaiPhong: true,
-                    },
-                },
-                user: {
-                    select: {
-                        id: true,
-                        hoTen: true,
-                        email: true,
-                    },
-                },
-            },
         });
 
         if (!booking) {
             throw new NotFoundException('Không tìm thấy đơn đặt phòng');
         }
 
-        const qrData = {
-            type: 'HOTEL',
-            bookingId: booking.id,
-            maDatPhong: booking.maDatPhong,
-            khachSan: {
-                ten: booking.khachSan.tenKhachSan,
-                diaChi: booking.khachSan.diaChi,
-            },
-            phong: {
-                ten: booking.phong.tenPhong,
-                loai: booking.phong.loaiPhong,
-            },
-            khachHang: {
-                hoTen: booking.user?.hoTen || 'Guest',
-                email: booking.user?.email,
-            },
-            ngayNhanPhong: booking.ngayNhanPhong.toISOString(),
-            ngayTraPhong: booking.ngayTraPhong.toISOString(),
-            soNguoiLon: booking.soNguoiLon,
-            soTreEm: booking.soTreEm,
-            tongTien: Number(booking.tongTien),
-            generatedAt: new Date().toISOString(),
-        };
+        // Generate secure token
+        const token = this.generateSecureToken();
 
-        const qrCodeDataUrl = await QRCode.toDataURL(JSON.stringify(qrData), {
+        // Store token
+        await this.storeVerificationToken(token, 'HOTEL', bookingId);
+
+        // Create verification URL
+        const verifyUrl = `${this.FRONTEND_URL}/verify/${token}`;
+
+        // Generate QR code with URL
+        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, {
             errorCorrectionLevel: 'H',
             width: 300,
             margin: 2,
@@ -303,68 +418,26 @@ export class QrCodeService {
      * Generate QR code for a bus booking
      */
     async generateBusQrCode(bookingId: number): Promise<string> {
+        // Verify booking exists
         const booking = await this.prisma.donDatVeXe.findUnique({
             where: { id: bookingId },
-            include: {
-                chuyenXe: {
-                    include: {
-                        tuyenXe: {
-                            include: {
-                                benXeDi: true,
-                                benXeDen: true,
-                                nhaXe: true,
-                            },
-                        },
-                        xe: true,
-                    },
-                },
-                nguoiDung: {
-                    select: {
-                        id: true,
-                        hoTen: true,
-                        email: true,
-                        soDienThoai: true,
-                    },
-                },
-                veXe: {
-                    select: {
-                        soGhe: true,
-                        hoTenHanhKhach: true,
-                    },
-                },
-            },
         });
 
         if (!booking) {
             throw new NotFoundException('Không tìm thấy đơn đặt xe');
         }
 
-        const qrData = {
-            type: 'BUS',
-            bookingId: booking.id,
-            maDonDat: booking.maDonDat,
-            chuyenXe: {
-                nhaCungCap: booking.chuyenXe.tuyenXe.nhaXe.tenNhaXe,
-                bienSoXe: booking.chuyenXe.xe.bienSoXe,
-                tuyen: {
-                    di: `${booking.chuyenXe.tuyenXe.benXeDi.tenBenXe} - ${booking.chuyenXe.tuyenXe.benXeDi.thanhPho}`,
-                    den: `${booking.chuyenXe.tuyenXe.benXeDen.tenBenXe} - ${booking.chuyenXe.tuyenXe.benXeDen.thanhPho}`,
-                },
-                gioDi: booking.chuyenXe.gioDi.toISOString(),
-                gioDen: booking.chuyenXe.gioDen.toISOString(),
-            },
-            hanhKhach: {
-                hoTen: booking.nguoiDung.hoTen,
-                soDienThoai: booking.nguoiDung.soDienThoai,
-                email: booking.nguoiDung.email,
-            },
-            soGhe: booking.veXe.map(v => v.soGhe).join(', '),
-            soLuongGhe: booking.soLuongGhe,
-            tongTien: Number(booking.tongTien),
-            generatedAt: new Date().toISOString(),
-        };
+        // Generate secure token
+        const token = this.generateSecureToken();
 
-        const qrCodeDataUrl = await QRCode.toDataURL(JSON.stringify(qrData), {
+        // Store token
+        await this.storeVerificationToken(token, 'BUS', bookingId);
+
+        // Create verification URL
+        const verifyUrl = `${this.FRONTEND_URL}/verify/${token}`;
+
+        // Generate QR code with URL
+        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, {
             errorCorrectionLevel: 'H',
             width: 300,
             margin: 2,

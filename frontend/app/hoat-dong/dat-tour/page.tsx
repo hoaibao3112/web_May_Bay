@@ -71,7 +71,7 @@ export default function ActivityBookingPage() {
 
         try {
             // Call backend API to create booking
-            const response = await fetch('http://localhost:5000/activities/bookings', {
+            const response = await fetch('http://localhost:5000/api/activities/bookings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

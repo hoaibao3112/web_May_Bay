@@ -73,7 +73,7 @@ function ThanhToanContent() {
 
   const fetchBooking = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/bookings/${bookingId}`);
+      const res = await fetch(`http://localhost:5000/api/bookings/${bookingId}`);
       const data = await res.json();
       setBooking(data);
     } catch (error) {
@@ -98,7 +98,7 @@ function ThanhToanContent() {
       }
 
       // Create payment with VNPay
-      const paymentRes = await fetch('http://localhost:5000/payments', {
+      const paymentRes = await fetch('http://localhost:5000/api/payments', {
         method: 'POST',
         headers,
         body: JSON.stringify({

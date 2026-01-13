@@ -48,7 +48,7 @@ export default function ActivitiesPage() {
 
     const fetchCategories = async () => {
         try {
-            const res = await fetch('http://localhost:5000/activities/categories');
+            const res = await fetch('http://localhost:5000/api/activities/categories');
             const data = await res.json();
             setCategories(data);
         } catch (error) {
@@ -66,7 +66,7 @@ export default function ActivitiesPage() {
             params.append('page', currentPage.toString());
             params.append('limit', '12');
 
-            const res = await fetch(`http://localhost:5000/activities/search?${params}`);
+            const res = await fetch(`http://localhost:5000/api/activities/search?${params}`);
             const data = await res.json();
 
             setActivities(data.data || []);

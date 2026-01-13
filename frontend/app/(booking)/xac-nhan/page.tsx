@@ -61,7 +61,7 @@ function XacNhanContent() {
 
   const fetchBooking = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/bookings/pnr/${maDatCho}`);
+      const res = await fetch(`http://localhost:5000/api/bookings/pnr/${maDatCho}`);
       const data = await res.json();
       setBooking(data);
     } catch (error) {
@@ -81,7 +81,7 @@ function XacNhanContent() {
   const fetchQrCode = async (bookingId: number) => {
     setLoadingQr(true);
     try {
-      const res = await fetch(`http://localhost:5000/qr-code/booking/${bookingId}`);
+      const res = await fetch(`http://localhost:5000/api/qr-code/booking/${bookingId}`);
       const data = await res.json();
       if (data.success) {
         setQrCode(data.qrCode);

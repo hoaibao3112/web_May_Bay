@@ -41,7 +41,7 @@ export default function LocationAutocomplete({
   useEffect(() => {
     const fetchCities = async () => {
       try {
-        const res = await fetch('http://localhost:5000/catalog/thanh-pho-vn');
+        const res = await fetch('http://localhost:5000/api/catalog/thanh-pho-vn');
         if (res.ok) {
           const data = await res.json();
           setCities(data);
@@ -54,7 +54,7 @@ export default function LocationAutocomplete({
     const fetchPopularCities = async () => {
       try {
         // Lấy danh sách các thành phố có bến xe
-        const res = await fetch('http://localhost:5000/bus-stations');
+        const res = await fetch('http://localhost:5000/api/bus-stations');
         if (res.ok) {
           const stations: BusStation[] = await res.json();
           // Lấy các thành phố duy nhất và phổ biến
@@ -118,7 +118,7 @@ export default function LocationAutocomplete({
 
       setIsLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/airport-transfer-search/suggest-destinations?q=${encodeURIComponent(value)}&city=${encodeURIComponent(city)}`);
+        const res = await fetch(`http://localhost:5000/api/airport-transfer-search/suggest-destinations?q=${encodeURIComponent(value)}&city=${encodeURIComponent(city)}`);
         if (res.ok) {
           const data = await res.json();
           // Map backend format to local format

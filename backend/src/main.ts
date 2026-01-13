@@ -6,6 +6,7 @@ import * as dotenv from 'dotenv'
 async function bootstrap() {
   dotenv.config()
   const app = await NestFactory.create(AppModule)
+  app.setGlobalPrefix('api') // Add global prefix for all routes
   app.enableCors()
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,

@@ -70,7 +70,7 @@ export default function HotelDetailPage() {
   const loadHotel = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/hotels/${params.id}`);
+      const res = await fetch(`http://localhost:5000/api/hotels/${params.id}`);
       if (!res.ok) {
         console.error('API returned status:', res.status);
         return;
