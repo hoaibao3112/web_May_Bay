@@ -12,12 +12,14 @@ import {
 import { HotelBookingsService } from './hotel-bookings.service';
 import { PaymentsService } from '../payments/payments.service';
 import { CreateHotelBookingDto } from './dto/create-hotel-booking.dto';
+import { QrCodeService } from '../qr-code/qr-code.service';
 
 @Controller('hotel-bookings')
 export class HotelBookingsController {
     constructor(
         private readonly hotelBookingsService: HotelBookingsService,
         private readonly paymentsService: PaymentsService,
+        private readonly qrCodeService: QrCodeService,
     ) { }
 
     @Post()
@@ -32,6 +34,16 @@ export class HotelBookingsController {
     @Get(':id')
     getBookingById(@Param('id', ParseIntPipe) id: number) {
         return this.hotelBookingsService.getBookingById(id);
+    }
+
+    @Get(':id/details')
+    async getBookingDetails(@Param('id', ParseIntPipe) id: number) {
+        const booking = await this.hotelBookingsService.getBookingById(id);
+        const qrCode = await this.qrCodeService.generateHotelQrCode(id);
+        return {
+            ...booking,
+            qrCode,
+        };
     }
 
     @Get('user/:userId')

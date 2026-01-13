@@ -12,10 +12,14 @@ import {
 import { BusBookingsService } from './bus-bookings.service';
 import { CreateBusBookingDto } from './dto/create-bus-booking.dto';
 import { CreateBusPaymentDto, VerifyBusPaymentDto } from './dto/create-bus-payment.dto';
+import { QrCodeService } from '../qr-code/qr-code.service';
 
 @Controller('bus-bookings')
 export class BusBookingsController {
-    constructor(private readonly busBookingsService: BusBookingsService) { }
+    constructor(
+        private readonly busBookingsService: BusBookingsService,
+        private readonly qrCodeService: QrCodeService,
+    ) { }
 
     @Post()
     createBooking(
@@ -32,6 +36,16 @@ export class BusBookingsController {
     @Get(':id')
     getBookingById(@Param('id', ParseIntPipe) id: number) {
         return this.busBookingsService.getBookingById(id);
+    }
+
+    @Get(':id/details')
+    async getBookingDetails(@Param('id', ParseIntPipe) id: number) {
+        const booking = await this.busBookingsService.getBookingById(id);
+        const qrCode = await this.qrCodeService.generateBusQrCode(id);
+        return {
+            ...booking,
+            qrCode,
+        };
     }
 
     @Get('code/:maDonDat')

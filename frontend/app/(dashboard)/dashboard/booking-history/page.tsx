@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import BookingDetailsModal from '../../../../components/BookingDetailsModal';
 
 interface Booking {
     id: number | string;
@@ -19,6 +20,9 @@ export default function BookingHistoryPage() {
     const [loading, setLoading] = useState(true);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [user, setUser] = useState<any>(null);
+    const [selectedBooking, setSelectedBooking] = useState<any>(null);
+    const [showModal, setShowModal] = useState(false);
+    const [loadingDetails, setLoadingDetails] = useState(false);
 
     useEffect(() => {
         // Check multiple possible keys for user data (prioritize the actual keys used by login)
@@ -134,6 +138,50 @@ export default function BookingHistoryPage() {
             console.error('❌ Error fetching bookings:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleViewDetails = async (booking: Booking) => {
+        setLoadingDetails(true);
+        try {
+            const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+            let endpoint = '';
+
+            switch (booking.type) {
+                case 'flight':
+                    endpoint = `http://localhost:5000/bookings/${booking.id}/details`;
+                    break;
+                case 'hotel':
+                    endpoint = `http://localhost:5000/hotel-bookings/${booking.id}/details`;
+                    break;
+                case 'bus':
+                    endpoint = `http://localhost:5000/bus-bookings/${booking.id}/details`;
+                    break;
+                case 'activity':
+                    endpoint = `http://localhost:5000/activities/bookings/${booking.id}/details`;
+                    break;
+                default:
+                    console.error('Unknown booking type:', booking.type);
+                    return;
+            }
+
+            const response = await fetch(endpoint, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const detailsWithQR = await response.json();
+                setSelectedBooking({ ...detailsWithQR, type: booking.type });
+                setShowModal(true);
+            } else {
+                console.error('Failed to fetch booking details');
+                alert('Không thể tải chi tiết đặt chỗ');
+            }
+        } catch (error) {
+            console.error('Error fetching booking details:', error);
+            alert('Đã xảy ra lỗi khi tải chi tiết');
+        } finally {
+            setLoadingDetails(false);
         }
     };
 
@@ -383,8 +431,12 @@ export default function BookingHistoryPage() {
 
                                     {/* Actions */}
                                     <div className="flex gap-3 pt-4 border-t">
-                                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
-                                            Xem chi tiết
+                                        <button
+                                            onClick={() => handleViewDetails(booking)}
+                                            disabled={loadingDetails}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {loadingDetails ? 'Đang tải...' : 'Xem chi tiết'}
                                         </button>
                                         {(booking.status === 'CHO_XAC_NHAN' || booking.status === 'GIU_CHO') && (
                                             <button className="px-4 py-2 border border-red-600 text-red-600 rounded-lg font-semibold hover:bg-red-50 transition">
@@ -398,6 +450,19 @@ export default function BookingHistoryPage() {
                     </div>
                 )}
             </div>
+
+            {/* Booking Details Modal */}
+            {showModal && selectedBooking && (
+                <BookingDetailsModal
+                    booking={selectedBooking}
+                    type={selectedBooking.type}
+                    qrCode={selectedBooking.qrCode}
+                    onClose={() => {
+                        setShowModal(false);
+                        setSelectedBooking(null);
+                    }}
+                />
+            )}
         </div>
     );
 }

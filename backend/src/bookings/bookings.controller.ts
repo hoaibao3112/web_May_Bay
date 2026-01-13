@@ -16,12 +16,16 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { AddPassengerDto } from './dto/add-passenger.dto';
 import { AddContactDto } from './dto/add-contact.dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { QrCodeService } from '../qr-code/qr-code.service';
 
 @Controller('bookings')
 export class BookingsController {
   private readonly logger = new Logger(BookingsController.name);
 
-  constructor(private bookingsService: BookingsService) { }
+  constructor(
+    private bookingsService: BookingsService,
+    private qrCodeService: QrCodeService,
+  ) { }
 
   // Tạo booking mới (có thể đăng nhập hoặc không)
   @Post()
@@ -63,6 +67,17 @@ export class BookingsController {
   @Get(':id')
   async getBooking(@Param('id') id: string) {
     return this.bookingsService.getBookingById(+id);
+  }
+
+  // Lấy thông tin booking với QR code
+  @Get(':id/details')
+  async getBookingDetails(@Param('id') id: string) {
+    const booking = await this.bookingsService.getBookingById(+id);
+    const qrCode = await this.qrCodeService.generateQrCode(+id);
+    return {
+      ...booking,
+      qrCode,
+    };
   }
 
   // Tra cứu booking theo PNR
