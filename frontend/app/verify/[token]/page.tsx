@@ -25,17 +25,23 @@ export default function VerifyBookingPage() {
 
     const fetchBookingDetails = async () => {
         try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/qr-code/verify/${token}`
-            );
+            const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/qr-code/verify/${token}`;
+            console.log('🔍 Calling API:', apiUrl);
+            
+            const response = await fetch(apiUrl);
+            console.log('📥 Response status:', response.status);
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ Error response:', errorText);
                 throw new Error('Không thể xác thực mã QR');
             }
 
             const result = await response.json();
+            console.log('✅ Success data:', result);
             setData(result);
         } catch (err: any) {
+            console.error('❌ Fetch error:', err);
             setError(err.message || 'Có lỗi xảy ra');
         } finally {
             setLoading(false);

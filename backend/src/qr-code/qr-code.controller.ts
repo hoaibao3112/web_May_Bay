@@ -35,7 +35,9 @@ export class QrCodeController {
      */
     @Get('verify/:token')
     async verifyToken(@Param('token') token: string) {
+        console.log('🔍 Verify token request received:', token);
         const result = await this.qrCodeService.verifyToken(token);
+        console.log('✅ Verify token result:', result);
         return result;
     }
 
