@@ -7,7 +7,7 @@ import BookingDetailsModal from '../../../../components/BookingDetailsModal';
 
 interface Booking {
     id: number | string;
-    type: 'flight' | 'hotel' | 'bus' | 'activity';
+    type: 'flight' | 'hotel' | 'bus' | 'activity' | 'transfer';
     status: string;
     date: string;
     total: number;
@@ -63,7 +63,7 @@ export default function BookingHistoryPage() {
             console.log('🔑 Token:', token?.substring(0, 20) + '...');
 
             // Fetch all booking types
-            const [activityRes, busRes, flightRes, hotelRes] = await Promise.all([
+            const [activityRes, busRes, flightRes, hotelRes, transferRes] = await Promise.all([
                 fetch(`http://localhost:5000/api/activities/bookings/my-orders?email=${email}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
@@ -76,22 +76,28 @@ export default function BookingHistoryPage() {
                 fetch('http://localhost:5000/api/hotel-bookings/user/1', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
+                fetch(`http://localhost:5000/api/airport-transfer-bookings/user/${userInfo.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
             ]);
 
             console.log('📊 Activity response status:', activityRes.status);
             console.log('🚌 Bus response status:', busRes.status);
             console.log('✈️ Flight response status:', flightRes.status);
             console.log('🏨 Hotel response status:', hotelRes.status);
+            console.log('🚗 Transfer response status:', transferRes.status);
 
             const activities = activityRes.ok ? await activityRes.json() : [];
             const buses = busRes.ok ? await busRes.json() : [];
             const flights = flightRes.ok ? await flightRes.json() : [];
             const hotels = hotelRes.ok ? await hotelRes.json() : [];
+            const transfers = transferRes.ok ? await transferRes.json() : [];
 
             console.log('✅ Activities fetched:', activities);
             console.log('✅ Buses fetched:', buses);
             console.log('✅ Flights fetched:', flights);
             console.log('✅ Hotels fetched:', hotels);
+            console.log('✅ Transfers fetched:', transfers);
 
             // Transform to unified format
             const allBookings: Booking[] = [
@@ -127,6 +133,14 @@ export default function BookingHistoryPage() {
                     total: h.tongTien,
                     details: h,
                 })),
+                ...transfers.map((t: any) => ({
+                    id: t.id,
+                    type: 'transfer' as const,
+                    status: t.trangThai,
+                    date: t.ngayDon,
+                    total: t.tongTien,
+                    details: t,
+                })),
             ];
 
             console.log('📦 Total bookings:', allBookings.length);
@@ -159,6 +173,9 @@ export default function BookingHistoryPage() {
                     break;
                 case 'activity':
                     endpoint = `http://localhost:5000/api/activities/bookings/${booking.id}/details`;
+                    break;
+                case 'transfer':
+                    endpoint = `http://localhost:5000/api/airport-transfer-bookings/${booking.id}`;
                     break;
                 default:
                     console.error('Unknown booking type:', booking.type);
@@ -238,6 +255,8 @@ export default function BookingHistoryPage() {
                 return '🚌';
             case 'activity':
                 return '🎯';
+            case 'transfer':
+                return '🚗';
             default:
                 return '📋';
         }
@@ -253,6 +272,8 @@ export default function BookingHistoryPage() {
                 return 'Xe khách';
             case 'activity':
                 return 'Tour / Hoạt động';
+            case 'transfer':
+                return 'Đưa đón sân bay';
             default:
                 return 'Khác';
         }
@@ -269,6 +290,7 @@ export default function BookingHistoryPage() {
         hotels: bookings.filter(b => b.type === 'hotel').length,
         buses: bookings.filter(b => b.type === 'bus').length,
         activities: bookings.filter(b => b.type === 'activity').length,
+        transfers: bookings.filter(b => b.type === 'transfer').length,
         totalSpent: bookings.reduce((sum, b) => sum + b.total, 0),
     };
 
@@ -304,6 +326,21 @@ export default function BookingHistoryPage() {
                     <div className="bg-white rounded-lg shadow-sm p-6">
                         <div className="text-gray-600 text-sm mb-1">🏨 Khách sạn</div>
                         <div className="text-3xl font-bold text-purple-600">{stats.hotels}</div>
+                    </div>
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="text-gray-600 text-sm mb-1">🚗 Xe khách</div>
+                        <div className="text-3xl font-bold text-orange-600">{stats.buses}</div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="text-gray-600 text-sm mb-1">🎯 Tour</div>
+                        <div className="text-3xl font-bold text-pink-600">{stats.activities}</div>
+                    </div>
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="text-gray-600 text-sm mb-1">🚗 Đưa đón</div>
+                        <div className="text-3xl font-bold text-indigo-600">{stats.transfers}</div>
                     </div>
                     <div className="bg-white rounded-lg shadow-sm p-6">
                         <div className="text-gray-600 text-sm mb-1">Tổng chi tiêu</div>
@@ -359,6 +396,15 @@ export default function BookingHistoryPage() {
                                     }`}
                             >
                                 🎯 Tour ({stats.activities})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('transfer')}
+                                className={`px-6 py-4 font-semibold border-b-2 transition ${activeTab === 'transfer'
+                                    ? 'border-blue-600 text-blue-600'
+                                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                                    }`}
+                            >
+                                🚗 Đưa đón & Vui chơi ({stats.transfers})
                             </button>
                         </div>
                     </div>
@@ -424,6 +470,14 @@ export default function BookingHistoryPage() {
                                                 <div className="text-sm text-gray-600">Chuyến bay</div>
                                                 <div className="font-semibold">
                                                     {booking.details.changBay?.sanBayDi?.tenSanBay} → {booking.details.changBay?.sanBayDen?.tenSanBay}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {booking.type === 'transfer' && (
+                                            <div>
+                                                <div className="text-sm text-gray-600">Hành trình</div>
+                                                <div className="font-semibold">
+                                                    {booking.details.diemDon} → {booking.details.diemTra}
                                                 </div>
                                             </div>
                                         )}
