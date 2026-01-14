@@ -160,6 +160,7 @@ export class AirportTransferBookingsService {
                 thanhPho: result.thanhPho,
             },
             loaiDichVu: result.loaiDichVu,
+            loaiXe: result.loaiXe, // Add this for controller access
             ngayDon: result.ngayDon,
             diemDon: result.diemDon,
             diemTra: result.diemTra,
@@ -176,6 +177,31 @@ export class AirportTransferBookingsService {
             createdAt: result.createdAt,
             updatedAt: result.updatedAt,
         };
+    }
+
+    async updateBookingPaymentMethod(id: number, phuongThuc: string, maGiaoDich: string) {
+        await this.prisma.$queryRaw`
+            UPDATE dat_dich_vu_dua_don 
+            SET 
+                phuongThucThanhToan = ${phuongThuc},
+                updatedAt = NOW()
+            WHERE id = ${id}
+        `;
+
+        // Also create a payment record with pending status
+        await this.prisma.$queryRaw`
+            INSERT INTO thanh_toan_dua_don (
+                datDichVuId, soTien, phuongThucThanhToan, 
+                trangThai, maGiaoDich, createdAt, updatedAt
+            ) 
+            SELECT 
+                ${id}, tongTien, ${phuongThuc}, 
+                'pending', ${maGiaoDich}, NOW(), NOW()
+            FROM dat_dich_vu_dua_don 
+            WHERE id = ${id}
+        `;
+
+        return { success: true };
     }
 
     async getBookingsByUserId(userId: number) {

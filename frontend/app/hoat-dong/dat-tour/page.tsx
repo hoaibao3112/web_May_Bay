@@ -243,9 +243,9 @@ export default function ActivityBookingPage() {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-gray-900">MoMo</span>
-                                            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Demo</span>
+                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Sandbox API</span>
                                         </div>
-                                        <div className="text-sm text-gray-600">Ví điện tử MoMo - Nhanh chóng & tiện lợi</div>
+                                        <div className="text-sm text-gray-600">Ví điện tử MoMo - Thanh toán thật qua API</div>
                                     </div>
                                 </label>
 
@@ -264,9 +264,9 @@ export default function ActivityBookingPage() {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-gray-900">VietQR</span>
-                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Miễn phí</span>
+                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Free API</span>
                                         </div>
-                                        <div className="text-sm text-gray-600">Chuyển khoản qua mã QR - Nhanh & an toàn</div>
+                                        <div className="text-sm text-gray-600">Chuyển khoản qua mã QR - API thật miễn phí</div>
                                     </div>
                                 </label>
 
@@ -285,9 +285,9 @@ export default function ActivityBookingPage() {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-gray-900">ZaloPay</span>
-                                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Demo</span>
+                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Sandbox API</span>
                                         </div>
-                                        <div className="text-sm text-gray-600">Ví điện tử quốc dân - An toàn & tiện lợi</div>
+                                        <div className="text-sm text-gray-600">Ví điện tử quốc dân - Thanh toán thật qua API</div>
                                     </div>
                                 </label>
                             </div>

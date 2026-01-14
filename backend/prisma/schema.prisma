@@ -897,6 +897,95 @@ model DanhGiaNhaXe {
 // HỆ THỐNG CHO THUÊ XE / ĐƯA ĐÓN SÂN BAY
 // ============================
 
+// 0. Nhà cung cấp đưa đón sân bay (Airport Transfer Provider)
+model NhaCungCapDuaDon {
+  id              Int      @id @default(autoincrement())
+  maNhaCungCap    String   @unique @db.VarChar(20)
+  tenNhaCungCap   String   @db.VarChar(191)
+  logo            String?  @db.VarChar(500)
+  soDienThoai     String?  @db.VarChar(20)
+  email           String?  @db.VarChar(191)
+  diaChi          String?  @db.Text
+  moTa            String?  @db.Text
+  trangThai       String   @default("active") @db.VarChar(20)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  dichVuDuaDon DichVuDuaDon[]
+
+  @@map("nha_cung_cap_dua_don")
+}
+
+// 0.1 Dịch vụ đưa đón (Airport Transfer Service)
+model DichVuDuaDon {
+  id                Int              @id @default(autoincrement())
+  nhaCungCapId      Int
+  nhaCungCap        NhaCungCapDuaDon @relation(fields: [nhaCungCapId], references: [id])
+  sanBayId          Int
+  loaiXe            String           @db.VarChar(100)
+  soChoNgoi         Int
+  giaTienMotChieu   Decimal          @db.Decimal(15, 2)
+  giaTienKhuHoi     Decimal?         @db.Decimal(15, 2)
+  moTa              String?          @db.Text
+  tienIch           String?          @db.Text // JSON string
+  hinhAnh           String?          @db.Text // JSON string
+  trangThai         String           @default("active") @db.VarChar(20)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  datDichVu DatDichVuDuaDon[]
+
+  @@map("dich_vu_dua_don")
+}
+
+// 0.2 Đặt dịch vụ đưa đón (Airport Transfer Booking)
+model DatDichVuDuaDon {
+  id                  Int          @id @default(autoincrement())
+  dichVuId            Int
+  dichVu              DichVuDuaDon @relation(fields: [dichVuId], references: [id])
+  userId              Int
+  loaiDichVu          String       @db.VarChar(20) // mot_chieu, khu_hoi
+  ngayDon             DateTime
+  diemDon             String       @db.VarChar(191)
+  diemTra             String       @db.VarChar(191)
+  soHanhKhach         Int
+  ngayTra             DateTime?
+  tenKhachHang        String       @db.VarChar(191)
+  soDienThoai         String       @db.VarChar(20)
+  email               String       @db.VarChar(191)
+  ghiChu              String?      @db.Text
+  tongTien            Decimal      @db.Decimal(15, 2)
+  trangThaiThanhToan  String       @default("pending") @db.VarChar(20)
+  phuongThucThanhToan String?      @db.VarChar(50)
+  trangThai           String       @default("pending") @db.VarChar(20)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  thanhToan ThanhToanDuaDon[]
+
+  @@map("dat_dich_vu_dua_don")
+}
+
+// 0.3 Thanh toán đưa đón (Airport Transfer Payment)
+model ThanhToanDuaDon {
+  id                  Int               @id @default(autoincrement())
+  datDichVuId         Int
+  datDichVu           DatDichVuDuaDon   @relation(fields: [datDichVuId], references: [id])
+  soTien              Decimal           @db.Decimal(15, 2)
+  phuongThucThanhToan String            @db.VarChar(50)
+  trangThai           String            @db.VarChar(20)
+  maGiaoDich          String?           @unique @db.VarChar(100)
+  maGiaoDichNganHang  String?           @db.VarChar(100)
+  nganHang            String?           @db.VarChar(50)
+  moTa                String?           @db.Text
+  thoiGianThanhToan   DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([datDichVuId])
+  @@map("thanh_toan_dua_don")
+}
+
 // 1. Nhà cung cấp xe (Car Rental Company)
 model NhaCungCapXe {
   id                 Int                 @id @default(autoincrement())

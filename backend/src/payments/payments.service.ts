@@ -478,49 +478,75 @@ export class PaymentsService {
     }
   }
 
-  // Tạo VietQR payment URL (Mock for Demo)
-  private async createVietQRPaymentUrl(
+  // Tạo VietQR payment URL - REAL API Implementation
+  async createVietQRPaymentUrl(
     maGiaoDich: string,
     amount: number,
     orderInfo: string,
   ): Promise<string> {
-    // FOR DEMO/SCHOOL PROJECT: Use mock VietQR payment page
-
-    console.log('🏦 Using Mock VietQR Payment for Demo');
+    // REAL VIETQR API IMPLEMENTATION
+    console.log('🏦 Using REAL VietQR API');
     console.log('Order ID:', maGiaoDich);
     console.log('Amount:', amount);
     console.log('Order Info:', orderInfo);
 
-    // Mock bank account info for VietQR demo
-    const bankCode = 'VCB'; // Vietcombank
-    const accountNo = '1234567890';
-    const accountName = 'TRAN HOAI BAO';
+    // Bank account configuration - You should move these to .env
+    const accountNo = process.env.VIETQR_ACCOUNT_NO || '0451000426932';
+    const accountName = process.env.VIETQR_ACCOUNT_NAME || 'TRAN HOAI BAO';
+    const acqId = process.env.VIETQR_ACQ_ID || '970436'; // Vietcombank
+    const template = process.env.VIETQR_TEMPLATE || 'compact'; // compact, compact2, qr_only, print
 
-    // Redirect to our mock VietQR payment page
-    const mockVietQRUrl = `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:3000'}/mock-vietqr?orderId=${maGiaoDich}&amount=${amount}&orderInfo=${encodeURIComponent(orderInfo)}&bankCode=${bankCode}&accountNo=${accountNo}&accountName=${encodeURIComponent(accountName)}`;
+    try {
+      // Call VietQR API to generate QR code
+      const vietQRData = {
+        accountNo: accountNo,
+        accountName: accountName,
+        acqId: acqId, // Bank BIN code
+        amount: amount,
+        addInfo: orderInfo,
+        format: 'text',
+        template: template,
+      };
 
-    console.log('✅ Mock VietQR URL created:', mockVietQRUrl);
+      console.log('📤 Calling VietQR API with data:', vietQRData);
 
-    return mockVietQRUrl;
+      const response = await axios.post(
+        'https://api.vietqr.io/v2/generate',
+        vietQRData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-    /* REAL VIETQR IMPLEMENTATION (For future reference):
-    
-    VietQR API: https://api.vietqr.io/v2/generate
-    You can use the free tier to generate real QR codes
-    
-    const vietQRData = {
-      accountNo: '1234567890',
-      accountName: 'TRAN HOAI BAO',
-      acqId: '970436', // Vietcombank bin
-      amount: amount,
-      addInfo: orderInfo,
-      format: 'text', // or 'compact'
-      template: 'compact' // or 'compact2', 'qr_only', 'print'
-    };
+      console.log('📥 VietQR API Response:', response.data);
 
-    const response = await axios.post('https://api.vietqr.io/v2/generate', vietQRData);
-    return response.data.data.qrDataURL; // Returns base64 QR code image
-    */
+      if (response.data && response.data.code === '00' && response.data.data) {
+        const qrDataURL = response.data.data.qrDataURL; // Base64 QR code image
+
+        console.log('✅ VietQR QR Code generated successfully');
+
+        // Redirect to our VietQR display page with the QR code
+        const vietQRDisplayUrl = `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:3000'}/mock-vietqr?orderId=${maGiaoDich}&amount=${amount}&orderInfo=${encodeURIComponent(orderInfo)}&qrData=${encodeURIComponent(qrDataURL)}&accountNo=${accountNo}&accountName=${encodeURIComponent(accountName)}&bankName=Vietcombank`;
+
+        console.log('✅ VietQR Display URL created');
+
+        return vietQRDisplayUrl;
+      } else {
+        console.error('❌ VietQR API Error:', response.data);
+        throw new Error(response.data?.desc || 'Không thể tạo mã QR từ VietQR');
+      }
+    } catch (error) {
+      console.error('❌ VietQR API Error:', error);
+
+      // Fallback to mock if API fails
+      console.log('⚠️ Falling back to mock VietQR due to API error');
+
+      const mockVietQRUrl = `${process.env.CLIENT_CUSTOMER_URL || 'http://localhost:3000'}/mock-vietqr?orderId=${maGiaoDich}&amount=${amount}&orderInfo=${encodeURIComponent(orderInfo)}&accountNo=${accountNo}&accountName=${encodeURIComponent(accountName)}`;
+
+      return mockVietQRUrl;
+    }
   }
 
 

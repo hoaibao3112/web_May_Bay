@@ -3,9 +3,10 @@ import { AirportTransferBookingsController } from './airport-transfer-bookings.c
 import { AirportTransferBookingsService } from './airport-transfer-bookings.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { QrCodeModule } from '../qr-code/qr-code.module';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
-    imports: [PrismaModule, QrCodeModule],
+    imports: [PrismaModule, QrCodeModule, PaymentsModule],
     controllers: [AirportTransferBookingsController],
     providers: [AirportTransferBookingsService],
     exports: [AirportTransferBookingsService],
