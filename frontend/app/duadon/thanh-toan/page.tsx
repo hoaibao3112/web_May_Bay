@@ -34,8 +34,9 @@ export default function AirportTransferPaymentPage() {
 
     const [booking, setBooking] = useState<BookingDetail | null>(null);
     const [loading, setLoading] = useState(true);
-    const [paymentMethod, setPaymentMethod] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('MOMO');
     const [processing, setProcessing] = useState(false);
+    const [error, setError] = useState('');
     const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
 
     useEffect(() => {
@@ -69,27 +70,40 @@ export default function AirportTransferPaymentPage() {
     };
 
     const handlePayment = async () => {
-        if (!paymentMethod) return;
+        if (!paymentMethod) {
+            setError('Vui lòng chọn phương thức thanh toán');
+            return;
+        }
+
         setProcessing(true);
+        setError('');
+
         try {
-            const res = await fetch('http://localhost:5000/api/airport-transfer-bookings/payment', {
+            // Call backend API to create payment URL
+            const res = await fetch(`http://localhost:5000/api/airport-transfer-bookings/${bookingId}/create-payment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    bookingId: parseInt(bookingId!),
-                    phuongThucThanhToan: paymentMethod,
-                    soTien: booking?.tongTien
+                    phuongThuc: paymentMethod,
                 }),
             });
 
-            if (res.ok) {
-                router.push(`/duadon/xac-nhan?bookingId=${bookingId}`);
-            } else {
-                throw new Error('Payment failed');
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Không thể tạo URL thanh toán');
             }
-        } catch (error) {
-            alert('Thanh toán thất bại, vui lòng thử lại');
-        } finally {
+
+            const result = await res.json();
+
+            // Redirect to payment URL
+            if (result.paymentUrl) {
+                window.location.href = result.paymentUrl;
+            } else {
+                throw new Error('Không nhận được URL thanh toán');
+            }
+        } catch (error: any) {
+            console.error('Payment error:', error);
+            setError(error.message || 'Có lỗi xảy ra, vui lòng thử lại');
             setProcessing(false);
         }
     };
@@ -113,6 +127,26 @@ export default function AirportTransferPaymentPage() {
     return (
         <div className="min-h-screen bg-gray-50 py-12">
             <div className="max-w-4xl mx-auto px-4 sm:px-6">
+                {/* Progress */}
+                <div className="flex items-center justify-center mb-8">
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-center opacity-50">
+                            <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold shadow-lg">✓</div>
+                            <span className="text-xs font-bold mt-2 text-green-600">Thông tin</span>
+                        </div>
+                        <div className="w-16 h-0.5 bg-blue-600 mt-[-20px]"></div>
+                        <div className="flex flex-col items-center">
+                            <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold shadow-lg shadow-blue-200">2</div>
+                            <span className="text-xs font-bold mt-2 text-blue-600">Thanh toán</span>
+                        </div>
+                        <div className="w-16 h-0.5 bg-gray-100 mt-[-20px]"></div>
+                        <div className="flex flex-col items-center opacity-40">
+                            <div className="w-10 h-10 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center font-bold">3</div>
+                            <span className="text-xs font-bold mt-2 text-gray-500">Hoàn tất</span>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Timer Header */}
                 <div className="bg-gradient-to-r from-red-500 to-pink-600 rounded-3xl p-6 text-white mb-8 shadow-xl flex items-center justify-between">
                     <div>
@@ -131,26 +165,96 @@ export default function AirportTransferPaymentPage() {
                                 Phương thức thanh toán
                             </h2>
 
-                            <div className="space-y-4">
-                                {[
-                                    { id: 'visa', name: 'Thẻ Quốc tế (Visa, Master, JCB)', icon: <FaCreditCard className="text-blue-500" /> },
-                                    { id: 'atm', name: 'Thẻ ATM Nội địa / Internet Banking', icon: <MdAccountBalance className="text-indigo-500" /> },
-                                    { id: 'momo', name: 'Ví MoMo', icon: <span className="w-6 h-6 bg-pink-500 rounded-md flex items-center justify-center text-[10px] text-white font-bold">M</span> },
-                                    { id: 'vnpay', name: 'VNPAY-QR', icon: <span className="w-6 h-6 bg-blue-700 rounded-md flex items-center justify-center text-[10px] text-white font-bold">V</span> }
-                                ].map(method => (
-                                    <label key={method.id} className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all cursor-pointer ${paymentMethod === method.id ? 'border-blue-500 bg-blue-50/50' : 'border-gray-50 hover:border-gray-100'}`}>
-                                        <input
-                                            type="radio"
-                                            name="payment"
-                                            value={method.id}
-                                            onChange={(e) => setPaymentMethod(e.target.value)}
-                                            className="w-5 h-5 text-blue-600 focus:ring-blue-500"
-                                        />
-                                        <div className="text-xl">{method.icon}</div>
-                                        <span className="font-bold text-gray-700">{method.name}</span>
-                                        {paymentMethod === method.id && <FaCheckCircle className="ml-auto text-blue-500" />}
-                                    </label>
-                                ))}
+                            {error && (
+                                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                                    {error}
+                                </div>
+                            )}
+
+                            <div className="space-y-3">
+                                {/* MoMo */}
+                                <label className="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                                    style={{ borderColor: paymentMethod === 'MOMO' ? '#a50064' : '#e5e7eb' }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="payment"
+                                        value="MOMO"
+                                        checked={paymentMethod === 'MOMO'}
+                                        onChange={(e) => setPaymentMethod(e.target.value)}
+                                        className="w-5 h-5 text-pink-600"
+                                    />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-gray-900">MoMo</span>
+                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Sandbox API</span>
+                                        </div>
+                                        <div className="text-sm text-gray-600">Ví điện tử MoMo - Thanh toán thật qua API</div>
+                                    </div>
+                                </label>
+
+                                {/* VietQR */}
+                                <label className="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                                    style={{ borderColor: paymentMethod === 'VIETQR' ? '#0088cc' : '#e5e7eb' }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="payment"
+                                        value="VIETQR"
+                                        checked={paymentMethod === 'VIETQR'}
+                                        onChange={(e) => setPaymentMethod(e.target.value)}
+                                        className="w-5 h-5 text-blue-600"
+                                    />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-gray-900">VietQR</span>
+                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Free API</span>
+                                        </div>
+                                        <div className="text-sm text-gray-600">Chuyển khoản qua mã QR - API thật miễn phí</div>
+                                    </div>
+                                </label>
+
+                                {/* ZaloPay */}
+                                <label className="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                                    style={{ borderColor: paymentMethod === 'ZALOPAY' ? '#0088cc' : '#e5e7eb' }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="payment"
+                                        value="ZALOPAY"
+                                        checked={paymentMethod === 'ZALOPAY'}
+                                        onChange={(e) => setPaymentMethod(e.target.value)}
+                                        className="w-5 h-5 text-blue-600"
+                                    />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-gray-900">ZaloPay</span>
+                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Sandbox API</span>
+                                        </div>
+                                        <div className="text-sm text-gray-600">Ví điện tử quốc dân - Thanh toán thật qua API</div>
+                                    </div>
+                                </label>
+
+                                {/* VNPay */}
+                                <label className="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                                    style={{ borderColor: paymentMethod === 'VNPAY' ? '#0088cc' : '#e5e7eb' }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="payment"
+                                        value="VNPAY"
+                                        checked={paymentMethod === 'VNPAY'}
+                                        onChange={(e) => setPaymentMethod(e.target.value)}
+                                        className="w-5 h-5 text-blue-600"
+                                    />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-gray-900">VNPay</span>
+                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Sandbox API</span>
+                                        </div>
+                                        <div className="text-sm text-gray-600">Cổng thanh toán VNPAY - API thật</div>
+                                    </div>
+                                </label>
                             </div>
                         </div>
 
@@ -189,10 +293,28 @@ export default function AirportTransferPaymentPage() {
                             <button
                                 onClick={handlePayment}
                                 disabled={!paymentMethod || processing}
-                                className={`w-full py-4 rounded-2xl font-black text-lg shadow-lg transition-all active:scale-95 ${!paymentMethod || processing ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'}`}
+                                className={`w-full py-4 rounded-2xl font-black text-lg shadow-lg transition-all active:scale-95 ${!paymentMethod || processing ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200'}`}
                             >
-                                {processing ? 'ĐANG XỬ LÝ...' : 'THANH TOÁN NGAY'}
+                                {processing ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        ĐANG XỬ LÝ...
+                                    </span>
+                                ) : (
+                                    'THANH TOÁN NGAY'
+                                )}
                             </button>
+
+                            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                                <div className="text-sm text-gray-700">
+                                    <div className="font-semibold mb-2">🔒 Thanh toán an toàn</div>
+                                    <ul className="space-y-1 text-xs">
+                                        <li>✓ Mã hóa SSL 128-bit</li>
+                                        <li>✓ Bảo mật thông tin thanh toán</li>
+                                        <li>✓ Hoàn tiền nếu có sự cố</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
