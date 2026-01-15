@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { FaCar, FaUsers, FaSuitcase, FaStar, FaSnowflake, FaWifi, FaPlaneDeparture } from 'react-icons/fa';
 import { MdLuggage, MdTimer } from 'react-icons/md';
 import Header from '../components/Header';
+import AirportAutocomplete from '../components/AirportAutocomplete';
+import LocationAutocomplete from '../components/LocationAutocomplete';
 
 interface AirportTransferOption {
     id: number;
@@ -48,6 +50,43 @@ export default function AirportTransferSearchResults() {
     const passengers = searchParams.get('passengers') || '2';
     const luggage = searchParams.get('luggage') || '2';
     const airportIdParam = searchParams.get('airportId');
+
+    // State to track selected airport's city for location suggestions
+    const [selectedAirportCity, setSelectedAirportCity] = useState<string>('');
+
+    // Fetch airport city if airportId is in URL params
+    useEffect(() => {
+        const fetchAirportCity = async () => {
+            if (airportIdParam && pickupLocation) {
+                try {
+                    // Call suggestions API to get all airports, then find the matching one
+                    const res = await fetch(`http://localhost:5000/api/airport-transfer-search/suggestions?q=${encodeURIComponent(pickupLocation)}`);
+                    if (res.ok) {
+                        const airports = await res.json();
+                        const airport = airports.find((a: any) => a.id === parseInt(airportIdParam));
+                        if (airport && airport.thanhPho) {
+                            console.log('🏙️ Setting airport city:', airport.thanhPho);
+                            setSelectedAirportCity(airport.thanhPho);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching airport city:', error);
+                }
+            }
+        };
+        fetchAirportCity();
+    }, [airportIdParam, pickupLocation]);
+
+    // DEBUG: Log search parameters
+    useEffect(() => {
+        console.log('🔍 SEARCH PARAMS RECEIVED:');
+        console.log('pickupLocation:', pickupLocation);
+        console.log('dropoffLocation:', dropoffLocation);
+        console.log('date:', date);
+        console.log('time:', time);
+        console.log('passengers:', passengers);
+        console.log('luggage:', luggage);
+    }, []);
 
     useEffect(() => {
         searchAirportTransfers();
@@ -116,27 +155,98 @@ export default function AirportTransferSearchResults() {
 
     return (
         <div className="min-h-screen bg-gray-50 pb-12">
-            {/* Header / Banner */}
-            <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white py-8 shadow-lg">
+            {/* Search Bar */}
+            <div className="bg-blue-600 py-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold flex items-center gap-3">
-                                <FaPlaneDeparture className="text-yellow-400" />
-                                Đưa đón sân bay tại {pickupLocation}
-                            </h1>
-                            <div className="flex flex-wrap items-center gap-4 mt-2 text-blue-100">
-                                <span className="flex items-center gap-1"><MdTimer /> {date} {time}</span>
-                                <span className="flex items-center gap-1"><FaUsers /> {passengers} hành khách</span>
-                                <span className="flex items-center gap-1"><MdLuggage /> {luggage} hành lý</span>
+                    <div className="bg-white rounded-xl shadow-lg p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {/* Pickup Location */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">🚗 Điểm đón</label>
+                                <AirportAutocomplete
+                                    value={pickupLocation}
+                                    onChange={(value, id, city) => {
+                                        const params = new URLSearchParams(searchParams.toString());
+                                        params.set('pickupLocation', value);
+                                        if (id) params.set('airportId', id.toString());
+                                        if (city) {
+                                            setSelectedAirportCity(city);
+                                        }
+                                        router.push(`/duadon?${params.toString()}`);
+                                    }}
+                                    placeholder="Sân bay Nội Bài"
+                                />
+                            </div>
+
+                            {/* Dropoff Location */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">📍 Điểm đến</label>
+                                <LocationAutocomplete
+                                    value={dropoffLocation}
+                                    onChange={(value) => {
+                                        const params = new URLSearchParams(searchParams.toString());
+                                        params.set('dropoffLocation', value);
+                                        router.push(`/duadon?${params.toString()}`);
+                                    }}
+                                    placeholder="Hồ Hoàn Kiếm"
+                                    city={selectedAirportCity}
+                                />
+                            </div>
+
+                            {/* Date and Time */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">📅 Ngày & Giờ</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="date"
+                                        value={date}
+                                        onChange={(e) => {
+                                            const params = new URLSearchParams(searchParams.toString());
+                                            params.set('date', e.target.value);
+                                            router.push(`/duadon?${params.toString()}`);
+                                        }}
+                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                    />
+                                    <input
+                                        type="time"
+                                        value={time}
+                                        onChange={(e) => {
+                                            const params = new URLSearchParams(searchParams.toString());
+                                            params.set('time', e.target.value);
+                                            router.push(`/duadon?${params.toString()}`);
+                                        }}
+                                        className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Passengers */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">👥 Số khách</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="20"
+                                    value={passengers}
+                                    onChange={(e) => {
+                                        const params = new URLSearchParams(searchParams.toString());
+                                        params.set('passengers', e.target.value);
+                                        router.push(`/duadon?${params.toString()}`);
+                                    }}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
                             </div>
                         </div>
-                        <button
-                            onClick={() => router.push('/')}
-                            className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white px-6 py-2.5 rounded-xl font-semibold transition-all self-start md:self-center"
-                        >
-                            Thay đổi tìm kiếm
-                        </button>
+
+                        {/* Summary */}
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                            <button
+                                onClick={() => router.push('/')}
+                                className="text-blue-600 text-sm font-medium hover:underline"
+                            >
+                                Thay đổi tìm kiếm
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -146,7 +256,10 @@ export default function AirportTransferSearchResults() {
                     {/* Filters Sidebar */}
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
-                            <h2 className="text-xl font-bold mb-6 text-gray-900 border-b pb-4">Bộ lọc tìm kiếm</h2>
+                            <h2 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+                                <FaPlaneDeparture className="text-blue-500" />
+                                Dịch vụ đưa đón sân bay
+                            </h2>
 
                             {/* Price Range */}
                             <div className="mb-8">

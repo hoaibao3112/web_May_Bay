@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FaCar, FaUsers, FaSuitcase, FaStar, FaSnowflake, FaWifi } from 'react-icons/fa';
 import { MdLuggage } from 'react-icons/md';
+import LocationAutocomplete from '../components/LocationAutocomplete';
 
 interface CarRentalOption {
     id: number;
@@ -125,25 +126,93 @@ export default function CarRentalSearchResults() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-6 shadow-md">
+            {/* Search Bar */}
+            <div className="bg-blue-600 py-6">
                 <div className="container mx-auto px-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold flex items-center gap-2">
-                                <FaCar className="text-3xl" />
-                                Thuê xe từ {from}
-                            </h1>
-                            <p className="text-blue-100 mt-1">
-                                {formatDateTime(pickupDate, pickupTime)} • {passengers} hành khách • {luggage} hành lý
-                            </p>
+                    <div className="bg-white rounded-xl shadow-lg p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {/* Pickup Location */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">🚗 Từ</label>
+                                <LocationAutocomplete
+                                    value={from}
+                                    onChange={(value) => {
+                                        const params = new URLSearchParams(searchParams.toString());
+                                        params.set('from', value);
+                                        router.push(`/cho-thue-xe?${params.toString()}`);
+                                    }}
+                                    placeholder="Nhập địa điểm"
+                                />
+                            </div>
+
+                            {/* Dropoff Location */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">📍 Đến</label>
+                                <LocationAutocomplete
+                                    value={to}
+                                    onChange={(value) => {
+                                        const params = new URLSearchParams(searchParams.toString());
+                                        params.set('to', value);
+                                        router.push(`/cho-thue-xe?${params.toString()}`);
+                                    }}
+                                    placeholder="Nhập địa điểm (tùy chọn)"
+                                />
+                            </div>
+
+                            {/* Pickup Date & Time */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">📅 Ngày & Giờ đón</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="date"
+                                        value={pickupDate}
+                                        onChange={(e) => {
+                                            const params = new URLSearchParams(searchParams.toString());
+                                            params.set('pickupDate', e.target.value);
+                                            router.push(`/cho-thue-xe?${params.toString()}`);
+                                        }}
+                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                    />
+                                    <input
+                                        type="time"
+                                        value={pickupTime}
+                                        onChange={(e) => {
+                                            const params = new URLSearchParams(searchParams.toString());
+                                            params.set('pickupTime', e.target.value);
+                                            router.push(`/cho-thue-xe?${params.toString()}`);
+                                        }}
+                                        className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Passengers */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">👥 Số khách</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="20"
+                                    value={passengers}
+                                    onChange={(e) => {
+                                        const params = new URLSearchParams(searchParams.toString());
+                                        params.set('passengers', e.target.value);
+                                        router.push(`/cho-thue-xe?${params.toString()}`);
+                                    }}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                            </div>
                         </div>
-                        <button
-                            onClick={() => router.push('/')}
-                            className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50 transition"
-                        >
-                            Thay đổi tìm kiếm
-                        </button>
+
+                        {/* Summary */}
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                            <button
+                                onClick={() => router.push('/')}
+                                className="text-blue-600 text-sm font-medium hover:underline"
+                            >
+                                Thay đổi tìm kiếm
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

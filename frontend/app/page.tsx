@@ -294,6 +294,11 @@ export default function HomePage() {
       return;
     }
 
+    if (!atDropoffLocation) {
+      alert('Vui lòng điền thông tin điểm đến');
+      return;
+    }
+
     // Navigate to airport transfer results page
     const params = new URLSearchParams({
       pickupLocation: atPickupLocation,
@@ -962,7 +967,7 @@ export default function HomePage() {
                     {/* Dropoff Location */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        📍 Đến khu vực, địa chỉ, tòa nhà
+                        📍 Đến khu vực, địa chỉ, tòa nhà*
                       </label>
                       <LocationAutocomplete
                         value={atDropoffLocation}
@@ -1036,7 +1041,7 @@ export default function HomePage() {
                   <div className="flex justify-end mt-4">
                     <button
                       onClick={handleAirportTransferSearch}
-                      disabled={!atPickupLocation || !atDate || !atTime}
+                      disabled={!atPickupLocation || !atDropoffLocation || !atDate || !atTime}
                       className="px-10 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
                     >
                       🔍 Tìm xe
