@@ -111,7 +111,7 @@ export default function CarRentalSearchResults() {
             passengers,
             luggage,
         });
-        router.push(`/thuexe/dat-xe?${params.toString()}`);
+        router.push(`/cho-thue-xe/dat-xe?${params.toString()}`);
     };
 
     const filteredCars = cars.filter(car => {

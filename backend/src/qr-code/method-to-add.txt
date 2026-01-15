@@ -1,0 +1,32 @@
+﻿    /**
+     * Generate QR code for an airport transfer booking
+     */
+    async generateTransferQrCode(bookingId: number): Promise<string> {
+        // Verify booking exists
+        const booking = await this.prisma.datDichVuDuaDon.findUnique({
+            where: { id: bookingId },
+        });
+
+        if (!booking) {
+            throw new NotFoundException('Không tìm thấy đơn đặt xe đưa đón');
+        }
+
+        // Generate secure token
+        const token = this.generateSecureToken();
+
+        // Store token
+        await this.storeVerificationToken(token, 'TRANSFER', bookingId);
+
+        // Create verification URL
+        const verifyUrl = `${this.FRONTEND_URL}/verify/${token}`;
+
+        // Generate QR code with URL
+        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, {
+            errorCorrectionLevel: 'H',
+            width: 300,
+            margin: 2,
+        });
+
+        return qrCodeDataUrl;
+    }
+}

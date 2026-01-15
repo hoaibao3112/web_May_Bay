@@ -285,7 +285,7 @@ export default function HomePage() {
       passengers: carPassengers.toString(),
       luggage: carLuggage.toString(),
     });
-    window.location.href = `/thuexe?${params.toString()}`;
+    window.location.href = `/cho-thue-xe?${params.toString()}`;
   };
 
   const handleAirportTransferSearch = () => {

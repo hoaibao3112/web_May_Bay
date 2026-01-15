@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 interface BookingDetailsModalProps {
     booking: any;
-    type: 'flight' | 'hotel' | 'bus' | 'activity';
+    type: 'flight' | 'hotel' | 'bus' | 'activity' | 'transfer';
     qrCode?: string;
     onClose: () => void;
 }
@@ -265,12 +265,94 @@ export default function BookingDetailsModal({ booking, type, qrCode, onClose }: 
         </div>
     );
 
+    const renderTransferDetails = () => (
+        <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <div className="text-sm text-gray-600">Mã đặt xe</div>
+                    <div className="text-xl font-bold text-indigo-600">DX-{String(booking.id).padStart(6, '0')}</div>
+                </div>
+                <div className="text-right">
+                    <div className="text-sm text-gray-600">Trạng thái</div>
+                    <div className="text-xl font-bold text-green-600">{booking.trangThai}</div>
+                </div>
+            </div>
+
+            <div className="border-l-4 border-indigo-500 pl-4">
+                <div className="text-sm text-gray-600">Dịch vụ</div>
+                <div className="font-semibold text-lg">{booking.dichVu?.loaiXe} - {booking.dichVu?.soChoNgoi} chỗ</div>
+                <div className="text-gray-700">{booking.nhaCungCap?.ten}</div>
+            </div>
+
+            <div>
+                <div className="text-sm text-gray-600 mb-2">Hành trình</div>
+                <div className="flex items-center gap-4">
+                    <div className="flex-1 bg-blue-50 p-3 rounded-lg">
+                        <div className="text-xs text-gray-600">Điểm đón</div>
+                        <div className="font-semibold">{booking.diemDon}</div>
+                    </div>
+                    <div className="text-2xl text-gray-400">→</div>
+                    <div className="flex-1 bg-orange-50 p-3 rounded-lg">
+                        <div className="text-xs text-gray-600">Điểm trả</div>
+                        <div className="font-semibold">{booking.diemTra}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <div className="text-sm text-gray-600">Ngày đón</div>
+                    <div className="font-semibold">{formatDate(booking.ngayDon)}</div>
+                </div>
+                <div>
+                    <div className="text-sm text-gray-600">Giờ đón</div>
+                    <div className="font-semibold text-lg">{booking.gioDon}</div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <div className="text-sm text-gray-600">Số hành khách</div>
+                    <div className="font-semibold text-lg">{booking.soHanhKhach}</div>
+                </div>
+                <div>
+                    <div className="text-sm text-gray-600">Loại dịch vụ</div>
+                    <div className="font-semibold">{booking.loaiDichVu === 'mot_chieu' ? 'Một chiều' : 'Khứ hồi'}</div>
+                </div>
+            </div>
+
+            <div>
+                <div className="text-sm text-gray-600">Thông tin liên hệ</div>
+                <div className="bg-gray-50 p-3 rounded-lg space-y-1">
+                    <div className="font-semibold">{booking.tenKhachHang}</div>
+                    <div className="text-sm text-gray-600">{booking.soDienThoai}</div>
+                    <div className="text-sm text-gray-600">{booking.email}</div>
+                </div>
+            </div>
+
+            {booking.ghiChu && (
+                <div>
+                    <div className="text-sm text-gray-600">Ghi chú</div>
+                    <div className="bg-yellow-50 p-3 rounded-lg text-sm">{booking.ghiChu}</div>
+                </div>
+            )}
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                    <span className="text-gray-700">Tổng tiền</span>
+                    <span className="text-2xl font-bold text-green-600">{formatCurrency(booking.tongTien)}</span>
+                </div>
+            </div>
+        </div>
+    );
+
     const getTypeIcon = () => {
         switch (type) {
             case 'flight': return '✈️';
             case 'hotel': return '🏨';
             case 'bus': return '🚌';
             case 'activity': return '🎯';
+            case 'transfer': return '🚗';
             default: return '📋';
         }
     };
@@ -281,6 +363,7 @@ export default function BookingDetailsModal({ booking, type, qrCode, onClose }: 
             case 'hotel': return 'Khách sạn';
             case 'bus': return 'Xe khách';
             case 'activity': return 'Hoạt động / Tour';
+            case 'transfer': return 'Đưa đón sân bay';
             default: return 'Booking';
         }
     };
@@ -315,6 +398,7 @@ export default function BookingDetailsModal({ booking, type, qrCode, onClose }: 
                         {type === 'hotel' && renderHotelDetails()}
                         {type === 'bus' && renderBusDetails()}
                         {type === 'activity' && renderActivityDetails()}
+                        {type === 'transfer' && renderTransferDetails()}
                     </div>
 
                     {/* QR Code Section */}

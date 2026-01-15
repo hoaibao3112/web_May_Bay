@@ -115,8 +115,8 @@ export default function Header() {
             <Link
               href="/khachsan"
               className={`text-sm font-medium transition-colors ${isActive('/khachsan')
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-700 hover:text-blue-600'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-700 hover:text-blue-600'
                 } h-full flex items-center`}
             >
               🏨 Khách sạn
@@ -125,8 +125,8 @@ export default function Header() {
             <Link
               href="/flights"
               className={`text-sm font-medium transition-colors ${isActive('/flights')
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-700 hover:text-blue-600'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-700 hover:text-blue-600'
                 } h-full flex items-center`}
             >
               ✈️ Vé máy bay
@@ -135,18 +135,18 @@ export default function Header() {
             <Link
               href="/xekhach"
               className={`text-sm font-medium transition-colors ${isActive('/xekhach')
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-700 hover:text-blue-600'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-700 hover:text-blue-600'
                 } h-full flex items-center`}
             >
               🚌 Vé xe khách
             </Link>
 
             <Link
-              href="/dua-don-san-bay"
-              className={`text-sm font-medium transition-colors ${isActive('/dua-don-san-bay')
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-700 hover:text-blue-600'
+              href="/duadon"
+              className={`text-sm font-medium transition-colors ${isActive('/duadon')
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-700 hover:text-blue-600'
                 } h-full flex items-center`}
             >
               🚖 Đưa đón sân bay
@@ -155,8 +155,8 @@ export default function Header() {
             <Link
               href="/cho-thue-xe"
               className={`text-sm font-medium transition-colors ${isActive('/cho-thue-xe')
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-700 hover:text-blue-600'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-700 hover:text-blue-600'
                 } h-full flex items-center`}
             >
               🚗 Cho thuê xe
@@ -165,8 +165,8 @@ export default function Header() {
             <Link
               href="/hoat-dong"
               className={`text-sm font-medium transition-colors ${isActive('/hoat-dong')
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-700 hover:text-blue-600'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-700 hover:text-blue-600'
                 } h-full flex items-center`}
             >
               🎡 Hoạt động & Vui chơi
@@ -177,8 +177,8 @@ export default function Header() {
               <button
                 onClick={() => setShowMoreDropdown(!showMoreDropdown)}
                 className={`text-sm font-medium transition-colors flex items-center gap-1 ${showMoreDropdown
-                    ? 'text-blue-600'
-                    : 'text-gray-700 hover:text-blue-600'
+                  ? 'text-blue-600'
+                  : 'text-gray-700 hover:text-blue-600'
                   }`}
               >
                 More

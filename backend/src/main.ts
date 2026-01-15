@@ -13,7 +13,8 @@ async function bootstrap() {
     transform: true,
   }))
   const port = process.env.PORT || 5000
-  await app.listen(port)
-  console.log(`Listening on http://localhost:${port}`)
+  await app.listen(port, '0.0.0.0') // Listen on all network interfaces
+  console.log(`Listening on http://0.0.0.0:${port}`)
+  console.log(`Network access: http://192.168.1.2:${port}`)
 }
 bootstrap()

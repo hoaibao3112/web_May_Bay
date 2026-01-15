@@ -1,4 +1,4 @@
-import {
+﻿import {
     Injectable,
     NotFoundException,
     BadRequestException,
@@ -53,7 +53,7 @@ export class QrCodeService {
         });
 
         if (!booking) {
-            throw new NotFoundException('Không tìm thấy đơn đặt vé');
+            throw new NotFoundException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n Ä‘áº·t vÃ©');
         }
 
         // Generate secure token
@@ -85,12 +85,12 @@ export class QrCodeService {
         });
 
         if (!tokenRecord) {
-            throw new NotFoundException('Mã QR không hợp lệ hoặc đã hết hạn');
+            throw new NotFoundException('MÃ£ QR khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n');
         }
 
         // Check if expired
         if (tokenRecord.expiresAt && tokenRecord.expiresAt < new Date()) {
-            throw new BadRequestException('Mã QR đã hết hạn');
+            throw new BadRequestException('MÃ£ QR Ä‘Ã£ háº¿t háº¡n');
         }
 
         // Fetch booking details based on type
@@ -202,11 +202,11 @@ export class QrCodeService {
             //     break;
 
             default:
-                throw new BadRequestException('Loại booking không hợp lệ');
+                throw new BadRequestException('Loáº¡i booking khÃ´ng há»£p lá»‡');
         }
 
         if (!bookingDetails) {
-            throw new NotFoundException('Không tìm thấy thông tin đặt chỗ');
+            throw new NotFoundException('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin Ä‘áº·t chá»—');
         }
 
         return {
@@ -226,7 +226,7 @@ export class QrCodeService {
 
             // Validate structure
             if (!parsedData.bookingId || !parsedData.maDatVe) {
-                throw new BadRequestException('Mã QR không hợp lệ');
+                throw new BadRequestException('MÃ£ QR khÃ´ng há»£p lá»‡');
             }
 
             // Fetch current booking data
@@ -248,12 +248,12 @@ export class QrCodeService {
             });
 
             if (!booking) {
-                throw new NotFoundException('Không tìm thấy đơn đặt vé từ mã QR');
+                throw new NotFoundException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n Ä‘áº·t vÃ© tá»« mÃ£ QR');
             }
 
             // Verify PNR matches
             if (booking.maDatVe !== parsedData.maDatVe) {
-                throw new BadRequestException('Mã đặt vé không khớp');
+                throw new BadRequestException('MÃ£ Ä‘áº·t vÃ© khÃ´ng khá»›p');
             }
 
             return {
@@ -265,7 +265,7 @@ export class QrCodeService {
             if (error instanceof NotFoundException || error instanceof BadRequestException) {
                 throw error;
             }
-            throw new BadRequestException('Không thể đọc mã QR: ' + error.message);
+            throw new BadRequestException('KhÃ´ng thá»ƒ Ä‘á»c mÃ£ QR: ' + error.message);
         }
     }
 
@@ -291,13 +291,13 @@ export class QrCodeService {
         });
 
         if (!passenger) {
-            throw new NotFoundException('Không tìm thấy hành khách');
+            throw new NotFoundException('KhÃ´ng tÃ¬m tháº¥y hÃ nh khÃ¡ch');
         }
 
         // Check if already checked in
         if (passenger.daCheckin) {
             throw new BadRequestException(
-                `Hành khách ${passenger.ho} ${passenger.ten} đã check-in lúc ${passenger.thoiGianCheckin?.toLocaleString('vi-VN')}`
+                `HÃ nh khÃ¡ch ${passenger.ho} ${passenger.ten} Ä‘Ã£ check-in lÃºc ${passenger.thoiGianCheckin?.toLocaleString('vi-VN')}`
             );
         }
 
@@ -334,7 +334,7 @@ export class QrCodeService {
 
         return {
             success: true,
-            message: `Check-in thành công cho ${updatedPassenger.ho} ${updatedPassenger.ten}`,
+            message: `Check-in thÃ nh cÃ´ng cho ${updatedPassenger.ho} ${updatedPassenger.ten}`,
             passenger: updatedPassenger,
             boardingPass,
             checkInTime: updatedPassenger.thoiGianCheckin,
@@ -392,7 +392,7 @@ export class QrCodeService {
         });
 
         if (!booking) {
-            throw new NotFoundException('Không tìm thấy đơn đặt phòng');
+            throw new NotFoundException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n Ä‘áº·t phÃ²ng');
         }
 
         // Generate secure token
@@ -424,7 +424,7 @@ export class QrCodeService {
         });
 
         if (!booking) {
-            throw new NotFoundException('Không tìm thấy đơn đặt xe');
+            throw new NotFoundException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n Ä‘áº·t xe');
         }
 
         // Generate secure token
@@ -465,7 +465,7 @@ export class QrCodeService {
     //     });
 
     //     if (!booking) {
-    //         throw new NotFoundException('Không tìm thấy đơn đặt hoạt động');
+    //         throw new NotFoundException('KhÃ´ng tÃ¬m tháº¥y Ä‘Æ¡n Ä‘áº·t hoáº¡t Ä‘á»™ng');
     //     }
 
     //     const qrData = {
@@ -495,36 +495,5 @@ export class QrCodeService {
 
     //     return qrCodeDataUrl;
     // }
-
-    /**
-     * Generate QR code for an airport transfer booking
-     */
-    async generateTransferQrCode(bookingId: number): Promise<string> {
-        // Verify booking exists
-        const booking = await this.prisma.datDichVuDuaDon.findUnique({
-            where: { id: bookingId },
-        });
-
-        if (!booking) {
-            throw new NotFoundException('Kh�ng t�m th?y don d?t xe dua d�n');
-        }
-
-        // Generate secure token
-        const token = this.generateSecureToken();
-
-        // Store token
-        await this.storeVerificationToken(token, 'TRANSFER', bookingId);
-
-        // Create verification URL
-        const verifyUrl = `${this.FRONTEND_URL}/verify/${token}`;
-
-        // Generate QR code with URL
-        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, {
-            errorCorrectionLevel: 'H',
-            width: 300,
-            margin: 2,
-        });
-
-        return qrCodeDataUrl;
-    }
 }
+

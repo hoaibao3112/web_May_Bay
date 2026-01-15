@@ -3,12 +3,14 @@ import { AirportTransferBookingsService } from './airport-transfer-bookings.serv
 import { CreateAirportTransferBookingDto } from './dto/create-airport-transfer-booking.dto';
 import { CreateAirportTransferPaymentDto } from './dto/create-airport-transfer-payment.dto';
 import { PaymentsService } from '../payments/payments.service';
+import { QrCodeService } from '../qr-code/qr-code.service';
 
 @Controller('airport-transfer-bookings')
 export class AirportTransferBookingsController {
     constructor(
         private readonly airportTransferBookingsService: AirportTransferBookingsService,
         private readonly paymentsService: PaymentsService,
+        private readonly qrCodeService: QrCodeService,
     ) { }
 
     @Post()
@@ -22,6 +24,16 @@ export class AirportTransferBookingsController {
     @Get(':id')
     getBookingById(@Param('id', ParseIntPipe) id: number) {
         return this.airportTransferBookingsService.getBookingById(id);
+    }
+
+    @Get(':id/details')
+    async getBookingDetails(@Param('id', ParseIntPipe) id: number) {
+        const booking = await this.airportTransferBookingsService.getBookingById(id);
+        const qrCode = await this.qrCodeService.generateTransferQrCode(id);
+        return {
+            ...booking,
+            qrCode,
+        };
     }
 
     @Get('user/:userId')

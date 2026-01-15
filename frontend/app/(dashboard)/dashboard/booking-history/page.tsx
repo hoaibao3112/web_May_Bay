@@ -14,6 +14,8 @@ interface Booking {
     details: any;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
 export default function BookingHistoryPage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('all');
@@ -64,19 +66,19 @@ export default function BookingHistoryPage() {
 
             // Fetch all booking types
             const [activityRes, busRes, flightRes, hotelRes, transferRes] = await Promise.all([
-                fetch(`http://localhost:5000/api/activities/bookings/my-orders?email=${email}`, {
+                fetch(`${API_URL}/activities/bookings/my-orders?email=${email}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
-                fetch('http://localhost:5000/api/bus-bookings/my-bookings', {
+                fetch(`${API_URL}/bus-bookings/user/${userInfo.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
-                fetch('http://localhost:5000/api/bookings/user/my-bookings', {
+                fetch(`${API_URL}/bookings/user/my-bookings`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
-                fetch('http://localhost:5000/api/hotel-bookings/user/1', {
+                fetch(`${API_URL}/hotel-bookings/user/${userInfo.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
-                fetch(`http://localhost:5000/api/airport-transfer-bookings/user/${userInfo.id}`, {
+                fetch(`${API_URL}/airport-transfer-bookings/user/${userInfo.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
             ]);
@@ -163,19 +165,19 @@ export default function BookingHistoryPage() {
 
             switch (booking.type) {
                 case 'flight':
-                    endpoint = `http://localhost:5000/api/bookings/${booking.id}/details`;
+                    endpoint = `${API_URL}/bookings/${booking.id}/details`;
                     break;
                 case 'hotel':
-                    endpoint = `http://localhost:5000/api/hotel-bookings/${booking.id}/details`;
+                    endpoint = `${API_URL}/hotel-bookings/${booking.id}/details`;
                     break;
                 case 'bus':
-                    endpoint = `http://localhost:5000/api/bus-bookings/${booking.id}/details`;
+                    endpoint = `${API_URL}/bus-bookings/${booking.id}/details`;
                     break;
                 case 'activity':
-                    endpoint = `http://localhost:5000/api/activities/bookings/${booking.id}/details`;
+                    endpoint = `${API_URL}/activities/bookings/${booking.id}/details`;
                     break;
                 case 'transfer':
-                    endpoint = `http://localhost:5000/api/airport-transfer-bookings/${booking.id}`;
+                    endpoint = `${API_URL}/airport-transfer-bookings/${booking.id}/details`;
                     break;
                 default:
                     console.error('Unknown booking type:', booking.type);
