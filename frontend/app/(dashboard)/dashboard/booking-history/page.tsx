@@ -25,6 +25,13 @@ export default function BookingHistoryPage() {
     const [selectedBooking, setSelectedBooking] = useState<any>(null);
     const [showModal, setShowModal] = useState(false);
     const [loadingDetails, setLoadingDetails] = useState(false);
+    const [loadingStates, setLoadingStates] = useState({
+        activities: true,
+        buses: true,
+        flights: true,
+        hotels: true,
+        transfers: true
+    });
 
     useEffect(() => {
         // Check multiple possible keys for user data (prioritize the actual keys used by login)
@@ -61,45 +68,47 @@ export default function BookingHistoryPage() {
                 return;
             }
 
-            console.log('🔍 Fetching bookings for email:', email);
-            console.log('🔑 Token:', token?.substring(0, 20) + '...');
+            // Fetch with timeout để tránh chờ quá lâu
+            const fetchWithTimeout = (url: string, options: any, timeout = 8000) => {
+                return Promise.race([
+                    fetch(url, options),
+                    new Promise<Response>((_, reject) => 
+                        setTimeout(() => reject(new Error('Request timeout')), timeout)
+                    )
+                ]);
+            };
 
-            // Fetch all booking types
-            const [activityRes, busRes, flightRes, hotelRes, transferRes] = await Promise.all([
-                fetch(`${API_URL}/activities/bookings/my-orders?email=${email}`, {
+            // Fetch all booking types with timeout protection
+            const results = await Promise.allSettled([
+                fetchWithTimeout(`${API_URL}/activities/bookings/my-orders?email=${email}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${API_URL}/bus-bookings/user/${userInfo.id}`, {
+                }).then(res => res.ok ? res.json() : []),
+                
+                fetchWithTimeout(`${API_URL}/bus-bookings/user/${userInfo.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${API_URL}/bookings/user/my-bookings`, {
+                }).then(res => res.ok ? res.json() : []),
+                
+                fetchWithTimeout(`${API_URL}/bookings/user/my-bookings`, {
                     headers: { 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${API_URL}/hotel-bookings/user/${userInfo.id}`, {
+                }).then(res => res.ok ? res.json() : []),
+                
+                fetchWithTimeout(`${API_URL}/hotel-bookings/user/${userInfo.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${API_URL}/airport-transfer-bookings/user/${userInfo.id}`, {
+                }).then(res => res.ok ? res.json() : []),
+                
+                fetchWithTimeout(`${API_URL}/airport-transfer-bookings/user/${userInfo.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
-                }),
+                }).then(res => res.ok ? res.json() : []),
             ]);
 
-            console.log('📊 Activity response status:', activityRes.status);
-            console.log('🚌 Bus response status:', busRes.status);
-            console.log('✈️ Flight response status:', flightRes.status);
-            console.log('🏨 Hotel response status:', hotelRes.status);
-            console.log('🚗 Transfer response status:', transferRes.status);
-
-            const activities = activityRes.ok ? await activityRes.json() : [];
-            const buses = busRes.ok ? await busRes.json() : [];
-            const flights = flightRes.ok ? await flightRes.json() : [];
-            const hotels = hotelRes.ok ? await hotelRes.json() : [];
-            const transfers = transferRes.ok ? await transferRes.json() : [];
-
-            console.log('✅ Activities fetched:', activities);
-            console.log('✅ Buses fetched:', buses);
-            console.log('✅ Flights fetched:', flights);
-            console.log('✅ Hotels fetched:', hotels);
-            console.log('✅ Transfers fetched:', transfers);
+            // Extract successful results
+            const [activitiesResult, busesResult, flightsResult, hotelsResult, transfersResult] = results;
+            
+            const activities = activitiesResult.status === 'fulfilled' ? activitiesResult.value : [];
+            const buses = busesResult.status === 'fulfilled' ? busesResult.value : [];
+            const flights = flightsResult.status === 'fulfilled' ? flightsResult.value : [];
+            const hotels = hotelsResult.status === 'fulfilled' ? hotelsResult.value : [];
+            const transfers = transfersResult.status === 'fulfilled' ? transfersResult.value : [];
 
             // Transform to unified format
             const allBookings: Booking[] = [
@@ -144,8 +153,6 @@ export default function BookingHistoryPage() {
                     details: t,
                 })),
             ];
-
-            console.log('📦 Total bookings:', allBookings.length);
 
             // Sort by date descending
             allBookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -298,8 +305,40 @@ export default function BookingHistoryPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+            <div className="min-h-screen bg-gray-50">
+                <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-8">
+                    <div className="container mx-auto px-4">
+                        <h1 className="text-3xl font-bold mb-2">Lịch sử đặt chỗ</h1>
+                        <p className="text-blue-100">Đang tải dữ liệu...</p>
+                    </div>
+                </div>
+                <div className="container mx-auto px-4 py-8">
+                    <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+                        <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent mb-4"></div>
+                        <div className="space-y-2 max-w-md mx-auto">
+                            <div className="flex items-center justify-between text-sm">
+                                <span>✈️ Vé máy bay</span>
+                                {!loadingStates.flights ? <span className="text-green-600">✓</span> : <span className="text-gray-400">⏳</span>}
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span>🏨 Khách sạn</span>
+                                {!loadingStates.hotels ? <span className="text-green-600">✓</span> : <span className="text-gray-400">⏳</span>}
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span>🚌 Xe khách</span>
+                                {!loadingStates.buses ? <span className="text-green-600">✓</span> : <span className="text-gray-400">⏳</span>}
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span>🎯 Tour / Hoạt động</span>
+                                {!loadingStates.activities ? <span className="text-green-600">✓</span> : <span className="text-gray-400">⏳</span>}
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span>🚗 Đưa đón sân bay</span>
+                                {!loadingStates.transfers ? <span className="text-green-600">✓</span> : <span className="text-gray-400">⏳</span>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
