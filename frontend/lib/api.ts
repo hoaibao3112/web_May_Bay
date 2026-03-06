@@ -1,14 +1,9 @@
 import axios from 'axios'
 
-// Auto-detect API URL based on current hostname
+// Luôn dùng biến môi trường NEXT_PUBLIC_API_URL
+// - Trên local: http://localhost:5000/api (set trong .env.local)
+// - Trên Vercel: URL backend Render (set trong Vercel env variables)
 const getApiUrl = () => {
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname
-    // If accessing from IP address, use that IP for API
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return `http://${hostname}:5000/api`
-    }
-  }
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 }
 
