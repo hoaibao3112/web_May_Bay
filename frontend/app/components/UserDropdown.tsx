@@ -72,13 +72,13 @@ export default function UserDropdown() {
       <div className="flex items-center gap-3">
         <Link
           href="/auth/login"
-          className="text-gray-700 hover:text-blue-600 font-medium"
+          className="text-secondary-700 hover:text-primary-600 font-medium transition-colors"
         >
           Đăng nhập
         </Link>
         <Link
           href="/auth/register"
-          className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+          className="px-5 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
         >
           Đăng ký
         </Link>
@@ -86,31 +86,34 @@ export default function UserDropdown() {
     );
   }
 
-  const getInitials = (name: string) => {
-    const parts = name.split(' ');
-    if (parts.length >= 2) {
-      return parts[0][0] + parts[parts.length - 1][0];
+  const getInitials = (name?: string) => {
+    if (!name || typeof name !== 'string') {
+      return 'U';
     }
-    return name.substring(0, 2);
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors"
+        className="flex items-center gap-2 px-3 py-2 hover:bg-primary-50 rounded-lg transition-colors"
       >
-        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-          {getInitials(user.hoTen)}
+        <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
+          {getInitials(user?.hoTen)}
         </div>
         <div className="text-left hidden md:block">
-          <div className="font-medium text-gray-900">{user.hoTen}</div>
-          <div className="text-xs text-gray-500 flex items-center gap-1">
-            <span className="text-yellow-500">⚪</span> {user.diemThuong || 0} Điểm
+          <div className="font-medium text-secondary-900">{user?.hoTen}</div>
+          <div className="text-xs text-secondary-500 flex items-center gap-1">
+            <span className="text-primary-500">⭐</span> {user?.diemThuong || 0} Điểm
           </div>
         </div>
         <svg
-          className={`w-4 h-4 text-gray-600 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-secondary-600 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -120,22 +123,22 @@ export default function UserDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+        <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-primary-200 py-2 z-50">
           {/* User Info Header */}
-          <div className="px-4 py-3 border-b border-gray-100">
+          <div className="px-4 py-3 border-b border-primary-100">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                {getInitials(user.hoTen)}
+              <div className="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                {getInitials(user?.hoTen)}
               </div>
               <div>
-                <div className="font-semibold text-gray-900">{user.hoTen}</div>
-                <div className="text-sm text-gray-500">{user.email}</div>
+                <div className="font-semibold text-secondary-900">{user?.hoTen}</div>
+                <div className="text-sm text-secondary-500">{user?.email}</div>
               </div>
             </div>
-            <div className="mt-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-200">
+            <div className="mt-2 px-3 py-2 bg-primary-50 rounded-lg border border-primary-200">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Bạn là thành viên</span>
-                <span className="text-sm font-semibold text-amber-700">Bronze Priority</span>
+                <span className="text-sm text-secondary-700">Bạn là thành viên</span>
+                <span className="text-sm font-semibold text-primary-600">Bronze Priority</span>
               </div>
             </div>
           </div>
@@ -144,97 +147,97 @@ export default function UserDropdown() {
           <div className="py-2">
             <Link
               href="/user/points"
-              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <span className="text-xl">⚪</span>
-              <span className="text-gray-700">{user.diemThuong || 0} Điểm</span>
+              <span className="text-secondary-700">{user?.diemThuong || 0} Điểm</span>
             </Link>
 
             <Link
               href="/user/profile"
-              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <span className="text-xl">👤</span>
-              <span className="text-gray-700">Chỉnh sửa hồ sơ</span>
+              <span className="text-secondary-700">Chỉnh sửa hồ sơ</span>
             </Link>
 
             <Link
               href="/user/cards"
-              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <span className="text-xl">💳</span>
-              <span className="text-gray-700">Thẻ của tôi</span>
+              <span className="text-secondary-700">Thẻ của tôi</span>
             </Link>
 
             <Link
               href="/user/transactions"
-              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <span className="text-xl">📋</span>
-              <span className="text-gray-700">Danh sách giao dịch</span>
+              <span className="text-secondary-700">Danh sách giao dịch</span>
             </Link>
 
             <Link
               href="/dashboard/booking-history"
-              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <span className="text-xl">📋</span>
-              <span className="text-gray-700">Đặt chỗ của tôi</span>
+              <span className="text-secondary-700">Đặt chỗ của tôi</span>
             </Link>
 
             <Link
               href="/user/refunds"
-              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <span className="text-xl">💰</span>
               <div className="flex items-center gap-2">
-                <span className="text-gray-700">Hoàn tiền</span>
-                <span className="px-2 py-0.5 bg-yellow-400 text-xs font-bold rounded">New!</span>
+                <span className="text-secondary-700">Hoàn tiền</span>
+                <span className="px-2 py-0.5 bg-amber-400 text-xs font-bold rounded">New!</span>
               </div>
             </Link>
 
             <Link
               href="/user/flight-alerts"
-              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <span className="text-xl">🔔</span>
-              <span className="text-gray-700">Thông báo giá vé máy bay</span>
+              <span className="text-secondary-700">Thông báo giá vé máy bay</span>
             </Link>
 
             <Link
               href="/user/saved-travelers"
-              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <span className="text-xl">👥</span>
-              <span className="text-gray-700">Thông tin hành khách đã lưu</span>
+              <span className="text-secondary-700">Thông tin hành khách đã lưu</span>
             </Link>
 
             <Link
               href="/user/promotions"
-              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <span className="text-xl">✉️</span>
-              <span className="text-gray-700">Khuyến mãi</span>
+              <span className="text-secondary-700">Khuyến mãi</span>
             </Link>
           </div>
 
           {/* Logout */}
-          <div className="border-t border-gray-100 pt-2">
+          <div className="border-t border-primary-100 pt-2">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 w-full hover:bg-gray-50 transition-colors text-left"
+              className="flex items-center gap-3 px-4 py-3 w-full hover:bg-red-50 transition-colors text-left"
             >
-              <span className="text-xl">🔴</span>
-              <span className="text-red-600 font-medium">Đăng xuất</span>
+              <span className="text-xl">🚪</span>
+              <span className="text-red-500 font-medium">Đăng xuất</span>
             </button>
           </div>
         </div>

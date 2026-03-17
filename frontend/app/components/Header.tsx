@@ -32,14 +32,14 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <header className="bg-white border-b border-primary-200 sticky top-0 z-50 shadow-md">
       {/* Top Bar */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-primary-100 bg-primary-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-14">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-primary-600">
                 ✈️ BayNhanh
               </div>
             </Link>
@@ -47,7 +47,7 @@ export default function Header() {
             {/* Right Side Menu */}
             <div className="flex items-center gap-6">
               {/* Language/Currency */}
-              <button className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-blue-600">
+              <button className="flex items-center gap-1 text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors">
                 🇻🇳 VND | VI
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -55,7 +55,7 @@ export default function Header() {
               </button>
 
               {/* Khuyến mãi */}
-              <Link href="/khuyen-mai" className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-blue-600">
+              <Link href="/khuyen-mai" className="flex items-center gap-2 text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors">
                 🎁 Khuyến mãi
               </Link>
 
@@ -63,7 +63,7 @@ export default function Header() {
               <div className="relative" ref={supportRef}>
                 <button
                   onClick={() => setShowSupportDropdown(!showSupportDropdown)}
-                  className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-blue-600"
+                  className="flex items-center gap-1 text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors"
                 >
                   Hỗ trợ
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,14 +72,14 @@ export default function Header() {
                 </button>
 
                 {showSupportDropdown && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2">
-                    <Link href="/ho-tro/trung-tam" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-primary-200 py-2">
+                    <Link href="/ho-tro/trung-tam" className="block px-4 py-2 text-sm text-secondary-700 hover:bg-primary-50 transition-colors">
                       📚 Trung tâm trợ giúp
                     </Link>
-                    <Link href="/ho-tro/lien-he" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                    <Link href="/ho-tro/lien-he" className="block px-4 py-2 text-sm text-secondary-700 hover:bg-primary-50 transition-colors">
                       📞 Liên hệ chúng tôi
                     </Link>
-                    <Link href="/ho-tro/chinh-sach" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                    <Link href="/ho-tro/chinh-sach" className="block px-4 py-2 text-sm text-secondary-700 hover:bg-primary-50 transition-colors">
                       📋 Chính sách & Điều khoản
                     </Link>
                   </div>
@@ -87,17 +87,17 @@ export default function Header() {
               </div>
 
               {/* Hợp tác */}
-              <Link href="/hop-tac" className="text-sm font-medium text-gray-700 hover:text-blue-600">
+              <Link href="/hop-tac" className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors">
                 🤝 Hợp tác với chúng tôi
               </Link>
 
               {/* Đã Lưu */}
-              <Link href="/da-luu" className="text-sm font-medium text-gray-700 hover:text-blue-600">
+              <Link href="/da-luu" className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors">
                 💾 Đã Lưu
               </Link>
 
               {/* Đặt chỗ của tôi */}
-              <Link href="/dashboard/booking-history" className="text-sm font-medium text-gray-700 hover:text-blue-600">
+              <Link href="/dashboard/booking-history" className="text-sm font-medium text-secondary-700 hover:text-primary-600 transition-colors">
                 📋 Đặt chỗ của tôi
               </Link>
 
@@ -115,8 +115,8 @@ export default function Header() {
             <Link
               href="/khachsan"
               className={`text-sm font-medium transition-colors ${isActive('/khachsan')
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-700 hover:text-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
+                : 'text-secondary-700 hover:text-primary-600'
                 } h-full flex items-center`}
             >
               🏨 Khách sạn
@@ -125,8 +125,8 @@ export default function Header() {
             <Link
               href="/flights"
               className={`text-sm font-medium transition-colors ${isActive('/flights')
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-700 hover:text-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
+                : 'text-secondary-700 hover:text-primary-600'
                 } h-full flex items-center`}
             >
               ✈️ Vé máy bay
@@ -135,8 +135,8 @@ export default function Header() {
             <Link
               href="/xekhach"
               className={`text-sm font-medium transition-colors ${isActive('/xekhach')
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-700 hover:text-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
+                : 'text-secondary-700 hover:text-primary-600'
                 } h-full flex items-center`}
             >
               🚌 Vé xe khách
@@ -145,8 +145,8 @@ export default function Header() {
             <Link
               href="/duadon"
               className={`text-sm font-medium transition-colors ${isActive('/duadon')
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-700 hover:text-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
+                : 'text-secondary-700 hover:text-primary-600'
                 } h-full flex items-center`}
             >
               🚖 Đưa đón sân bay
@@ -155,8 +155,8 @@ export default function Header() {
             <Link
               href="/cho-thue-xe"
               className={`text-sm font-medium transition-colors ${isActive('/cho-thue-xe')
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-700 hover:text-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
+                : 'text-secondary-700 hover:text-primary-600'
                 } h-full flex items-center`}
             >
               🚗 Cho thuê xe
@@ -165,8 +165,8 @@ export default function Header() {
             <Link
               href="/hoat-dong"
               className={`text-sm font-medium transition-colors ${isActive('/hoat-dong')
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-700 hover:text-blue-600'
+                ? 'text-primary-600 border-b-2 border-primary-600'
+                : 'text-secondary-700 hover:text-primary-600'
                 } h-full flex items-center`}
             >
               🎡 Hoạt động & Vui chơi
@@ -177,8 +177,8 @@ export default function Header() {
               <button
                 onClick={() => setShowMoreDropdown(!showMoreDropdown)}
                 className={`text-sm font-medium transition-colors flex items-center gap-1 ${showMoreDropdown
-                  ? 'text-blue-600'
-                  : 'text-gray-700 hover:text-blue-600'
+                  ? 'text-primary-600'
+                  : 'text-secondary-700 hover:text-primary-600'
                   }`}
               >
                 More
@@ -188,17 +188,17 @@ export default function Header() {
               </button>
 
               {showMoreDropdown && (
-                <div className="absolute top-full left-0 mt-0 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2">
-                  <Link href="/tours" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                <div className="absolute top-full left-0 mt-0 w-56 bg-white rounded-lg shadow-xl border border-primary-200 py-2">
+                  <Link href="/tours" className="block px-4 py-2 text-sm text-secondary-700 hover:bg-primary-50 transition-colors">
                     🗺️ Tours du lịch
                   </Link>
-                  <Link href="/visa" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                  <Link href="/visa" className="block px-4 py-2 text-sm text-secondary-700 hover:bg-primary-50 transition-colors">
                     📝 Dịch vụ Visa
                   </Link>
-                  <Link href="/bao-hiem" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                  <Link href="/bao-hiem" className="block px-4 py-2 text-sm text-secondary-700 hover:bg-primary-50 transition-colors">
                     🛡️ Bảo hiểm du lịch
                   </Link>
-                  <Link href="/sim-du-lich" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                  <Link href="/sim-du-lich" className="block px-4 py-2 text-sm text-secondary-700 hover:bg-primary-50 transition-colors">
                     📱 SIM du lịch
                   </Link>
                 </div>
