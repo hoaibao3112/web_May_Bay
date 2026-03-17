@@ -2,10 +2,13 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BookingsService } from '../bookings/bookings.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../common/constants/error-messages';
+import { BOOKING_CONSTANTS, PAYMENT_CONSTANTS } from '../common/constants/booking-constants';
 import { randomBytes, createHmac } from 'crypto';
 import * as qs from 'qs';
 import * as moment from 'moment';
@@ -13,6 +16,8 @@ import axios from 'axios';
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(
     private prisma: PrismaService,
     private bookingsService: BookingsService,
@@ -20,68 +25,41 @@ export class PaymentsService {
 
   // Tạo thanh toán
   async createPayment(dto: CreatePaymentDto, userId?: number) {
-    let booking;
-
-    try {
-      booking = await this.prisma.donDatVe.findUnique({
-        where: { id: dto.bookingId },
-        include: {
-          hanhKhach: true,
-          changBay: {
-            include: {
-              chuyenBay: true,
-            },
+    // Lấy booking với strict checking
+    const booking = await this.prisma.donDatVe.findUnique({
+      where: { id: dto.bookingId },
+      include: {
+        changBay: {
+          include: {
+            chuyenBay: true,
           },
         },
-      });
-    } catch (error) {
-      // Nếu lỗi hanhKhach null, query lại không include hanhKhach
-      if (error.message && error.message.includes('Field hanhKhach is required')) {
-        booking = await this.prisma.donDatVe.findUnique({
-          where: { id: dto.bookingId },
-          include: {
-            changBay: {
-              include: {
-                chuyenBay: true,
-              },
-            },
-          },
-        });
-        // Thêm hanhKhach rỗng
-        if (booking) {
-          booking.hanhKhach = [];
-        }
-      } else {
-        throw error;
-      }
-    }
+        hanhKhach: true,
+      },
+    });
 
     if (!booking) {
-      throw new NotFoundException('Không tìm thấy đơn đặt vé');
+      this.logger.warn(`Booking not found: ${dto.bookingId}`);
+      throw new NotFoundException(ERROR_MESSAGES.BOOKING_NOT_FOUND);
     }
 
-    // TODO: UNCOMMENT THIS IN PRODUCTION!
-    // Tạm thời bỏ qua để test
-    // if (booking.trangThai !== 'GIU_CHO' && booking.trangThai !== 'TAO_MOI') {
-    //   throw new BadRequestException('Đơn đặt vé không ở trạng thái cho phép thanh toán');
-    // }
-    console.log('⚠️ WARNING: Skipping status validation for testing. Current status:', booking.trangThai);
+    // ✅ KIỂM TRA STATUS - BẮTBUỘC TRONG PRODUCTION
+    const validStatuses = [BOOKING_CONSTANTS.STATUS.HOLDING, BOOKING_CONSTANTS.STATUS.WAIT_PAYMENT];
+    if (!validStatuses.includes(booking.trangThai as any)) {
+      this.logger.warn(`Invalid booking status: ${booking.trangThai} for booking ${booking.id}`);
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_PAYMENT_STATUS);
+    }
 
-    // Kiểm tra đã thêm hành khách chưa
-    // TODO: Uncomment this in production
-    // if (booking.hanhKhach.length === 0) {
-    //   throw new BadRequestException('Vui lòng thêm thông tin hành khách trước khi thanh toán');
-    // }
+    // ✅ KIỂM TRA HÀNh KHÁCH - BẮTBUỘC
+    if (!booking.hanhKhach || booking.hanhKhach.length === 0) {
+      throw new BadRequestException(ERROR_MESSAGES.NO_PASSENGERS);
+    }
 
-    // Tính tổng tiền theo số hành khách
-    const soHanhKhach = booking.hanhKhach.length || 1; // Mặc định 1 nếu chưa có
-    const tongTien = Number(booking.tongTien) * soHanhKhach;
+    // ✅ FIXED: tongTien đã là tổng tiền (không nhân đôi nữa)
+    const tongTien = Number(booking.tongTien);
 
-    // Update tổng tiền booking
-    await this.prisma.donDatVe.update({
-      where: { id: booking.id },
-      data: { tongTien },
-    });
+    // ✅ FIXED: Xóa dòng update tongTien (nó đã đúng rồi)
+    // Không cần: await this.prisma.donDatVe.update(...)
 
     // Tạo mã giao dịch
     const maGiaoDich = `TXN${Date.now()}${randomBytes(4).toString('hex').toUpperCase()}`;

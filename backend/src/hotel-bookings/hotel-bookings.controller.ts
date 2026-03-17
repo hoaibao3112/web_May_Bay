@@ -8,11 +8,14 @@ import {
     Param,
     ParseIntPipe,
     Request,
+    UseGuards,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { HotelBookingsService } from './hotel-bookings.service';
 import { PaymentsService } from '../payments/payments.service';
 import { CreateHotelBookingDto } from './dto/create-hotel-booking.dto';
 import { QrCodeService } from '../qr-code/qr-code.service';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 
 @Controller('hotel-bookings')
 export class HotelBookingsController {
@@ -23,11 +26,17 @@ export class HotelBookingsController {
     ) { }
 
     @Post()
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     createBooking(
         @Body() createDto: CreateHotelBookingDto,
         @Request() req: any,
     ) {
-        const userId = req.user?.id || 1; // Temporary fallback
+        // ✅ FIXED: Remove fallback || 1 and validate user
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để đặt phòng');
+        }
+        const userId = req.user.id;
+        
         return this.hotelBookingsService.createBooking(createDto, userId);
     }
 
@@ -60,10 +69,17 @@ export class HotelBookingsController {
     }
 
     @Post(':id/payment')
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     async createPayment(
         @Param('id', ParseIntPipe) bookingId: number,
         @Body() body: { phuongThuc: string },
+        @Request() req: any, // ✅ FIXED: Added to capture user
     ) {
+        // ✅ FIXED: Validate user before payment
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để thanh toán');
+        }
+
         // Get booking info
         const booking = await this.hotelBookingsService.getBookingById(bookingId);
 
@@ -121,11 +137,17 @@ export class HotelBookingsController {
     }
 
     @Delete(':id')
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     cancelBooking(
         @Param('id', ParseIntPipe) id: number,
         @Request() req: any,
     ) {
-        const userId = req.user?.id || 1;
+        // ✅ FIXED: Remove fallback || 1 and validate user
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để hủy đặt phòng');
+        }
+        const userId = req.user.id;
+        
         return this.hotelBookingsService.cancelBooking(id, userId);
     }
 }

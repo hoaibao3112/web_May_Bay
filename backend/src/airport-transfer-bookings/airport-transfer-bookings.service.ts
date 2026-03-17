@@ -7,10 +7,9 @@ import { CreateAirportTransferPaymentDto } from './dto/create-airport-transfer-p
 export class AirportTransferBookingsService {
     constructor(private prisma: PrismaService) { }
 
-    async createBooking(createBookingDto: CreateAirportTransferBookingDto) {
+    async createBooking(createBookingDto: CreateAirportTransferBookingDto, userId: number) {
         const {
             dichVuId,
-            userId,
             loaiDichVu,
             ngayDon,
             gioDon,
@@ -27,6 +26,7 @@ export class AirportTransferBookingsService {
 
         // DEBUG: Log the received data
         console.log('📥 Received dichVuId:', dichVuId);
+        console.log('📥 Received userId:', userId);
 
         // Get service details to calculate price
         const service: any = await this.prisma.$queryRaw`

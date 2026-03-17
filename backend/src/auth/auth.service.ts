@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -7,9 +7,13 @@ import { LoginDto } from './dto/login.dto';
 import { GoogleStrategy } from './google.strategy';
 import { EmailService } from './email.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../common/constants/error-messages';
+import { BOOKING_CONSTANTS } from '../common/constants/booking-constants';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -18,19 +22,16 @@ export class AuthService {
   ) { }
 
   async register(dto: RegisterDto) {
-    // Kiểm tra email đã tồn tại
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
 
     if (existing) {
-      throw new ConflictException('Email đã được sử dụng');
+      throw new ConflictException(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Tạo user mới
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -51,13 +52,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
     const payload = { sub: user.id, email: user.email, vaiTro: user.vaiTro };
@@ -77,7 +78,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException(ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     const { password, ...result } = user;
@@ -89,27 +90,24 @@ export class AuthService {
       const googleUser = await this.googleStrategy.verifyToken(idToken);
 
       if (!googleUser || !googleUser.email) {
-        throw new UnauthorizedException('Invalid Google token');
+        throw new UnauthorizedException(ERROR_MESSAGES.GOOGLE_AUTH_FAILED);
       }
 
-      // Tìm hoặc tạo user
       let user = await this.prisma.user.findUnique({
         where: { email: googleUser.email },
       });
 
       if (!user) {
-        // Tạo user mới từ Google
         user = await this.prisma.user.create({
           data: {
             email: googleUser.email,
             hoTen: googleUser.name || googleUser.email,
-            password: '', // Không cần password cho Google OAuth
+            password: '',
             vaiTro: 'CUSTOMER',
             googleId: googleUser.sub,
           },
         });
       } else if (!user.googleId) {
-        // Cập nhật googleId nếu user đã tồn tại nhưng chưa có
         user = await this.prisma.user.update({
           where: { id: user.id },
           data: { googleId: googleUser.sub },
@@ -126,12 +124,13 @@ export class AuthService {
         user: userWithoutPassword,
       };
     } catch (error) {
-      throw new UnauthorizedException('Google authentication failed');
+      this.logger.error('Google authentication error', error);
+      throw new UnauthorizedException(ERROR_MESSAGES.GOOGLE_AUTH_FAILED);
     }
   }
 
   /**
-   * Send OTP for password change
+   * Gửi OTP cho đổi mật khẩu
    */
   async sendPasswordOTP(email: string) {
     const user = await this.prisma.user.findUnique({
@@ -139,24 +138,23 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Email không tồn tại');
+      throw new UnauthorizedException(ERROR_MESSAGES.EMAIL_NOT_FOUND);
     }
 
-    // Don't allow OTP for Google accounts without password
     if (!user.password || user.password === '') {
-      throw new BadRequestException('Tài khoản Google không thể đổi mật khẩu bằng phương thức này');
+      throw new BadRequestException(ERROR_MESSAGES.GOOGLE_ACCOUNT_NO_PASSWORD);
     }
 
     await this.emailService.sendPasswordOTP(email);
 
     return {
-      message: 'Mã OTP đã được gửi đến email của bạn',
+      message: SUCCESS_MESSAGES.OTP_SENT,
       expiresIn: '5 phút',
     };
   }
 
   /**
-   * Change password with OTP verification
+   * Đổi mật khẩu với xác thực OTP
    */
   async changePassword(userId: number, dto: ChangePasswordDto) {
     const user = await this.prisma.user.findUnique({
@@ -164,25 +162,28 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Người dùng không tồn tại');
+      throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
 
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      dto.currentPassword,
+      user.password,
+    );
     if (!isPasswordValid) {
-      throw new BadRequestException('Mật khẩu hiện tại không đúng');
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_CURRENT_PASSWORD);
     }
 
     // Check if new password is same as current
     const isSamePassword = await bcrypt.compare(dto.newPassword, user.password);
     if (isSamePassword) {
-      throw new BadRequestException('Mật khẩu mới phải khác mật khẩu hiện tại');
+      throw new BadRequestException(ERROR_MESSAGES.SAME_PASSWORD);
     }
 
     // Verify OTP
     const isOtpValid = this.emailService.verifyOTP(user.email, dto.otp);
     if (!isOtpValid) {
-      throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_OTP);
     }
 
     // Hash new password
@@ -195,7 +196,7 @@ export class AuthService {
     });
 
     return {
-      message: 'Đổi mật khẩu thành công',
+      message: SUCCESS_MESSAGES.CHANGE_PASSWORD_SUCCESS,
     };
   }
 

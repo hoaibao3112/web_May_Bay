@@ -263,14 +263,4 @@ export class HotelsService {
     return review;
   }
 
-  // ==================== TYPEORM BOOKING METHODS ====================
-  // Note: Using TypeORM for bookings while Prisma for hotel search
-
-  async createHotelBooking(dto: any) {
-    // Note: DatKhachSan repository would be injected via @InjectRepository
-    // For now, keeping the existing Prisma booking method above
-    // This will be implemented when TypeORM repository is injected
-
-    throw new Error('Use TypeORM repository - to be implemented');
-  }
 }

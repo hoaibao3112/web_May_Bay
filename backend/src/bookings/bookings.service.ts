@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -9,34 +10,50 @@ import { AddPassengerDto } from './dto/add-passenger.dto';
 import { AddContactDto } from './dto/add-contact.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomBytes } from 'crypto';
+import { ERROR_MESSAGES } from '../common/constants/error-messages';
+import { BOOKING_CONSTANTS } from '../common/constants/booking-constants';
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name);
+
+  // Thời gian giữ chỗ (phút)
+  private readonly HOLD_TIME_MINUTES = BOOKING_CONSTANTS.HOLD_TIME_MINUTES;
+
   constructor(private prisma: PrismaService) { }
 
-  // Tạo đơn đặt vé và giữ chỗ
+  /**
+   * Tạo đơn đặt vé (Single Responsibility: chỉ orchestrate)
+   */
   async createBooking(dto: CreateBookingDto, userId?: number) {
-    console.log('Creating booking with:', {
-      changBayId: dto.changBayId,
-      hangVeId: dto.hangVeId,
-      changBayIdType: typeof dto.changBayId,
-      hangVeIdType: typeof dto.hangVeId,
-    });
+    // 1. Lấy và validate giá vé
+    const giaVe = await this.getAndValidatePrice(dto);
 
-    // Debug: Kiểm tra tất cả GiaVe cho changBayId này
-    const allGiaVeForChangBay = await this.prisma.giaVe.findMany({
-      where: { changBayId: dto.changBayId },
-      select: {
-        id: true,
-        changBayId: true,
-        hangVeId: true,
-        giaBan: true,
-        soLuongGheTrong: true,
-      },
-    });
-    console.log('All GiaVe for changBayId', dto.changBayId, ':', allGiaVeForChangBay);
+    // 2. Tạo booking
+    const booking = await this.createBookingRecord(dto, giaVe, userId);
 
-    // Tìm giá vé theo changBayId và hangVeId
+    // 3. Thêm thông tin liên hệ nếu có
+    if (dto.thongTinLienHe) {
+      await this.createOrUpdateContactInfo(booking.id, dto.thongTinLienHe);
+    }
+
+    // 4. Thêm hành khách nếu có
+    if (dto.hanhKhach && dto.hanhKhach.length > 0) {
+      await this.createPassengers(booking.id, dto.hanhKhach);
+    }
+
+    // 5. Giảm số chỗ còn lại
+    await this.decrementAvailableSeats(giaVe.id);
+
+    return booking;
+  }
+
+  /**
+   * Lấy giá vé và validate số chỗ trống
+   */
+  private async getAndValidatePrice(
+    dto: CreateBookingDto,
+  ) {
     const giaVe = await this.prisma.giaVe.findFirst({
       where: {
         changBayId: dto.changBayId,
@@ -56,36 +73,35 @@ export class BookingsService {
       },
     });
 
-    console.log('Found giaVe:', giaVe ? {
-      id: giaVe.id,
-      soLuongGheTrong: giaVe.soLuongGheTrong,
-      changBayId: giaVe.changBayId,
-      hangVeId: giaVe.hangVeId,
-    } : null);
-
     if (!giaVe || giaVe.soLuongGheTrong < 1) {
-      throw new BadRequestException('Không còn chỗ trống cho chuyến bay này');
+      throw new BadRequestException(ERROR_MESSAGES.NO_AVAILABLE_SEATS);
     }
 
-    // Tính tổng tiền (tạm tính cho 1 người)
-    const tongTien = Number(giaVe.giaBan);
+    return giaVe;
+  }
 
-    // Tạo mã đặt vé
+  /**
+   * Tạo record booking trong database
+   */
+  private async createBookingRecord(
+    dto: CreateBookingDto,
+    giaVe: any,
+    userId?: number,
+  ) {
     const maDatVe = this.generatePNR();
+    const hetHanGiuCho = new Date(
+      Date.now() + this.HOLD_TIME_MINUTES * 60 * 1000,
+    );
 
-    // Thời hạn giữ chỗ: 15 phút
-    const hetHanGiuCho = new Date(Date.now() + 15 * 60 * 1000);
-
-    // Tạo booking
-    const booking = await this.prisma.donDatVe.create({
+    return this.prisma.donDatVe.create({
       data: {
         maDatVe,
         nguoiDungId: userId,
         changBayId: dto.changBayId,
         hangVeId: dto.hangVeId,
-        trangThai: 'GIU_CHO',
-        tongTien,
-        tienTe: 'VND',
+        trangThai: BOOKING_CONSTANTS.STATUS.HOLDING,
+        tongTien: Number(giaVe.giaBan),
+        tienTe: BOOKING_CONSTANTS.DEFAULT_CURRENCY,
         hetHanGiuCho,
         searchSessionId: dto.searchSessionId,
       },
@@ -102,59 +118,78 @@ export class BookingsService {
         hangVe: true,
       },
     });
-
-    // Thêm thông tin liên hệ nếu có
-    if (dto.thongTinLienHe) {
-      await this.prisma.thongTinLienHe.create({
-        data: {
-          donDatVeId: booking.id,
-          hoTen: dto.thongTinLienHe.email.split('@')[0], // Tạm dùng email làm tên
-          email: dto.thongTinLienHe.email,
-          soDienThoai: dto.thongTinLienHe.soDienThoai,
-        },
-      });
-    }
-
-    // Thêm hành khách nếu có
-    if (dto.hanhKhach && dto.hanhKhach.length > 0) {
-      await Promise.all(
-        dto.hanhKhach.map((hk) =>
-          this.prisma.hanhKhach.create({
-            data: {
-              donDatVeId: booking.id,
-              loai: hk.loai as any,
-              ho: hk.ho,
-              ten: hk.ten,
-              gioiTinh: hk.gioiTinh,
-              ngaySinh: new Date(hk.ngaySinh),
-              quocTich: hk.quocTich,
-            },
-          })
-        )
-      );
-    }
-
-    // Giảm số chỗ còn lại (tạm giữ)
-    await this.prisma.giaVe.update({
-      where: { id: giaVe.id },
-      data: { soLuongGheTrong: giaVe.soLuongGheTrong - 1 },
-    });
-
-    return booking;
   }
 
-  // Thêm hành khách
+  /**
+   * Tạo hoặc cập nhật thông tin liên hệ
+   */
+  private async createOrUpdateContactInfo(
+    bookingId: number,
+    thongTinLienHe: any,
+  ) {
+    return this.prisma.thongTinLienHe.upsert({
+      where: { donDatVeId: bookingId },
+      update: thongTinLienHe,
+      create: {
+        donDatVeId: bookingId,
+        hoTen: thongTinLienHe.email.split('@')[0],
+        ...thongTinLienHe,
+      },
+    });
+  }
+
+  /**
+   * Tạo danh sách hành khách
+   */
+  private async createPassengers(
+    bookingId: number,
+    hanhKhachList: any[],
+  ) {
+    return Promise.all(
+      hanhKhachList.map((hk) =>
+        this.prisma.hanhKhach.create({
+          data: {
+            donDatVeId: bookingId,
+            loai: hk.loai,
+            ho: hk.ho.toUpperCase(),
+            ten: hk.ten.toUpperCase(),
+            gioiTinh: hk.gioiTinh,
+            ngaySinh: new Date(hk.ngaySinh),
+            quocTich: hk.quocTich,
+          },
+        }),
+      ),
+    );
+  }
+
+  /**
+   * Giảm số chỗ trống
+   */
+  private async decrementAvailableSeats(giaVeId: number) {
+    return this.prisma.giaVe.update({
+      where: { id: giaVeId },
+      data: {
+        soLuongGheTrong: {
+          decrement: 1,
+        },
+      },
+    });
+  }
+
+  /**
+   * Thêm hành khách vào booking
+   */
   async addPassenger(bookingId: number, dto: AddPassengerDto) {
     const booking = await this.prisma.donDatVe.findUnique({
       where: { id: bookingId },
     });
 
     if (!booking) {
-      throw new NotFoundException('Không tìm thấy đơn đặt vé');
+      throw new NotFoundException(ERROR_MESSAGES.BOOKING_NOT_FOUND);
     }
 
-    if (booking.trangThai !== 'GIU_CHO') {
-      throw new BadRequestException('Không thể thêm hành khách cho đơn đặt vé này');
+    if (booking.trangThai !== BOOKING_CONSTANTS.STATUS.HOLDING) {
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_BOOKING_STATUS);
     }
 
     const passenger = await this.prisma.hanhKhach.create({
@@ -175,14 +210,16 @@ export class BookingsService {
     return passenger;
   }
 
-  // Thêm thông tin liên hệ
+  /**
+   * Thêm hoặc cập nhật thông tin liên hệ booking
+   */
   async addContact(bookingId: number, dto: AddContactDto) {
     const booking = await this.prisma.donDatVe.findUnique({
       where: { id: bookingId },
     });
 
     if (!booking) {
-      throw new NotFoundException('Không tìm thấy đơn đặt vé');
+      throw new NotFoundException(ERROR_MESSAGES.BOOKING_NOT_FOUND);
     }
 
     const contact = await this.prisma.thongTinLienHe.upsert({

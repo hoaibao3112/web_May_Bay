@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards, Get, Request } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Get, Request, Response } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
@@ -56,22 +56,29 @@ export class AuthController {
 
   @Get('facebook/callback')
   @UseGuards(AuthGuard('facebook'))
-  async facebookCallback(@Request() req) {
-    // Generate JWT token
-    const payload = { sub: req.user.id, email: req.user.email, vaiTro: req.user.vaiTro };
+  async facebookCallback(
+    @Request() req,
+    @Response({ passthrough: true }) res,
+  ) {
+    // ✅ Táo JWT token
+    const payload = {
+      sub: req.user.id,
+      email: req.user.email,
+      vaiTro: req.user.vaiTro,
+    };
     const accessToken = this.jwtService.sign(payload);
 
-    // Redirect to frontend with token
-    return `
-      <html>
-        <body>
-          <script>
-            window.opener.postMessage({ type: 'FACEBOOK_LOGIN_SUCCESS', token: '${accessToken}', user: ${JSON.stringify(req.user)} }, '*');
-            window.close();
-          </script>
-        </body>
-      </html>
-    `;
+    // ✅ Gửi token qua httpOnly cookie (bảo mật)
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,      // JavaScript không đọc được
+      secure: process.env.NODE_ENV === 'production', // HTTPS only trên production
+      sameSite: 'strict',  // Chống CSRF
+      maxAge: 24 * 60 * 60 * 1000, // 24 giờ
+    });
+
+    // ✅ Redirect về frontend với success flag
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    res.redirect(`${clientUrl}/auth/callback?status=success`);
   }
 }
 

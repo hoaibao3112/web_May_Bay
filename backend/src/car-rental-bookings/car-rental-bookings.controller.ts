@@ -8,21 +8,30 @@ import {
     Delete,
     ParseIntPipe,
     Request,
+    UseGuards,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { CarRentalBookingsService } from './car-rental-bookings.service';
 import { CreateCarRentalBookingDto } from './dto/create-car-rental-booking.dto';
 import { CreateCarRentalPaymentDto, VerifyCarRentalPaymentDto } from './dto/create-car-rental-payment.dto';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 
 @Controller('car-rental-bookings')
 export class CarRentalBookingsController {
     constructor(private readonly carRentalBookingsService: CarRentalBookingsService) { }
 
     @Post()
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     createBooking(
         @Body() createDto: CreateCarRentalBookingDto,
         @Request() req: any,
     ) {
-        const userId = req.user?.id || 1; // Temporary fallback
+        // ✅ FIXED: Remove fallback || 1 and validate user
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để thuê xe');
+        }
+        const userId = req.user.id;
+        
         return this.carRentalBookingsService.createBooking(createDto, userId);
     }
 
@@ -54,20 +63,32 @@ export class CarRentalBookingsController {
     }
 
     @Delete(':id')
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     cancelBooking(
         @Param('id', ParseIntPipe) id: number,
         @Request() req: any,
     ) {
-        const userId = req.user?.id || 1; // Temporary fallback
+        // ✅ FIXED: Remove fallback || 1 and validate user
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để hủy đặt vé');
+        }
+        const userId = req.user.id;
+        
         return this.carRentalBookingsService.cancelBooking(id, userId);
     }
 
     @Post('payment')
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     createPayment(
         @Body() createPaymentDto: CreateCarRentalPaymentDto,
         @Request() req: any,
     ) {
-        const userId = req.user?.id;
+        // ✅ FIXED: Validate user, no fallback
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để thanh toán');
+        }
+        const userId = req.user.id;
+        
         return this.carRentalBookingsService.createPayment(createPaymentDto, userId);
     }
 

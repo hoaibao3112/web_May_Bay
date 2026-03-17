@@ -31,17 +31,22 @@ export class BookingsController {
   @Post()
   async createBooking(@Body() dto: CreateBookingDto, @Request() req?) {
     try {
-      this.logger.log('Received booking request:');
-      this.logger.log(JSON.stringify(dto));
-
-      // Thử lấy userId nếu user đã đăng nhập
       const userId = req?.user?.id;
-      this.logger.log('User ID:', userId || 'Guest booking');
+      
+      if (process.env.NODE_ENV === 'development') {
+        this.logger.debug(`Creating booking`, {
+          changBayId: dto.changBayId,
+          hangVeId: dto.hangVeId,
+          passengerCount: dto.hanhKhach?.length || 0,
+        });
+      }
 
       return await this.bookingsService.createBooking(dto, userId);
     } catch (error) {
-      this.logger.error('Error creating booking:', error.message, error.stack);
-      throw new BadRequestException(error.message || 'Không thể tạo đơn đặt vé');
+      this.logger.error('Error creating booking:', error.message);
+      throw new BadRequestException(
+        error.message || 'Không thể tạo đơn đặt vé',
+      );
     }
   }
 

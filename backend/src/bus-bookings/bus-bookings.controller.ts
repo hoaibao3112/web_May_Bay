@@ -8,11 +8,14 @@ import {
     Delete,
     ParseIntPipe,
     Request,
+    UseGuards,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { BusBookingsService } from './bus-bookings.service';
 import { CreateBusBookingDto } from './dto/create-bus-booking.dto';
 import { CreateBusPaymentDto, VerifyBusPaymentDto } from './dto/create-bus-payment.dto';
 import { QrCodeService } from '../qr-code/qr-code.service';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 
 @Controller('bus-bookings')
 export class BusBookingsController {
@@ -22,6 +25,7 @@ export class BusBookingsController {
     ) { }
 
     @Post()
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     createBooking(
         @Body() createDto: CreateBusBookingDto,
         @Request() req: any,
@@ -29,7 +33,13 @@ export class BusBookingsController {
         console.log('Received booking DTO:', JSON.stringify(createDto, null, 2));
         console.log('chuyenXeId type:', typeof createDto.chuyenXeId);
         console.log('chuyenXeId value:', createDto.chuyenXeId);
-        const userId = req.user?.id || 1; // Temporary fallback
+        
+        // ✅ FIXED: Remove fallback || 1 and validate user
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để đặt vé');
+        }
+        const userId = req.user.id;
+        
         return this.busBookingsService.createBooking(createDto, userId);
     }
 
@@ -71,21 +81,33 @@ export class BusBookingsController {
     }
 
     @Delete(':id')
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     cancelBooking(
         @Param('id', ParseIntPipe) id: number,
         @Request() req: any,
     ) {
-        const userId = req.user?.id || 1; // Temporary fallback
+        // ✅ FIXED: Remove fallback || 1 and validate user
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để hủy đặt vé');
+        }
+        const userId = req.user.id;
+        
         return this.busBookingsService.cancelBooking(id, userId);
     }
 
     // Tạo thanh toán
     @Post('payment')
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     createPayment(
         @Body() createPaymentDto: CreateBusPaymentDto,
         @Request() req: any,
     ) {
-        const userId = req.user?.id;
+        // ✅ FIXED: Validate user, no fallback
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để thanh toán');
+        }
+        const userId = req.user.id;
+        
         return this.busBookingsService.createPayment(createPaymentDto, userId);
     }
 

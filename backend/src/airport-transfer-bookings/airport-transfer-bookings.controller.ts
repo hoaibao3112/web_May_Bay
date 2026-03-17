@@ -1,9 +1,10 @@
-import { Controller, Post, Get, Patch, Body, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Param, ParseIntPipe, Query, UseGuards, UnauthorizedException, Request } from '@nestjs/common';
 import { AirportTransferBookingsService } from './airport-transfer-bookings.service';
 import { CreateAirportTransferBookingDto } from './dto/create-airport-transfer-booking.dto';
 import { CreateAirportTransferPaymentDto } from './dto/create-airport-transfer-payment.dto';
 import { PaymentsService } from '../payments/payments.service';
 import { QrCodeService } from '../qr-code/qr-code.service';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 
 @Controller('airport-transfer-bookings')
 export class AirportTransferBookingsController {
@@ -14,11 +15,21 @@ export class AirportTransferBookingsController {
     ) { }
 
     @Post()
-    createBooking(@Body() createBookingDto: CreateAirportTransferBookingDto) {
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
+    createBooking(
+        @Body() createBookingDto: CreateAirportTransferBookingDto,
+        @Request() req: any, // ✅ FIXED: Added to capture user
+    ) {
+        // ✅ FIXED: Validate user before creating booking
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để đặt dịch vụ');
+        }
+        
         // DEBUG: Log the received DTO
         console.log('🎯 Controller received DTO:', createBookingDto);
         console.log('🎯 dichVuId from DTO:', createBookingDto.dichVuId);
-        return this.airportTransferBookingsService.createBooking(createBookingDto);
+        
+        return this.airportTransferBookingsService.createBooking(createBookingDto, req.user.id);
     }
 
     @Get(':id')
@@ -50,19 +61,33 @@ export class AirportTransferBookingsController {
     }
 
     @Patch(':id/cancel')
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     cancelBooking(
         @Param('id', ParseIntPipe) id: number,
-        @Query('userId', ParseIntPipe) userId: number,
+        @Request() req: any, // ✅ FIXED: Changed from query param to user context
     ) {
+        // ✅ FIXED: Get userId from authenticated user
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để hủy đặt vé');
+        }
+        const userId = req.user.id;
+        
         return this.airportTransferBookingsService.cancelBooking(id, userId);
     }
 
     // Real Payment API Integration (VNPay, MoMo, ZaloPay, VietQR)
     @Post(':bookingId/create-payment')
+    @UseGuards(JwtAuthGuard) // ✅ FIXED: Added security guard
     async createPaymentUrl(
         @Param('bookingId', ParseIntPipe) bookingId: number,
         @Body() body: { phuongThuc: 'VNPAY' | 'MOMO' | 'ZALOPAY' | 'VIETQR' },
+        @Request() req: any, // ✅ FIXED: Added to capture user
     ) {
+        // ✅ FIXED: Validate user before payment
+        if (!req.user?.id) {
+            throw new UnauthorizedException('Vui lòng đăng nhập để thanh toán');
+        }
+        
         // Get booking details
         const booking = await this.airportTransferBookingsService.getBookingById(bookingId);
 
