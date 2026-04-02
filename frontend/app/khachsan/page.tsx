@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import Tilt from 'react-parallax-tilt';
 import UserDropdown from '../components/UserDropdown';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 
@@ -384,7 +386,18 @@ function KhachSanContent() {
               </div>
             )}
 
-            <div className="space-y-4">
+            <motion.div 
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.1 }
+                }
+              }}
+              className="space-y-4"
+            >
               {filteredHotels.map(hotel => {
                 const price = Number(hotel.giaThapNhat) || Number(hotel.phong[0]?.giaTheoNgay) || 0;
                 const totalPrice = price * (nights || 1);
@@ -393,8 +406,15 @@ function KhachSanContent() {
                 const reviewCount = hotel.soDanhGia || Math.floor(Math.random() * 1000) + 100;
 
                 return (
-                  <div key={hotel.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                    <div className="flex gap-4 p-4">
+                  <motion.div 
+                    variants={{
+                      hidden: { opacity: 0, y: 30 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    key={hotel.id}
+                  >
+                    <Tilt className="bg-white rounded-lg shadow-sm hover:shadow-2xl transition-shadow overflow-hidden border-2 border-transparent hover:border-gray-100" tiltMaxAngleX={2} tiltMaxAngleY={2} scale={1.01} transitionSpeed={2000} tiltReverse={true}>
+                      <div className="flex gap-4 p-4">
                       {/* Image */}
                       <div className="relative w-64 h-48 flex-shrink-0">
                         <img
@@ -463,18 +483,19 @@ function KhachSanContent() {
                             )}
                             <Link
                               href={`/khachsan/${hotel.id}?ngayNhanPhong=${checkIn}&ngayTraPhong=${checkOut}&soNguoi=${adults}&soPhong=${rooms}`}
-                              className="block w-full text-center px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+                              className="block w-full text-center px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg font-semibold hover:from-orange-600 hover:to-amber-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
                             >
                               Chọn phòng
                             </Link>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                      </div>
+                    </Tilt>
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           </main>
         </div>
       </div>

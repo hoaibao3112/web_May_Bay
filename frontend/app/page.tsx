@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 import LocationAutocomplete from './components/LocationAutocomplete';
 import AirportAutocomplete from './components/AirportAutocomplete';
 
@@ -314,18 +315,25 @@ export default function HomePage() {
 
   // Service tabs data
   const serviceTabs = [
-    { id: 'flights', name: 'Vé máy bay', icon: '✈️' },
-    { id: 'hotels', name: 'Khách sạn', icon: '🏨' },
-    { id: 'buses', name: 'Vé xe khách', icon: '🚌' },
-    { id: 'airport-transfer', name: 'Đưa đón sân bay', icon: '🚗' },
-    { id: 'car-rental', name: 'Cho thuê xe', icon: '🚙' },
-    { id: 'activities', name: 'Hoạt động & Vui chơi', icon: '⚡' },
+    { id: 'flights', name: 'Vé máy bay', image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=100&q=80' },
+    { id: 'hotels', name: 'Khách sạn', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100&q=80' },
+    { id: 'buses', name: 'Vé xe khách', image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=100&q=80' },
+    { id: 'airport-transfer', name: 'Đưa đón sân bay', image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=100&q=80' },
+    { id: 'car-rental', name: 'Cho thuê xe', image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=100&q=80' },
+    { id: 'activities', name: 'Hoạt động & Vui chơi', image: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=100&q=80' },
+  ];
+
+  const destinationImages = [
+    'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=600&q=80',
+    'https://images.unsplash.com/photo-1555921015-c262ad0c4784?w=600&q=80',
+    'https://images.unsplash.com/photo-1595844730298-b960ff86bed6?w=600&q=80',
+    'https://images.unsplash.com/photo-1506744626753-1fa44df31c7f?w=600&q=80'
   ];
 
   // Destinations data from API
-  const destinations = (Array.isArray(popularRoutes) ? popularRoutes : []).map((route: any) => ({
+  const destinations = (Array.isArray(popularRoutes) ? popularRoutes : []).map((route: any, index: number) => ({
     name: route.thanhPhoDen || route.sanBayDen,
-    image: '🏝️',
+    image: destinationImages[index % destinationImages.length],
     description: `${route.soLuongDat || 0} chuyến bay`,
     price: route.giaTrungBinh ? `Từ ${new Intl.NumberFormat('vi-VN').format(route.giaTrungBinh)}đ` : 'Liên hệ',
     from: route.sanBayDi,
@@ -362,55 +370,92 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section with Background Image - REDESIGNED */}
-      <section className="relative min-h-screen overflow-hidden bg-gradient-to-b from-primary-600 via-primary-500 to-primary-700">
-        {/* Background Image with Overlay */}
-        <div className="absolute inset-0">
-          <Image
-            src="/images/AnhNen/Backgroud.jpg"
-            alt="Background"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-primary-900/70 via-primary-800/60 to-primary-900/75"></div>
+      {/* Hero Section with Cinematic Video Background */}
+      <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden bg-primary-900 rounded-b-[2.5rem] shadow-2xl mb-12">
+        {/* Premium Background Video (Airplane flying at sunset) */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover scale-105"
+            poster="https://images.unsplash.com/photo-1506744626753-1fa44df31c7f?w=1920&q=80"
+          >
+            <source src="https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4" type="video/mp4" />
+          </video>
+          {/* Overlay chuyển sắc Gradient sang trọng */}
+          <div className="absolute inset-0 bg-gradient-to-t from-primary-900/95 via-primary-900/40 to-black/30"></div>
         </div>
 
         {/* Content */}
-        <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-32">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 mb-12">
           {/* Title */}
-          <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
-              App du lịch hàng đầu, một chạm đi bất cứ đâu
+          <motion.div 
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="text-center mb-16"
+          >
+            <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 drop-shadow-2xl tracking-tight leading-tight">
+              Kỳ nghỉ mơ ước,<br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-200">chỉ cách một cú chạm</span>
             </h1>
-            <p className="text-xl text-primary-100 drop-shadow-md">
-              Đặt chuyến bay, khách sạn, xe cộ nhanh chóng và tiện lợi
+            <p className="text-xl md:text-2xl text-primary-100 drop-shadow-md font-medium max-w-3xl mx-auto">
+              Nền tảng săn vé máy bay và đặt phòng khách sạn hàng đầu dành riêng cho bạn.
             </p>
-          </div>
+          </motion.div>
 
           {/* Service Tabs */}
-          <div className="flex flex-wrap justify-center gap-3 mb-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex flex-wrap justify-center gap-3 mb-10"
+          >
             {serviceTabs.map((tab) => (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 backdrop-blur-sm ${activeTab === tab.id
-                  ? 'bg-white text-primary-600 shadow-2xl scale-105'
+                className={`px-6 py-3 rounded-full font-medium transition-colors flex items-center gap-2 backdrop-blur-sm relative overflow-hidden ${activeTab === tab.id
+                  ? 'text-primary-600 shadow-xl'
                   : 'bg-white/20 text-white hover:bg-white/30 border border-white/40'
                   }`}
               >
-                <span className="text-xl">{tab.icon}</span>
-                <span>{tab.name}</span>
-              </button>
+                {activeTab === tab.id && (
+                  <motion.div
+                    layoutId="activeTabIndicator"
+                    className="absolute inset-0 bg-white rounded-full"
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                )}
+                <img src={tab.image} alt={tab.name} className="w-7 h-7 rounded-full object-cover relative z-10 shadow-sm border border-white/50" />
+                <span className="relative z-10">{tab.name}</span>
+              </motion.button>
             ))}
-          </div>
+          </motion.div>
 
           {/* Compact Search Card */}
-          <div className="max-w-5xl mx-auto">
-            <div className="bg-white rounded-3xl shadow-2xl p-8 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="max-w-5xl mx-auto"
+          >
+            <div className="bg-white/90 rounded-3xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] p-8 backdrop-blur-xl border border-white/40 relative overflow-hidden">
+              <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary-200/40 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-accent-200/40 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="relative z-10">
               {/* Flight Search */}
               {activeTab === 'flights' && (
-                <div>
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
                   {/* Trip Type Buttons */}
                   <div className="flex gap-4 mb-6">
                     <button
@@ -536,17 +581,22 @@ export default function HomePage() {
                     <button
                       onClick={handleSearch}
                       disabled={!fromAirport || !toAirport || !departDate}
-                      className="btn-primary self-end disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+                      className="btn-primary self-end disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 shadow-md hover:shadow-lg bg-gradient-to-r from-primary-600 to-primary-500"
                     >
                       🔍 Tìm chuyến bay
                     </button>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Hotel Search */}
               {activeTab === 'hotels' && (
-                <div>
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div ref={cityInputRef} className="lg:col-span-2 relative">
                       <label className="block text-sm font-semibold text-secondary-700 mb-2">
@@ -751,12 +801,12 @@ export default function HomePage() {
                     <button
                       onClick={handleHotelSearch}
                       disabled={!hotelCity || !hotelCheckin || !hotelCheckout}
-                      className="px-10 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 self-end transition-all"
+                      className="px-10 py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-lg font-semibold hover:from-primary-700 hover:to-primary-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 self-end transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                     >
                       🔍 Tìm khách sạn
                     </button>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Bus Search */}
@@ -1129,45 +1179,40 @@ export default function HomePage() {
                   </div>
 
                   {/* Quick Categories */}
-                  <div className="mt-6 pt-6 border-t">
+                  <div className="mt-6 pt-6 border-t border-gray-100">
                     <h3 className="font-semibold text-secondary-900 mb-4">Hoặc chọn một danh mục để khám phá:</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <Link
                         href="/hoat-dong?danhMucId=1"
-                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl hover:shadow-md transition group"
+                        className="relative flex items-center justify-center p-6 rounded-xl hover:shadow-xl transition-all overflow-hidden group h-32"
                       >
-                        <svg className="w-8 h-8 text-primary-600" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                        </svg>
-                        <span className="font-medium text-secondary-900 group-hover:text-primary-700">Điểm tham quan</span>
+                        <img src="https://images.unsplash.com/photo-1542314831-c53cd4b85ca4?w=400&q=80" alt="Tham quan" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
+                        <span className="relative font-bold text-white text-lg drop-shadow-md z-10 text-center">Điểm tham quan</span>
                       </Link>
                       <Link
                         href="/hoat-dong?danhMucId=2"
-                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl hover:shadow-md transition group"
+                        className="relative flex items-center justify-center p-6 rounded-xl hover:shadow-xl transition-all overflow-hidden group h-32"
                       >
-                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 003 16.382V5.618a1 1 0 011.553-.894L9 7.711" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 20l5.447-2.724A1 1 0 0021 16.382V5.618a1 1 0 00-1.553-.894L15 7.711" />
-                        </svg>
-                        <span className="font-medium text-secondary-900 group-hover:text-green-600">Tour</span>
+                        <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400&q=80" alt="Tour" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
+                        <span className="relative font-bold text-white text-lg drop-shadow-md z-10 text-center">Tour</span>
                       </Link>
                       <Link
                         href="/hoat-dong?danhMucId=3"
-                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl hover:shadow-md transition group"
+                        className="relative flex items-center justify-center p-6 rounded-xl hover:shadow-xl transition-all overflow-hidden group h-32"
                       >
-                        <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h-2m2 0h2m-2 0V8m0 2v2m-6 0h2m-2 0H8m2 0V8m0 2v2m8-4H8a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-8a2 2 0 00-2-2z" />
-                        </svg>
-                        <span className="font-medium text-secondary-900 group-hover:text-purple-600">Spa & Thư giãn</span>
+                        <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&q=80" alt="Spa" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
+                        <span className="relative font-bold text-white text-lg drop-shadow-md z-10 text-center">Spa & Thư giãn</span>
                       </Link>
                       <Link
                         href="/hoat-dong?danhMucId=4"
-                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl hover:shadow-md transition group"
+                        className="relative flex items-center justify-center p-6 rounded-xl hover:shadow-xl transition-all overflow-hidden group h-32"
                       >
-                        <svg className="w-8 h-8 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        <span className="font-medium text-secondary-900 group-hover:text-orange-600">Thể thao</span>
+                        <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&q=80" alt="Thể thao" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
+                        <span className="relative font-bold text-white text-lg drop-shadow-md z-10 text-center">Thể thao</span>
                       </Link>
                     </div>
                   </div>
@@ -1190,8 +1235,9 @@ export default function HomePage() {
                   </p>
                 </div>
               )}
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -1278,8 +1324,9 @@ export default function HomePage() {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
               >
-                <div className="h-32 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-5xl group-hover:scale-110 transition-transform">
-                  {dest.image}
+                <div className="h-40 overflow-hidden relative">
+                  <img src={dest.image} alt={dest.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
                 <div className="p-5">
                   <h3 className="text-lg font-bold text-secondary-900 mb-1">{dest.name}</h3>
@@ -1311,42 +1358,34 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-6">
-                <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className="inline-block w-28 h-28 mb-6 rounded-full overflow-hidden shadow-lg border-4 border-white transition-transform hover:scale-110">
+                <img src="https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?w=200&q=80" alt="Giá tốt nhất" className="w-full h-full object-cover" />
               </div>
-              <h3 className="text-lg font-bold text-secondary-900 mb-2">Giá tốt nhất</h3>
+              <h3 className="text-xl font-bold text-secondary-900 mb-2">Giá tốt nhất</h3>
               <p className="text-secondary-600">So sánh giá từ nhiều hãng bay</p>
             </div>
 
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-6">
-                <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+              <div className="inline-block w-28 h-28 mb-6 rounded-full overflow-hidden shadow-lg border-4 border-white transition-transform hover:scale-110">
+                <img src="https://images.unsplash.com/photo-1508615039623-a25605d2b022?w=200&q=80" alt="Đặt vé nhanh" className="w-full h-full object-cover" />
               </div>
-              <h3 className="text-lg font-bold text-secondary-900 mb-2">Đặt vé nhanh</h3>
+              <h3 className="text-xl font-bold text-secondary-900 mb-2">Đặt vé nhanh</h3>
               <p className="text-secondary-600">Chỉ 3 phút hoàn tất</p>
             </div>
 
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-6">
-                <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+              <div className="inline-block w-28 h-28 mb-6 rounded-full overflow-hidden shadow-lg border-4 border-white transition-transform hover:scale-110">
+                <img src="https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=200&q=80" alt="An toàn bảo mật" className="w-full h-full object-cover" />
               </div>
-              <h3 className="text-lg font-bold text-secondary-900 mb-2">An toàn bảo mật</h3>
-              <p className="text-secondary-600">Thanh toán được mã hóa</p>
+              <h3 className="text-xl font-bold text-secondary-900 mb-2">An toàn bảo mật</h3>
+              <p className="text-secondary-600">Thanh toán được bảo mật</p>
             </div>
 
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-6">
-                <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5.657-4.343a9 9 0 10-12.728 12.728" />
-                </svg>
+              <div className="inline-block w-28 h-28 mb-6 rounded-full overflow-hidden shadow-lg border-4 border-white transition-transform hover:scale-110">
+                <img src="https://images.unsplash.com/photo-1543269664-76bc3997d9ea?w=200&q=80" alt="Hỗ trợ 24/7" className="w-full h-full object-cover" />
               </div>
-              <h3 className="text-lg font-bold text-secondary-900 mb-2">Hỗ trợ 24/7</h3>
+              <h3 className="text-xl font-bold text-secondary-900 mb-2">Hỗ trợ 24/7</h3>
               <p className="text-secondary-600">Giúp đỡ bất cứ lúc nào</p>
             </div>
           </div>
